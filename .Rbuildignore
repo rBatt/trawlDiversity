@@ -1,0 +1,12 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+.Rapp.history
+.DS_Store
+.gitignore
+.gitattributes
+
+^.*\.Rproj$
+^\.Rproj\.user$
+^\.travis\.yml$
+^pkgBuild$
+README
