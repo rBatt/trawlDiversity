@@ -28,7 +28,7 @@ data {
     int nU_psi; // number of Covariates for psi (presence)
     int nU_theta; // number of Covariates for theta (detection)
     
-    vector[nU_psi] U_psi[T,S,J]; // covariates for psi (presence)
+    vector[nU_psi] [T,S,J]; // covariates for psi (presence)
     vector[nU_theta] U_theta[T,S,J,K]; // covariates for theta (detectability)
     
     int N; // total number of observed species (anywhere, ever)
@@ -74,7 +74,10 @@ parameters {
 	
 	for(t in 1:T){
 		for(j in 1:J){
-			logit_psi[j,t] <- U_alpha
+			for(s in 1:S){
+				logit_psi[t][s] <- U_psi*alpha[s]
+			}
+			
 		}
 	}
 	
