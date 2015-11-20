@@ -22,18 +22,18 @@
 // ========
 data {
     int<lower=1> T; // number of years
-    int<lower=1> Kmax[T];
-    int<lower=1> J[T]; // number of sites
-    int<lower=1, upper=Kmax> K[J,T]; // number of 'replicates' (hauls)
+    int<lower=1> Kmax;
+    int<lower=1> Jmax; // number of sites
+    int<lower=1, upper=Kmax> nK[Jmax,Tmax]; // number of 'replicates' (hauls)
     int nU_psi; // number of Covariates for psi (presence)
     int nU_theta; // number of Covariates for theta (detection)
     
-    vector[nU_psi] [T,S,J]; // covariates for psi (presence)
-    vector[nU_theta] U_theta[T,S,J,K]; // covariates for theta (detectability)
+    vector[nU_psi] [nT,nS,Jmax]; // covariates for psi (presence)
+    vector[nU_theta] U_theta[nT,nS,Jmax,Kmax]; // covariates for theta (detectability)
     
     int N; // total number of observed species (anywhere, ever)
-	int<lower=N> S; // size of super population, included unknown species
-    int Y[J,K,S,T]; // species observations
+	int<lower=N> nS; // size of super population, includes unknown species
+    int Y[Jmax,Kmax,nS,nT]; // species observations
 }
 
 
