@@ -8,7 +8,7 @@ ebs.a2 <- ebs.a[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, bte
 # Order of dimensions is optimized for Stan looping:
 # last dimension loops most quickly
 gno <- c("year","stratum","K","spp") # need to get this by formula parsing
-Yc <- trawlCast(x=ebs.a2, formula=year~stratum~K~spp, valueName="abund", grandNamesOut=gno)
+Xc <- trawlCast(x=ebs.a2, formula=year~stratum~K~spp, valueName="abund", grandNamesOut=gno)
 nK <- trawlCast(ebs.a2, 
 	year~stratum, 
 	valueName=tail(gno,2)[1], #"K", 
@@ -16,7 +16,7 @@ nK <- trawlCast(ebs.a2,
 	fun.aggregate=max, 
 	valFill=0, 
 	grandNamesOut=head(gno, length(gno)-2)# c("j","t")
-) # used to indicate which values in Yc are NA, basically
+) # used to indicate which values in Xc are NA, basically
 
 
 # Get covariates for U
@@ -44,7 +44,7 @@ cov.tjk <- ebs.a2[,eval(una.cov), keyby=cov.by] # also setting key
 # It is implied that to get the mean, you look 1 level higher
 # than the most specific favor in cov.by
 # This is why the order of cov.by matters, a lot
-# PRETTY PRESUMPTUOUS / FRAGILE CODE
+# PRETTX PRESUMPTUOUS / FRAGILE CODE
 is.ci <- function(x)is.numeric(x) | is.integer(x)
 fm2 <- function(x){
 	if(!any(is.na(x))){
@@ -76,7 +76,7 @@ cov.tjk[,c(names(cov.vars)):=eval(fillMean.cov),by=c(cov.by[-length(cov.by)])]
 stopifnot(!any(is.na(cov.tjk))) # can't have any NA's with my current simple approach
 
 # Set up template for expanding covariates
-template <- unique(data.table(reshape2:::melt(Yc), key=c(cov.by)))[,eval(s2c(cov.by))]
+template <- unique(data.table(reshape2:::melt(Xc), key=c(cov.by)))[,eval(s2c(cov.by))]
 template[,c(names(template)):=lapply(.SD, as.character)]
 cov.tjk[,c(cov.by):=lapply(.SD[,eval(s2c(cov.by))], as.character)]
 
@@ -117,21 +117,21 @@ V <- getUV(v.form)
 nV <- tail(dim(V),1)
 
 
-# Yc <- trawlCast(x=ebs.a2, formula=year~stratum~K, valueName="doy", grandNamesOut=c("t","j","k","year"), fun.aggregate=meanna)
+# Xc <- trawlCast(x=ebs.a2, formula=year~stratum~K, valueName="doy", grandNamesOut=c("t","j","k","year"), fun.aggregate=meanna)
 
 
 
 # test if it'd work in stan
-nT <- length(dimnames(Yc)$year)
-Jmax <- length(dimnames(Yc)$stratum)
-Kmax <- length(dimnames(Yc)$K)
-nS <- length(dimnames(Yc)$spp)
+nT <- length(dimnames(Xc)$year)
+Jmax <- length(dimnames(Xc)$stratum)
+Kmax <- length(dimnames(Xc)$K)
+nS <- length(dimnames(Xc)$spp)
 
 for(t in 1:Tmax){
 	for(j in 1:Jmax){
 		t.K <- nK[t,j]
 		if(t.K){
-			t.dat <- unname(Yc[t,j,,])
+			t.dat <- unname(Xc[t,j,,])
 			print(t.dat)
 			# for(k in 1:t.K){
 #
@@ -147,14 +147,14 @@ for(t in 1:Tmax){
 # thanks to indexing provided by nK. 
 # Reminder: nK tells us how many reps, 
 # or if 0, that a J-T combo doesn't exist
-Y <- Yc
-Y[is.na(Y)] <- 0
+X <- Xc
+X[is.na(X)] <- 0
 
 U[is.na(U)] <- 0
 V[is.na(V)] <- 0
 
 
-# items to use: Y, U, V, nK ...
+# items to use: X, U, V, nK ...
 # nT, Jmax, Kmax, nS ...
 # nV, nU ...
 # those should be passed to Stan as data
