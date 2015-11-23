@@ -4,12 +4,29 @@ load_all("trawl/trawlDiversity")
 
 ebs.a2 <- ebs.a[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, doy=yday(datetime))]
 
+# ebs.a1 <- ebs.agg2[pick(spp, 50, w=T)][pick(year,3)][pick(stratum, 30)]
+# ebs.a2 <- ebs.a1[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, doy=yday(datetime))]
+
+# hacked bad word around for dropping
+ebs.a2[,cantFill:=all(is.na(btemp)),by=c("year","stratum")]
+ebs.a2 <- ebs.a2[!(cantFill)]
+
+# scale day of year
+doy.mu <- ebs.a2[,mean(doy, na.rm=TRUE)]
+doy.sd <- ebs.a2[,sd(doy, na.rm=TRUE)]
+ebs.a2[,doy:=(doy-doy.mu)/doy.sd]
+
 # Cast Data
 # Not quite ready for Stan
 # Order of dimensions is optimized for Stan looping:
 # last dimension loops most quickly
+n0 <- 10
 gno <- c("year","stratum","K","spp") # need to get this by formula parsing
-Xc <- trawlCast(x=ebs.a2, formula=year~stratum~K~spp, valueName="abund", grandNamesOut=gno)
+formula <- year~stratum~K~spp
+cov.vars <- c(bt="btemp",doy="doy",yr="year") # order does not matter
+
+
+Xc <- trawlCast(x=ebs.a2, formula=formula, valueName="abund", grandNamesOut=gno)
 nK <- trawlCast(ebs.a2, 
 	year~stratum, 
 	valueName=tail(gno,2)[1], #"K", 
@@ -24,7 +41,7 @@ nK <- trawlCast(ebs.a2,
 # Choose names of covariates
 # The names of the vector are the names you'll get in the end
 # The character elements of the vector should correspond to columns
-cov.vars <- c(bt="btemp",doy="doy",yr="year") # order does not matter
+# cov.vars <- c(bt="btemp",doy="doy",yr="year") # order does not matter
 # cov.vars <- c(btemp="bt",doy="doy",year="yr") # if wanted opposite convention
 
 # Grouping for covariates
@@ -122,24 +139,7 @@ nV <- tail(dim(V),1)
 
 
 
-# test if it'd work in stan
-nT <- length(dimnames(Xc)$year)
-Jmax <- length(dimnames(Xc)$stratum)
-Kmax <- length(dimnames(Xc)$K)
-N <- length(dimnames(Xc)$spp)
 
-for(t in 1:nT){
-	for(j in 1:Jmax){
-		t.K <- nK[t,j]
-		if(t.K){
-			t.dat <- unname(Xc[t,j,,])
-			print(t.dat)
-			# for(k in 1:t.K){
-#
-# 			}
-		}
-	}
-}
 # if you don't see any NA's, should all be good! (in old version, with t.K loop)
 
 
@@ -155,9 +155,29 @@ add_neverObs <- function(x, n0){
 	return(outA)
 	
 }
-n0 <- 4
 X <- add_neverObs(Xc, n0=n0)
+
+
+# test if it'd work in stan
+nT <- length(dimnames(Xc)$year)
+Jmax <- length(dimnames(Xc)$stratum)
+Kmax <- length(dimnames(Xc)$K)
+N <- length(dimnames(Xc)$spp)
 nS <- N + n0
+
+# for(t in 1:nT){
+# 	for(j in 1:Jmax){
+# 		t.K <- nK[t,j]
+# 		if(t.K){
+# 			t.dat <- unname(Xc[t,j,,])
+# 			print(t.dat)
+# 			# for(k in 1:t.K){
+# #
+# # 			}
+# 		}
+# 	}
+# }
+
 
 # Convert NA's to 0's, so they Stan doesn't get mad.
 # But don't worry, these converts will be skipped by loop,
@@ -170,17 +190,26 @@ U[is.na(U)] <- 0
 V[is.na(V)] <- 0
 
 
-# items to use: X, U, V, nK ...
-# nT, Jmax, Kmax, nS ...
-# nV, nU ...
-# those should be passed to Stan as data
-
-
+# =====================
+# = Fit Model in Stan =
+# =====================
 library(rstan)
 model_file <- "trawl/trawlDiversity/inst/stan/msomStatic.stan"
-stan(
+ebs_msom <- stan(
 	file=model_file, 
 	data=c("X","U","V","nK","nT","Kmax","Jmax","nU","nV","nS","N"), 
-	control=list(stepsize=0.05, adapt_delta=0.95), 
-	chains=4, iter=1000, refresh=1, seed=1337, cores=4
+	# control=list(stepsize=0.05, adapt_delta=0.95), 
+	chains=1, iter=500, refresh=1, seed=1337, cores=1
 )
+
+
+# ==================================
+# = Printing the Fitted Parameters =
+# ==================================
+print(ebs_msom, c("alpha[1,1]", "beta[1,1]", "Omega"));
+
+print(ebs_msom, c(
+	"alpha[1,1]", "alpha[2,1]", "alpha[3,1]", 
+	"beta[1,1]", "beta[2,1]", "beta[3,1]", "beta[4,1]", "beta[5,1]",
+	"Omega"
+))
