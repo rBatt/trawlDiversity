@@ -51,12 +51,12 @@ data {
     int<lower=1> nT; // number of years
     int<lower=1> Kmax;
     int<lower=1> Jmax; // number of sites
-    int<lower=1, upper=Kmax> nK[Jmax,nT]; // number of 'replicates' (hauls)
+    int<lower=0, upper=Kmax> nK[nT,Jmax]; // number of 'replicates' (hauls)
     int nU; // number of Covariates for psi (presence)
     int nV; // number of Covariates for theta (detection)
     
-    matrix[Kmax, nU] U[nT,Jmax]; // covariates for psi (presence)
-    matrix[Kmax, nV] V[nT,Jmax]; // covariates for theta (detectability)
+    matrix[Kmax,nU] U[nT,Jmax]; // covariates for psi (presence)
+    matrix[Kmax,nV] V[nT,Jmax]; // covariates for theta (detectability)
     
     int N; // total number of observed species (anywhere, ever)
 	int<lower=1> nS; // size of super population, includes unknown species
@@ -77,11 +77,8 @@ data {
 // ==============
 // = Parameters =
 // ==============
-parameters {
-	vector[nS] Z[nT,Jmax,Kmax]; // true state of presence; will have to fix some at 0 (ragged J K)
-	
+parameters {	
 	real<lower=0, upper=1> Omega[nT]; // average availability
-	// real<lower=0, upper=1> w[nT,nS]; // species availability
 	
 	vector[nU] alpha_mu; // hyperparameter mean
 	vector<lower=0>[nU] alpha_sd; // hyperparameter sd
@@ -98,21 +95,24 @@ parameters {
 // = Transformed Parameters =
 // ==========================
 transformed parameters {
-	matrix[Kmax,nS] logit_psi[nT,Jmax]; // presence probability
-	matrix[Kmax,nS] logit_theta[nT,Jmax]; // detection probability
+	row_vector[nS] logit_psi[nT,Jmax,Kmax]; // presence probability
+	row_vector[nS] logit_theta[nT,Jmax,Kmax]; // detection probability
 	
 	
 	for(t in 1:nT){
 		for(j in 1:Jmax){
 			int K;
 			K <- nK[t,j];
-			if(K){ // if K is not 0
+			if(K>0){ // if K is not 0
 				// if the K matrix gets too large, 
 				// it is in here that I should add
 				// a loop, wherein I subset to U[t,j,k], and
 				// vectorize over spp only
-				logit_psi[t,j] <- U[t,j]*alpha;
-				logit_theta[t,j] <- V[t,j]*beta;
+				for(k in 1:K){
+					logit_psi[t,j,k] <- U[t,j,k]*alpha;
+					logit_theta[t,j,k] <- V[t,j,k]*beta;
+				}
+				
 			}
 		}
 	}
@@ -155,7 +155,7 @@ model {
 			int tK;
 			tK <- nK[t,j];
 			
-			if (tK){ // if >0 sampling events, proceed
+			if(tK>0){ // if >0 sampling events, proceed
 				for(k in 1:tK){// loop through sampling events
 					
 					
