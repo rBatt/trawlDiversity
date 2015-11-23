@@ -1,3 +1,4 @@
+library(devtools)
 load_all("trawlData")
 load_all("trawl/trawlDiversity")
 
@@ -125,7 +126,7 @@ nV <- tail(dim(V),1)
 nT <- length(dimnames(Xc)$year)
 Jmax <- length(dimnames(Xc)$stratum)
 Kmax <- length(dimnames(Xc)$K)
-nS <- length(dimnames(Xc)$spp)
+N <- length(dimnames(Xc)$spp)
 
 for(t in 1:nT){
 	for(j in 1:Jmax){
@@ -142,12 +143,27 @@ for(t in 1:nT){
 # if you don't see any NA's, should all be good! (in old version, with t.K loop)
 
 
+# Add never-observed species to array
+add_neverObs <- function(x, n0){
+	fillA <- do.call(`[`, c(list(x), rep(TRUE, length(dim(x))-1), 1))
+	fillA[!is.na(fillA)] <- 0
+	X0 <- replicate(n0, fillA)
+	
+	outDim <- c(head(dim(x),-1), tail(dim(x),1)+n0)
+	outA <- array(c(x, X0), dim=outDim)
+	
+	return(outA)
+	
+}
+n0 <- 4
+X <- add_neverObs(Xc, n0=n0)
+nS <- N + n0
+
 # Convert NA's to 0's, so they Stan doesn't get mad.
 # But don't worry, these converts will be skipped by loop,
 # thanks to indexing provided by nK. 
 # Reminder: nK tells us how many reps, 
 # or if 0, that a J-T combo doesn't exist
-X <- Xc
 X[is.na(X)] <- 0
 
 U[is.na(U)] <- 0
@@ -164,7 +180,7 @@ library(rstan)
 model_file <- "trawl/trawlDiversity/inst/stan/msomStatic.stan"
 stan(
 	file=model_file, 
-	data=c("X","U","V","nK","nT","Kmax","Jmax","nS"), 
+	data=c("X","U","V","nK","nT","Kmax","Jmax","nU","nV","nS","N"), 
 	control=list(stepsize=0.05, adapt_delta=0.95), 
-	chains=4, iter=5000, refresh=0, seed=1337
+	chains=4, iter=1000, refresh=1, seed=1337, cores=4
 )

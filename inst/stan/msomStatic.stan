@@ -12,9 +12,36 @@
 // =============
 // = Functions =
 // =============
-// functions {
-//
-// }
+functions {
+	
+	// log probability functions
+	
+	// lp for species that are observed
+	real lp_obs(int x, real logit_psi, real logit_theta) {
+		// could probably just drop x; 
+		// taken from function that used binomial
+		
+		// log(p(present) * p(detected))
+		return log_inv_logit(logit_psi) + bernoulli_logit_log(x, logit_theta);
+	}
+	
+	// lp for species that aren't observed, but known to exist
+	real lp_unobs(real logit_psi, real logit_theta) {
+		// log(p(observed)) = log(p(present) * p(detected))
+		// log(p(unobs)) = log(p(observed) * 1-p(present))
+		
+		return log_sum_exp(lp_obs(0, logit_psi, logit_theta), log1m_inv_logit(logit_psi));
+	}
+	
+	real lp_never_obs(real logit_psi, real logit_theta, real Omega) {
+		real lp_unavailable;
+		real lp_available;
+		lp_unavailable <- bernoulli_log(0, Omega);
+		lp_available <- bernoulli_log(1, Omega) + lp_unobs(logit_psi, logit_theta);
+		return log_sum_exp(lp_unavailable, lp_available);
+	}
+	
+}
 
 
 // ========
@@ -31,9 +58,9 @@ data {
     matrix[Kmax, nU] U[nT,Jmax]; // covariates for psi (presence)
     matrix[Kmax, nV] V[nT,Jmax]; // covariates for theta (detectability)
     
-    // int N; // total number of observed species (anywhere, ever)
+    int N; // total number of observed species (anywhere, ever)
 	int<lower=1> nS; // size of super population, includes unknown species
-    vector[nS] X[nT,Jmax,Kmax]; // species observations
+    int X[nT,Jmax,Kmax,nS]; // species observations
 }
 
 
@@ -41,7 +68,9 @@ data {
 // = Transformed Data =
 // ====================
 // transformed data {
-    
+// 	int n0;
+//
+// 	n0 <- nS - N
 // }
 
 
@@ -52,7 +81,7 @@ parameters {
 	vector[nS] Z[nT,Jmax,Kmax]; // true state of presence; will have to fix some at 0 (ragged J K)
 	
 	real<lower=0, upper=1> Omega[nT]; // average availability
-	real<lower=0, upper=1> vector[nS] w[nT]; // species availability
+	// real<lower=0, upper=1> w[nT,nS]; // species availability
 	
 	vector[nU] alpha_mu; // hyperparameter mean
 	vector<lower=0>[nU] alpha_sd; // hyperparameter sd
@@ -72,10 +101,10 @@ transformed parameters {
 	matrix[Kmax,nS] logit_psi[nT,Jmax]; // presence probability
 	matrix[Kmax,nS] logit_theta[nT,Jmax]; // detection probability
 	
-	int K;
 	
-	for(t in 1:T){
-		for(j in 1:J){
+	for(t in 1:nT){
+		for(j in 1:Jmax){
+			int K;
 			K <- nK[t,j];
 			if(K){ // if K is not 0
 				// if the K matrix gets too large, 
@@ -114,39 +143,49 @@ model {
 		}
 	}
 	
-	// for(s in 1:nS){
-	// 	w[s] ~ bernoulli(Omega);
-	// }
-	// for(t in 1:nt){
-	// 	w[t] ~ bernoulli(Omega[t]);
-	// }
 	
-	
-	// loop through years
-	for(t in 1:nT){
-		
-		// draw parameter for availability (1 or 0)
-		w[t] ~ bernoulli(Omega[t]);
-		
-		// loop through sites
-		for(j in 1:Jmax){
+	// ============================================
+	// = Begin Looping down to Point Observations =
+	// ============================================
+	for(t in 1:nT){ // loop through years
+		for(j in 1:Jmax){ // loop through sites
 			
 			// Define variable for number of sampling events
 			// (at this site, during this year)
-			real tK[1];
+			int tK;
 			tK <- nK[t,j];
 			
-			// if >0 sampling events, proceed
-			if (tK){
-				
-				// loop through sampling events
-				for(k in 1:tK){
+			if (tK){ // if >0 sampling events, proceed
+				for(k in 1:tK){// loop through sampling events
 					
-					// true presence
-					Z[t,j,k] ~ bernoulli_logit(psi_logit[t,j,k] * w[t]);
 					
-					// observed presence; likelihood
-					X[t,j,k] ~ bernoulli_logit_log(theta_logit[t,j,k] * Z[t,j,k]);
+					// =====================================
+					// = Two Species Loops for Likelihoods =
+					// =====================================
+					
+					// 1)
+					for(n in 1:N){// loop through observed species
+						1 ~ bernoulli(Omega[t]); // observed, so available
+						if(X[t,j,k,n] > 0){ // if present
+							// increment likelihood
+							increment_log_prob(
+								lp_obs(X[t,j,k,n], logit_psi[t,j,k,n], logit_theta[t,j,k,n])
+							);
+						}else{ // if absent
+							// increment likelihood
+							increment_log_prob(
+								lp_unobs(logit_psi[t,j,k,n], logit_theta[t,j,k,n])
+							);
+						}
+					} // end first species loop
+					
+					// 2)
+					for(s in (N+1):nS){ // loop through padded species
+						// increment likelihood
+						increment_log_prob(
+							lp_never_obs(logit_psi[t,j,k,s], logit_theta[t,j,k,s], Omega[t])
+						);
+					} // end second species loop
 					
 				} // end sample loop
 			} // if 0 samples, do nothing
