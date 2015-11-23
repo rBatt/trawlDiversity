@@ -127,7 +127,7 @@ Jmax <- length(dimnames(Xc)$stratum)
 Kmax <- length(dimnames(Xc)$K)
 nS <- length(dimnames(Xc)$spp)
 
-for(t in 1:Tmax){
+for(t in 1:nT){
 	for(j in 1:Jmax){
 		t.K <- nK[t,j]
 		if(t.K){
@@ -158,3 +158,13 @@ V[is.na(V)] <- 0
 # nT, Jmax, Kmax, nS ...
 # nV, nU ...
 # those should be passed to Stan as data
+
+
+library(rstan)
+model_file <- "trawl/trawlDiversity/inst/stan/msomStatic.stan"
+stan(
+	file=model_file, 
+	data=c("X","U","V","nK","nT","Kmax","Jmax","nS"), 
+	control=list(stepsize=0.05, adapt_delta=0.95), 
+	chains=4, iter=5000, refresh=0, seed=1337
+)
