@@ -23,7 +23,7 @@ ebs.a2[,doy:=(doy-doy.mu)/doy.sd]
 # ======================
 # = Cast Data for Stan =
 # ======================
-staticData <- msomData(ebs.a2, n0=10, cov.vars=c(bt="btemp",doy="doy",yr="year"), u.form=~bt+I(bt^2), v.form=~doy+I(doy^2)+yr, valueName="abund")
+staticData <- msomData(Data=ebs.a2, n0=10, cov.vars=c(bt="btemp",doy="doy",yr="year"), u.form=~bt+I(bt^2), v.form=~doy+I(doy^2)+yr, valueName="abund")
 
 
 # =====================
@@ -31,9 +31,15 @@ staticData <- msomData(ebs.a2, n0=10, cov.vars=c(bt="btemp",doy="doy",yr="year")
 # =====================
 library(rstan)
 model_file <- "trawl/trawlDiversity/inst/stan/msomStatic.stan"
+# ebs_msom <- stan(
+# 	file=model_file,
+# 	data=c("X","U","V","nK","nT","Kmax","Jmax","nU","nV","nS","N"),
+# 	# control=list(stepsize=0.05, adapt_delta=0.95),
+# 	chains=4, iter=500, refresh=1, seed=1337, cores=4
+# )
 ebs_msom <- stan(
 	file=model_file, 
-	data=c("X","U","V","nK","nT","Kmax","Jmax","nU","nV","nS","N"), 
+	data=staticData, 
 	# control=list(stepsize=0.05, adapt_delta=0.95), 
 	chains=4, iter=500, refresh=1, seed=1337, cores=4
 )
