@@ -108,25 +108,25 @@ parameters {
 // ==========================
 // = Transformed Parameters =
 // ==========================
-transformed parameters {
-	row_vector[nS] logit_psi[nT,Jmax,Kmax]; // presence probability
-	row_vector[nS] logit_theta[nT,Jmax,Kmax]; // detection probability
-
-
-	for (t in 1:nT) {
-		for (j in 1:Jmax) {
-			// if the K matrix gets too large,
-			// it is in here that I should add
-			// a loop, wherein I subset to U[t,j,k], and
-			// vectorize over spp only
-			for (k in 1:nK[t,j]) {
-				logit_psi[t,j,k] <- U[t,j,k]*alpha;
-				logit_theta[t,j,k] <- V[t,j,k]*beta;
-			}
-		}
-	}
-
-}
+// transformed parameters {
+// 	row_vector[nS] logit_psi[nT,Jmax,Kmax]; // presence probability
+// 	row_vector[nS] logit_theta[nT,Jmax,Kmax]; // detection probability
+//
+//
+// 	for (t in 1:nT) {
+// 		for (j in 1:Jmax) {
+// 			// if the K matrix gets too large,
+// 			// it is in here that I should add
+// 			// a loop, wherein I subset to U[t,j,k], and
+// 			// vectorize over spp only
+// 			for (k in 1:nK[t,j]) {
+// 				logit_psi[t,j,k] <- U[t,j,k]*alpha;
+// 				logit_theta[t,j,k] <- V[t,j,k]*beta;
+// 			}
+// 		}
+// 	}
+//
+// }
 
 
 // =========
@@ -158,18 +158,28 @@ model {
 		for (j in 1:Jmax) { // sites
 			for (k in 1:nK[t,j]) {// sampling events
 				
+				row_vector[nS] logit_psi; // presence probability
+				row_vector[nS] logit_theta; // detection probability
+				
+				logit_psi <- U[t,j,k]*alpha;
+				logit_theta <- V[t,j,k]*beta;
+				
 				// 1)
 				for (n in 1:N) {// observed species
+					
 					if (X[t,j,k,n] > 0) { // if present
-						increment_log_prob(lp_obs(X[t,j,k,n], logit_psi[t,j,k,n], logit_theta[t,j,k,n]));
+						// increment_log_prob(lp_obs(X[t,j,k,n], logit_psi[t,j,k,n], logit_theta[t,j,k,n]));
+						increment_log_prob(lp_obs(X[t,j,k,n], logit_psi[n], logit_theta[n]));
 					} else { // if absent
-						increment_log_prob(lp_unobs(logit_psi[t,j,k,n], logit_theta[t,j,k,n]));
+						// increment_log_prob(lp_unobs(logit_psi[t,j,k,n], logit_theta[t,j,k,n]));
+						increment_log_prob(lp_unobs(logit_psi[n], logit_theta[n]));
 					}
 				} // end first species loop
 				
 				// 2)
 				for (s in (N+1):nS) { // padded species
-					increment_log_prob(lp_never_obs(logit_psi[t,j,k,s], logit_theta[t,j,k,s], Omega[t]));
+					// increment_log_prob(lp_never_obs(logit_psi[t,j,k,s], logit_theta[t,j,k,s], Omega[t]));
+					increment_log_prob(lp_never_obs(logit_psi[s], logit_theta[s], Omega[t]));
 				} // end second species loop
 			} // end sample loop
 		} // end site loop
