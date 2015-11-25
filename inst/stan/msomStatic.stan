@@ -73,7 +73,7 @@ data {
     matrix[Kmax,nV] V[nT,Jmax]; // covariates for theta (detectability)
     
     int N; // total number of observed species (anywhere, ever)
-	int<lower=1> nS; // size of super population, includes unknown species
+		int<lower=1> nS; // size of super population, includes unknown species
     int X[nT,Jmax,Kmax,nS]; // species observations
 }
 
@@ -111,21 +111,21 @@ parameters {
 transformed parameters {
 	row_vector[nS] logit_psi[nT,Jmax,Kmax]; // presence probability
 	row_vector[nS] logit_theta[nT,Jmax,Kmax]; // detection probability
-	
-	
-	for(t in 1:nT){
-		for(j in 1:Jmax){
-			// if the K matrix gets too large, 
+
+
+	for (t in 1:nT) {
+		for (j in 1:Jmax) {
+			// if the K matrix gets too large,
 			// it is in here that I should add
 			// a loop, wherein I subset to U[t,j,k], and
 			// vectorize over spp only
-			for(k in 1:nK[t,j]){
+			for (k in 1:nK[t,j]) {
 				logit_psi[t,j,k] <- U[t,j,k]*alpha;
 				logit_theta[t,j,k] <- V[t,j,k]*beta;
-			}				
+			}
 		}
 	}
-	
+
 }
 
 
@@ -141,52 +141,35 @@ model {
 	
 	Omega ~ beta(2,2);
 	
-	
 	// Priors for parameters
 	// for(s in 1:nS){
-		for(u in 1:nU){
+		for (u in 1:nU) {
 			alpha[u] ~ normal(alpha_mu[u], alpha_sd[u]);
 		}
-		for(v in 1:nV){
+		for (v in 1:nV) {
 			beta[v] ~ normal(beta_mu[v], beta_sd[v]);
 		}
 	// }
 	
 	
-	// ============================================
-	// = Begin Looping down to Point Observations =
-	// ============================================
-	for(t in 1:nT){ // loop through years
+	// ---- Begin Looping down to Point Observations ----
+	for (t in 1:nT) { // loop through years
 		increment_log_prob(bernoulli_log(1, Omega[t]) * N * sum(nK[t])); // observed, so available
-		for(j in 1:Jmax){ // loop through sites
-			for(k in 1:nK[t,j]){// loop through sampling events
-
-				// =====================================
-				// = Two Species Loops for Likelihoods =
-				// =====================================
+		for (j in 1:Jmax) { // sites
+			for (k in 1:nK[t,j]) {// sampling events
 				
 				// 1)
-				for(n in 1:N){// loop through observed species
-					// 1 ~ bernoulli(Omega[t]); // observed, so available
-					if(X[t,j,k,n] > 0){ // if present
-						// increment likelihood
-						increment_log_prob(
-							lp_obs(X[t,j,k,n], logit_psi[t,j,k,n], logit_theta[t,j,k,n])
-						);
-					}else{ // if absent
-						// increment likelihood
-						increment_log_prob(
-							lp_unobs(logit_psi[t,j,k,n], logit_theta[t,j,k,n])
-						);
+				for (n in 1:N) {// observed species
+					if (X[t,j,k,n] > 0) { // if present
+						increment_log_prob(lp_obs(X[t,j,k,n], logit_psi[t,j,k,n], logit_theta[t,j,k,n]));
+					} else { // if absent
+						increment_log_prob(lp_unobs(logit_psi[t,j,k,n], logit_theta[t,j,k,n]));
 					}
 				} // end first species loop
 				
 				// 2)
-				for(s in (N+1):nS){ // loop through padded species
-					// increment likelihood
-					increment_log_prob(
-						lp_never_obs(logit_psi[t,j,k,s], logit_theta[t,j,k,s], Omega[t])
-					);
+				for (s in (N+1):nS) { // padded species
+					increment_log_prob(lp_never_obs(logit_psi[t,j,k,s], logit_theta[t,j,k,s], Omega[t]));
 				} // end second species loop
 			} // end sample loop
 		} // end site loop
