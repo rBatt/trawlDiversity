@@ -134,10 +134,10 @@ transformed parameters {
 // =========
 model {
 	// Priors for hyperparameters
-	alpha_mu ~ cauchy(0, 2.5);
-	alpha_sd ~ cauchy(0, 2.5);
-	beta_mu ~ cauchy(0, 2.5);
-	beta_sd ~ cauchy(0, 2.5);
+	alpha_mu ~ cauchy(0, 1);
+	alpha_sd ~ cauchy(0, 2);
+	beta_mu ~ cauchy(0, 1);
+	beta_sd ~ cauchy(0, 2);
 	
 	Omega ~ beta(2,2);
 	
