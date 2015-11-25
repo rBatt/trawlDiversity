@@ -40,8 +40,8 @@ model_file <- "trawl/trawlDiversity/inst/stan/msomStatic.stan"
 ebs_msom <- stan(
 	file=model_file, 
 	data=staticData, 
-	# control=list(stepsize=0.05, adapt_delta=0.95), 
-	chains=4, iter=500, refresh=1, seed=1337, cores=4
+	control=list(stepsize=0.05, adapt_delta=0.95),
+	chains=4, iter=50, refresh=1, seed=1337, cores=4
 )
 
 
@@ -50,8 +50,27 @@ ebs_msom <- stan(
 # ==================================
 print(ebs_msom, c("alpha[1,1]", "beta[1,1]", "Omega"));
 
-print(ebs_msom, c(
+inspect_params <- c(
+	"alpha_mu","alpha_sd","beta_mu","beta_sd",
 	"alpha[1,1]", "alpha[2,1]", "alpha[3,1]", 
 	"beta[1,1]", "beta[2,1]", "beta[3,1]", "beta[4,1]", "beta[5,1]",
+	"logit_psi[1,1,1,1]","logit_psi[1,1,1,5]","logit_psi[1,1,1,9]",
+	"logit_theta[1,1,1,1]","logit_theta[1,1,1,5]","logit_theta[1,1,1,9]",
 	"Omega"
-))
+)
+
+
+
+print(ebs_msom, inspect_params)
+
+traceplot(ebs_msom, inspect_params, inc_warmup=FALSE)
+
+pairs(ebs_msom, pars=c("alpha[1,1]","beta[1,1]"))
+
+hist_treedepth <- function(fit) { 
+  sampler_params <- get_sampler_params(fit, inc_warmup=FALSE) 
+  hist(sapply(sampler_params, function(x) c(x[,'treedepth__']))[,1], breaks=0:20, main="", xlab="Treedepth") 
+  abline(v=10, col=2, lty=1) 
+}
+sapply(ebs_msom@sim$samples, function(x) attr(x, 'args')$control$max_treedepth)
+hist_treedepth(ebs_msom)
