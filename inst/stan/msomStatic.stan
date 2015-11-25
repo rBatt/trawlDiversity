@@ -156,32 +156,46 @@ model {
 	for (t in 1:nT) { // loop through years
 		increment_log_prob(bernoulli_log(1, Omega[t]) * N * sum(nK[t])); // observed, so available
 		for (j in 1:Jmax) { // sites
+			
+			if(nK[t,j]){
+						
+			// matrix[Kmax,nS] logit_psi; // presence probability
+// 			matrix[Kmax,nS] logit_theta; // detection probability
+				// logit_psi <- U[t,j]*alpha;
+				// logit_theta <- V[t,j]*beta;
+				
+				matrix[nK[t,j],nS] logit_psi; // presence probability
+				matrix[nK[t,j],nS] logit_theta; // detection probability
+				logit_psi <- block(U[t,j], 1, 1, nK[t,j], nU)*alpha;
+				logit_theta <- block(V[t,j], 1, 1, nK[t,j], nV)*beta;
+			
 			for (k in 1:nK[t,j]) {// sampling events
 				
-				row_vector[nS] logit_psi; // presence probability
-				row_vector[nS] logit_theta; // detection probability
-				
-				logit_psi <- U[t,j,k]*alpha;
-				logit_theta <- V[t,j,k]*beta;
+				// row_vector[nS] logit_psi; // presence probability
+				// row_vector[nS] logit_theta; // detection probability
+				//
+				// logit_psi <- U[t,j,k]*alpha;
+				// logit_theta <- V[t,j,k]*beta;
 				
 				// 1)
 				for (n in 1:N) {// observed species
 					
 					if (X[t,j,k,n] > 0) { // if present
 						// increment_log_prob(lp_obs(X[t,j,k,n], logit_psi[t,j,k,n], logit_theta[t,j,k,n]));
-						increment_log_prob(lp_obs(X[t,j,k,n], logit_psi[n], logit_theta[n]));
+						increment_log_prob(lp_obs(X[t,j,k,n], logit_psi[k, n], logit_theta[k,n]));
 					} else { // if absent
 						// increment_log_prob(lp_unobs(logit_psi[t,j,k,n], logit_theta[t,j,k,n]));
-						increment_log_prob(lp_unobs(logit_psi[n], logit_theta[n]));
+						increment_log_prob(lp_unobs(logit_psi[k,n], logit_theta[k,n]));
 					}
 				} // end first species loop
 				
 				// 2)
 				for (s in (N+1):nS) { // padded species
 					// increment_log_prob(lp_never_obs(logit_psi[t,j,k,s], logit_theta[t,j,k,s], Omega[t]));
-					increment_log_prob(lp_never_obs(logit_psi[s], logit_theta[s], Omega[t]));
+					increment_log_prob(lp_never_obs(logit_psi[k,s], logit_theta[k,s], Omega[t]));
 				} // end second species loop
 			} // end sample loop
+			} // if nK
 		} // end site loop
 	} // end year loop
 	
