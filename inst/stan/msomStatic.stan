@@ -33,6 +33,20 @@ functions {
 		return log_sum_exp(lp_obs(0, logit_psi, logit_theta), log1m_inv_logit(logit_psi));
 	}
 	
+	// real lp_exists(int x[N], int N, real logit_psi, real logit_theta) {
+	// 	// could probably just drop x;
+	// 	// taken from function that used binomial
+	//
+	// 	int is0[N];
+	//
+	// 	for(i in 1:N){
+	// 		is0[i] <- x[i] == 0;
+	// 	}
+	//
+	// 	// log(p(present) * p(detected))
+	// 	return log_sum_exp(log_inv_logit(logit_psi) + bernoulli_logit_log(x, logit_theta), log1m_inv_logit(logit_psi)*is0);
+	// }
+	
 	real lp_never_obs(real logit_psi, real logit_theta, real Omega) {
 		real lp_unavailable;
 		real lp_available;
