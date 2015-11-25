@@ -143,6 +143,7 @@ model {
 	// = Begin Looping down to Point Observations =
 	// ============================================
 	for(t in 1:nT){ // loop through years
+		increment_log_prob(bernoulli_log(1, Omega[t]) * N * sum(nK[t])); // observed, so available
 		for(j in 1:Jmax){ // loop through sites
 			for(k in 1:nK[t,j]){// loop through sampling events
 
@@ -152,7 +153,7 @@ model {
 				
 				// 1)
 				for(n in 1:N){// loop through observed species
-					1 ~ bernoulli(Omega[t]); // observed, so available
+					// 1 ~ bernoulli(Omega[t]); // observed, so available
 					if(X[t,j,k,n] > 0){ // if present
 						// increment likelihood
 						increment_log_prob(
