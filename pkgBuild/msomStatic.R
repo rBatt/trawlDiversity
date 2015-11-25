@@ -44,6 +44,16 @@ ebs_msom <- stan(
 	chains=4, iter=50, refresh=1, seed=1337, cores=4
 )
 
+# =========================
+# = Timing and Efficiency =
+# =========================
+(timing <- cbind(get_elapsed_time(ebs_msom), rowSums(get_elapsed_time(ebs_msom))))
+(max_time <- max(timing))
+(neff_mu <- mean(summary(ebs_msom)$summary[,"n_eff"]))
+(neff_sd <- sd(summary(ebs_msom)$summary[,"n_eff"]))
+max_time/neff_mu
+
+
 
 # ==================================
 # = Printing the Fitted Parameters =

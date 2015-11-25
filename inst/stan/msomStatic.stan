@@ -129,14 +129,14 @@ model {
 	
 	
 	// Priors for parameters
-	for(s in 1:nS){
+	// for(s in 1:nS){
 		for(u in 1:nU){
-			alpha[u,s] ~ normal(alpha_mu[u], alpha_sd[u]);
+			alpha[u] ~ normal(alpha_mu[u], alpha_sd[u]);
 		}
 		for(v in 1:nV){
-			beta[v,s] ~ normal(beta_mu[v], beta_sd[v]);
+			beta[v] ~ normal(beta_mu[v], beta_sd[v]);
 		}
-	}
+	// }
 	
 	
 	// ============================================
