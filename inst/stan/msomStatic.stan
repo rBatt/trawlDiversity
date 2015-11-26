@@ -134,7 +134,7 @@ model {
       matrix[nJ[t],nS] logit_psi; // presence probability
       logit_psi <- block(U[t], 1, 1, nJ[t], nU)*alpha; // block matrix algebra for speed
     
-      for (j in 1:Jmax) { // sites
+      for (j in 1:nJ[t]) { // sites
       
         if(nK[t,j]){ // if samples in site
           
