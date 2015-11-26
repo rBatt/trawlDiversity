@@ -5,7 +5,8 @@ load_all("trawl/trawlDiversity")
 # ======================
 # = Subset Data to Use =
 # ======================
-ebs.a2 <- ebs.a[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, doy=yday(datetime))]
+# ebs.a2 <- ebs.a[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, doy=yday(datetime))]
+ebs.a2 <- ebs.agg2[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, doy=yday(datetime))]
 
 # ebs.a1 <- ebs.agg2[pick(spp, 50, w=T)][pick(year,3)][pick(stratum, 30)]
 # ebs.a2 <- ebs.a1[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, doy=yday(datetime))]
