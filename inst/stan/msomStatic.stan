@@ -85,7 +85,10 @@ data {
 // ==============
 // = Parameters =
 // ==============
-parameters {  
+parameters { 
+	// real Omega_mu; // logit availability hyper mean
+	// real<lower=0> Omega_sd; // logit availability hyper sd
+	// vector[nT] Omega_logit_raw; // logit availability, non-centered
   real<lower=0, upper=1> Omega[nT]; // average availability
   
 	vector[nU] alpha_mu; // hyperparameter mean
@@ -106,6 +109,7 @@ transformed parameters {
 
   matrix[nU,nS] alpha; // presence coefficient
   matrix[nV,nS] beta; // detection coefficient
+	// vector[nT] Omega; // availability parameter
 	
   for (u in 1:nU) {
     alpha[u] <- alpha_mu[u] + alpha_sd[u]*alpha_raw[u];
@@ -113,6 +117,11 @@ transformed parameters {
   for (v in 1:nV) {
     beta[v] <- beta_mu[v] + beta_sd[v]*beta_raw[v];
   }
+	
+	// for (t in 1:nT)
+	// 	// Omega[t] <- inv_logit(Omega_mu + Omega_logit_raw[t]*Omega_sd); // centered (0,1) availability
+	// 	Omega[t] <- inv_logit(Omega_logit_raw[t]*2); // centered (0,1) availability
+	
 	
 }
 
@@ -126,10 +135,17 @@ model {
   alpha_sd ~ cauchy(0, 2);
   beta_mu ~ cauchy(0, 1);
   beta_sd ~ cauchy(0, 2);
-  
-  Omega ~ beta(2,2);
-  
+	
+	// omega hyperparameters (for logit scale)
+	// in R, try: hist(plogis(rnorm(100, mean=rnorm(100, 0, 1), sd=abs(rcauchy(100, 0, 1)))))
+	// Omega_mu ~ normal(0, 1);
+	// Omega_sd ~ cauchy(0, 1);
+	
+	  
   // Priors for parameters
+	// Omega_logit_raw ~ normal(0, 1); // implies Omega ~ inv_logit(normal(Omega_mu, Omega_sd))
+	Omega ~ beta(1.5,1.5);
+	
   for (u in 1:nU) {
     alpha_raw[u] ~ normal(0, 1); // implies alpha ~ normal(alpha_mu, alpha_sd)
   }
