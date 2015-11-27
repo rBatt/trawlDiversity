@@ -46,6 +46,7 @@ functions {
     lp_available <- bernoulli_log(1, Omega) + lp_unobs(logit_psi, logit_theta);
     return log_sum_exp(lp_unavailable, lp_available);
   }
+	
   
 }
 
@@ -87,22 +88,33 @@ data {
 parameters {  
   real<lower=0, upper=1> Omega[nT]; // average availability
   
-  vector[nU] alpha_mu; // hyperparameter mean
-  vector<lower=0>[nU] alpha_sd; // hyperparameter sd
-  matrix[nU,nS] alpha; // presence coefficient
+	vector[nU] alpha_mu; // hyperparameter mean
+	vector<lower=0>[nU] alpha_sd; // hyperparameter sd
+	matrix[nU,nS] alpha_raw; // non-centered presence coefficient
   
   vector[nV] beta_mu; // hyperparameter mean
   vector<lower=0>[nV] beta_sd; // hyperparameter sd
-  matrix[nV,nS] beta; // detection coefficient
+  matrix[nV,nS] beta_raw; // detection coefficient
+	
 }
 
 
 // ==========================
 // = Transformed Parameters =
 // ==========================
-// transformed parameters {
-// 
-// }
+transformed parameters {
+
+  matrix[nU,nS] alpha; // presence coefficient
+  matrix[nV,nS] beta; // detection coefficient
+	
+  for (u in 1:nU) {
+    alpha[u] <- alpha_mu[u] + alpha_sd[u]*alpha_raw[u];
+  }
+  for (v in 1:nV) {
+    beta[v] <- beta_mu[v] + beta_sd[v]*beta_raw[v];
+  }
+	
+}
 
 
 // =========
@@ -119,10 +131,10 @@ model {
   
   // Priors for parameters
   for (u in 1:nU) {
-    alpha[u] ~ normal(alpha_mu[u], alpha_sd[u]);
+    alpha_raw[u] ~ normal(0, 1); // implies alpha ~ normal(alpha_mu, alpha_sd)
   }
   for (v in 1:nV) {
-    beta[v] ~ normal(beta_mu[v], beta_sd[v]);
+    beta_raw[v] ~ normal(0, 1);// implies beta ~ normal(beta_mu, beta_sd)
   }
   
   

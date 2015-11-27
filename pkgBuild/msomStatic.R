@@ -5,13 +5,14 @@ load_all("trawl/trawlDiversity")
 # ======================
 # = Subset Data to Use =
 # ======================
-# ebs.a2 <- ebs.a[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, doy=yday(datetime))]
-ebs.a2 <- ebs.agg2[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, doy=yday(datetime))]
+ebs.a2 <- ebs.a[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, doy=yday(datetime))]
+# ebs.a2 <- ebs.agg2[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, doy=yday(datetime))]
 
 # ebs.a1 <- ebs.agg2[pick(spp, 50, w=T)][pick(year,3)][pick(stratum, 30)]
 # ebs.a2 <- ebs.a1[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, doy=yday(datetime))]
 
 # aggregate process covariates among samples within site-year
+# ebs.a2[,btemp_sd:=sd(btemp, na.rm=TRUE), by=c("stratum","year","spp")]
 ebs.a2[,btemp:=meanna(btemp), by=c("stratum","year")]
 
 # hacked bad word around for dropping
@@ -23,10 +24,17 @@ doy.mu <- ebs.a2[,mean(doy, na.rm=TRUE)]
 doy.sd <- ebs.a2[,sd(doy, na.rm=TRUE)]
 ebs.a2[,doy:=(doy-doy.mu)/doy.sd]
 
+# aggregate doy
+# ebs.a2[,doy_sd:=sd(doy, na.rm=TRUE), by=c("stratum","year","spp")]
+# ebs.a2[,doy2_sd:=2*doy*doy_sd]
+# ebs.a2[,doy:=meanna(doy, na.rm=TRUE), by=c("stratum","year","spp")]
+# ebs.a2[,doy2:=doy^2]
+
 
 # ======================
 # = Cast Data for Stan =
 # ======================
+# cov.vars <- c(bt="btemp",doy="doy",yr="year")
 staticData <- msomData(Data=ebs.a2, n0=10, cov.vars=c(bt="btemp",doy="doy",yr="year"), u.form=~bt+I(bt^2), v.form=~doy+I(doy^2)+yr, valueName="abund")
 
 # drop K-dimension duplicates of process covariates
@@ -50,7 +58,7 @@ model_file <- "trawl/trawlDiversity/inst/stan/msomStatic.stan"
 ebs_msom <- stan(
 	file=model_file, 
 	data=staticData, 
-	control=list(stepsize=0.05, adapt_delta=0.95),
+	control=list(stepsize=0.01, adapt_delta=0.95),
 	chains=4, iter=50, refresh=1, seed=1337, cores=4, verbose=FALSE
 )
 
