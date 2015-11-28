@@ -1,82 +1,116 @@
+
+# ========
+# = Load =
+# ========
 library(devtools)
 library("trawlData")
 load_all("trawl/trawlDiversity")
 
+
 # ======================
 # = Subset Data to Use =
 # ======================
-ebs.a2 <- ebs.a[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, doy=yday(datetime))]
+# smallest data set
+# ebs.a2 <- ebs.a[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, doy=yday(datetime))]
+
+# largest data set
 # ebs.a2 <- ebs.agg2[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, doy=yday(datetime))]
 
-# ebs.a1 <- ebs.agg2[pick(year,5)][pick(stratum, 7, w=T)][pick(spp, 10, w=FALSE)]
-
-# set.seed(1337)
-# ind <- mpick(ebs.agg2, p=c(stratum=5, year=4), weight=TRUE, limit=60)
-# logic <- expression(
-# 	spp%in%spp[ind]
-# 	& stratum%in%stratum[ind]
-# 	& year%in%year[ind]
-# )
-# ebs.a1 <- ebs.agg2[eval(logic)][pick(spp, 10, w=FALSE)]
-
-# ebs.a2 <- ebs.a1[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, doy=yday(datetime))]
+# medium data set
+set.seed(1337)
+ind <- mpick(ebs.agg2, p=c(stratum=5, year=15), weight=TRUE, limit=60)
+logic <- expression(
+	spp%in%spp[ind]
+	& stratum%in%stratum[ind]
+	& year%in%year[ind]
+)
+ebs.a1 <- ebs.agg2[eval(logic)][pick(spp, 20, w=FALSE)]
+ebs.a2 <- ebs.a1[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, doy=yday(datetime))]
 
 
-# aggregate process covariates among samples within site-year
-sd2 <- function(x, ...){
-	if(sum(!is.na(x))==1){return(0)}else{return(sd(x, ...))}
-}
-ebs.a2[,bt_sd:=sd2(.SD[,list(btemp=mean(btemp,na.rm=T)),by="K"][,btemp], na.rm=TRUE), by=c("stratum","year")]
-ebs.a2[,btemp:=meanna(btemp), by=c("stratum","year")]
-ebs.a2[,bt2_sd:=2*btemp*bt_sd]
+# ======================================
+# = Aggregate and Transform Covariates =
+# ======================================
+# rename columns for shorthand
+setnames(ebs.a2, c("btemp"), c("bt"))
+ebs.a2[,yr:=year]
 
+# aggregate and transform (^2) btemp
+mk_cov_rv_pow(ebs.a2, "bt", across="K", by=c("stratum","year"), pow=2)
 
-# hacked bad word around for dropping
-ebs.a2[,cantFill:=all(is.na(btemp)),by=c("year","stratum")]
-ebs.a2 <- ebs.a2[!(cantFill)]
-
-# scale day of year
+# scale and aggregate doy
 doy.mu <- ebs.a2[,mean(doy, na.rm=TRUE)]
 doy.sd <- ebs.a2[,sd(doy, na.rm=TRUE)]
 ebs.a2[,doy:=(doy-doy.mu)/doy.sd]
-
-# aggregate doy
-ebs.a2[,doy_sd:=sd2(.SD[,list(doy=mean(doy,na.rm=T)),by="K"][,doy], na.rm=TRUE), by=c("stratum","year")]
-ebs.a2[,doy:=meanna(doy), by=c("stratum","year")]
-ebs.a2[,doy2_sd:=2*doy*doy_sd]
-
+mk_cov_rv(ebs.a2, "doy", across="K", by=c("stratum","year"))
 
 
 # ======================
 # = Cast Data for Stan =
 # ======================
-# cov.vars <- c(bt="btemp",doy="doy",yr="year")
-staticData <- msomData(Data=ebs.a2, n0=10, cov.vars=c(bt="btemp",doy="doy",yr="year"), u.form=~bt+I(bt^2), v.form=~doy+I(doy^2)+yr, valueName="abund")
+# ---- Get Basic Structure of MSOM Data Input ----
+staticData <- msomData(Data=ebs.a2, n0=30, cov.vars=c(bt="bt", bt2="bt2",doy="doy",yr="yr"), u.form=~bt+bt2, v.form=~doy+yr, valueName="abund", cov.by=c("year","stratum"))
 
-staticData_sd <- msomData(Data=ebs.a2, n0=1, cov.vars=c(bt_sd="bt_sd",doy_sd="doy_sd",bt2_sd="bt2_sd",doy2_sd="doy2_sd",yr="year"), u.form=~bt_sd+bt2_sd-1, v.form=~doy_sd+doy2_sd+yr, valueName="abund")[c("U","V")]
+staticData_sd <- msomData(Data=ebs.a2, n0=1, cov.vars=c(bt_sd="bt_sd",doy_sd="doy_sd",bt2_sd="bt2_sd"), u.form=~bt_sd+bt2_sd-1, v.form=~doy_sd-1, valueName="abund", cov.by=c("year","stratum"))[c("U","V")]
 
-# drop K-dimension of process covariates
-# add in sd of covariates (sd among K dimension)
-staticData$U <- staticData$U[,,1,-1]
-staticData$U_sd <- staticData_sd$U[,,1,]
-names(staticData)[names(staticData)=="U"] <- "U_mu"
+# ---- Split Covariates into Constants and Random Variables ----
+getCovType <- function(UV, type=c("constant","mu","sd")){
+	
+	# Dimension Sizes, Number, and Names
+	dims <- dim(staticData[[UV]])
+	nD <- length(dims)
+	dn <- dimnames(staticData[[UV]])[[nD]]
+	dn_sd <- dimnames(staticData_sd[[UV]])[[nD]]
+	
+	# Get Names of Desired Covariates
+	covNames <- switch(type,
+		constant = dn[!dn%in%gsub("_sd","",dn_sd)],
+		mu = dn[dn%in%gsub("_sd","",dn_sd)],
+		sd = dn_sd
+	)
+	
+	# Get the Desired Covariates
+	covOut <- switch(type,
+		constant = staticData[[UV]][,,covNames],
+		mu = staticData[[UV]][,,covNames],
+		sd = staticData_sd[[UV]][,,covNames]
+	)
+	
+	# Convert to Array, Get Dimension Information
+	covOut <- as.array(covOut)
+	cO_dims <- dim(covOut)
+	cO_nD <- length(cO_dims)
+	
+	# Make Sure covOut Dimensions match Full Cov Dimensions
+	if(cO_nD<nD){
+		# if here, I'm guessing it's because length(covNames) is 1
+		# and in that case, I want an array of the orignal major dims to be returned
+		stopifnot(length(covNames)==1)
+		
+		cO_newDim <- c(cO_dims,rep(1,nD-cO_nD)) 
+		covOut <- array(covOut, dim=cO_newDim, dimnames=c(dimnames(covOut),covNames))
+	}
+	
+	# Return
+	return(covOut)
+}
 
-# drop K-dimension of detection covariates
-# add sd of detection covariates (among samples)
-staticData$V <- staticData$V[,,1,-1]
-staticData$V_sd <- staticData_sd$V[,,1,-1]
-names(staticData)[names(staticData)=="V"] <- "V_mu"
+# ---- Do the Splitting Function ----
+for(UV in c("U","V")){
+	for(type in c("constant","mu","sd")){
+		switch(type,
+			constant={staticData[[paste0(UV,"_c")]] <- getCovType(UV,type)},
+			{staticData[[paste(UV,type,sep="_")]] <- getCovType(UV,type)}
+		)
+	}
+}
 
-# add a counter for nJ (number of sites in each year)
+# ---- Add a counter for nJ (number of sites in each year) ----
 staticData$nJ <- apply(staticData$nK, 1, function(x)sum(x>0))
 
-# aggregate abundance across samples
+# ---- Aggregate abundance across samples ----
 staticData$X <- apply(staticData$X, c(1,2,4), function(x)sum(x))
 
-# add binary presence/ absence
-# isObs <- staticData$X
-# isObs[] <- pmin(1, staticData$X)
-# staticData$isObs <- isObs
 
 # =====================
 # = Fit Model in Stan =
@@ -88,7 +122,7 @@ ebs_msom <- stan(
 	file=model_file, 
 	data=staticData, 
 	control=list(stepsize=0.01, adapt_delta=0.95),
-	chains=4, iter=50, refresh=1, seed=1337, cores=4, verbose=FALSE
+	chains=4, iter=20, refresh=2, seed=1337, cores=4, verbose=FALSE
 )
 
 
@@ -111,9 +145,7 @@ print(ebs_msom, c("alpha[1,1]", "beta[1,1]", "Omega"));
 inspect_params <- c(
 	"alpha_mu","alpha_sd","beta_mu","beta_sd",
 	"alpha[1,1]", "alpha[2,1]", "alpha[3,1]", 
-	"beta[1,1]", "beta[2,1]", "beta[3,1]", "beta[4,1]", "beta[5,1]",
-	# "logit_psi[1,1,1,1]","logit_psi[1,1,1,5]","logit_psi[1,1,1,9]",
-	# "logit_theta[1,1,1,1]","logit_theta[1,1,1,5]","logit_theta[1,1,1,9]",
+	"beta[1,1]", "beta[2,1]", "beta[3,1]",
 	"Omega[1]", "Omega[3]"
 )
 
