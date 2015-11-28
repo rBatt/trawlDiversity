@@ -135,8 +135,8 @@ transformed parameters {
 			matrix[Jmax, nU-1] tU;	// annual covariates, aside from intercept
 			matrix[Jmax, nV-1] tV;
 			
-			tU <- U_mu[nT] + U_raw[nT] .* U_sd[nT]; // center
-			tV <- V_mu[nT] + V_raw[nT] .* V_sd[nT];
+			tU <- U_mu[t] + U_raw[t] .* U_sd[t]; // center
+			tV <- V_mu[t] + V_raw[t] .* V_sd[t];
 			
 			U[t] <- append_col(ones, tU); // add intercept
 			V[t] <- append_col(ones, tV);
