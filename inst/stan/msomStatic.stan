@@ -156,7 +156,7 @@ model {
   
   // ---- Begin Looping down to Point Observations ----
   for (t in 1:nT) { // loop through years
-    increment_log_prob(bernoulli_log(1, Omega[t]) * N * sum(nK[t])); // observed, so available
+    increment_log_prob(bernoulli_log(1, Omega[t]) * N * sum(nJ[t])); // observed, so available
     
     if(nJ[t]){
       matrix[nJ[t],nS] logit_psi; // presence probability
