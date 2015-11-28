@@ -17,33 +17,33 @@ functions {
   // ---- log probability functions ----
   
   // lp for species that are observed
-  real lp_obs(int x, real logit_psi, real logit_theta) {
-    return log_inv_logit(logit_psi) + bernoulli_logit_log(x, logit_theta);
-  }
-  
-  vector lp_obs2(int[] x, vector lil_lp, row_vector logit_theta) {
-    return lil_lp + bernoulli_logit_log(x, logit_theta);
+  vector lp_obs(int[] x, int K,  vector lil_lp, row_vector logit_theta) {
+    return lil_lp + binomial_logit_log(x, K, logit_theta);
   }
   
   // lp for species that aren't observed, but known to exist
-  real lp_unobs(real logit_psi, real logit_theta) {
-    return log_sum_exp(lp_obs(0, logit_psi, logit_theta), log1m_inv_logit(logit_psi));
+  real lp_unobs(int K, vector lil_lp, row_vector logit_theta, vector l1mil_lp) {
+		int D;
+		D <- cols(logit_theta);
+    return log_sum_exp(log_sum_exp(lp_obs(rep_array(0, D), K, lil_lp, logit_theta)), log_sum_exp(l1mil_lp));
   }
   
   // lp that works as either lp_obs or lp_unobs, depending on isUnobs values
-  real lp_exists(int[] x, row_vector logit_psi, row_vector logit_theta, vector isUnobs, vector lil_lp) {
-    // FYI: both isUnobs and x are from X[t,j], 
-    // isUnobs is !max() swept out across X[t,j,1:K,n] for 1:N, x is just X[t,j,k,1:N]
-    // Intention is that isUnobs will be 0 for each x that is observed for any k.
-    return log_sum_exp(log_sum_exp(lp_obs2(x, lil_lp, logit_theta)), log_sum_exp(lil_lp .* isUnobs));
+  real lp_exists(int[] x, int K, vector lil_lp, row_vector logit_theta, vector isUnobs, vector l1mil_lp) {
+
+		int D;
+		D <- cols(logit_theta);
+    return log_sum_exp(log_sum_exp(lp_obs(x, K, lil_lp, logit_theta)), log_sum_exp(l1mil_lp .* isUnobs));
   }
   
   // lp for species that were never observed
-  real lp_never_obs(real logit_psi, real logit_theta, real Omega) {
+  real lp_never_obs(int K, vector lil_lp, row_vector logit_theta, real Omega, vector l1mil_lp) {
     real lp_unavailable;
     real lp_available;
-    lp_unavailable <- bernoulli_log(0, Omega);
-    lp_available <- bernoulli_log(1, Omega) + lp_unobs(logit_psi, logit_theta);
+		int D;
+		D <- cols(logit_theta);
+    lp_unavailable <- bernoulli_log(rep_array(0, D), Omega);
+    lp_available <- bernoulli_log(rep_array(1, D), Omega) + lp_unobs(K, lil_lp, logit_theta, l1mil_lp);
     return log_sum_exp(lp_unavailable, lp_available);
   }
 	
@@ -66,11 +66,14 @@ data {
     int N; // total number of observed species (anywhere, ever)
     int<lower=1> nS; // size of super population, includes unknown species
     vector[nS] isUnobs[nT,Jmax]; // was a species unobserved (across all K) each site-year?
+		// vector[nS] isObs[nT,Jmax,nS]; // binary {0,1} version of X, opposite of isUnobs
     
-    matrix[Jmax,nU] U[nT]; // covariates for psi (presence)
-    matrix[Kmax,nV] V[nT,Jmax]; // covariates for theta (detectability)
+    matrix[Jmax,nU-1] U_mu[nT]; // sample mean for psi covariates (U)
+		matrix[Jmax,nU-1] U_sd[nT]; // sample sd for U
+    matrix[Jmax,nV-1] V_mu[nT]; // sample mean for theta covariates (V)
+		matrix[Jmax,nV-1] V_sd[nT]; // sample sd for V
     
-    int X[nT,Jmax,Kmax,nS]; // species observations
+    int X[nT,Jmax,nS]; // species abundances
 }
 
 
@@ -86,9 +89,6 @@ data {
 // = Parameters =
 // ==============
 parameters { 
-	// real Omega_mu; // logit availability hyper mean
-	// real<lower=0> Omega_sd; // logit availability hyper sd
-	// vector[nT] Omega_logit_raw; // logit availability, non-centered
   real<lower=0, upper=1> Omega[nT]; // average availability
   
 	vector[nU] alpha_mu; // hyperparameter mean
@@ -99,6 +99,9 @@ parameters {
   vector<lower=0>[nV] beta_sd; // hyperparameter sd
   matrix[nV,nS] beta_raw; // detection coefficient
 	
+	matrix[Jmax,nU-1] U_raw[nT]; // predictors for psi, not including intercept
+	matrix[Jmax,nV-1] V_raw[nT]; // predictors for theta, not including intercept
+	
 }
 
 
@@ -107,10 +110,16 @@ parameters {
 // ==========================
 transformed parameters {
 
+	// ---- declare ----
   matrix[nU,nS] alpha; // presence coefficient
   matrix[nV,nS] beta; // detection coefficient
-	// vector[nT] Omega; // availability parameter
+
+	matrix[Jmax, nU] U[nT]; // presence covariates
+	matrix[Jmax, nV] V[nT]; // detection covariates
 	
+	
+	// ---- define ----	
+	// coefficients
   for (u in 1:nU) {
     alpha[u] <- alpha_mu[u] + alpha_sd[u]*alpha_raw[u];
   }
@@ -118,11 +127,21 @@ transformed parameters {
     beta[v] <- beta_mu[v] + beta_sd[v]*beta_raw[v];
   }
 	
-	// for (t in 1:nT)
-	// 	// Omega[t] <- inv_logit(Omega_mu + Omega_logit_raw[t]*Omega_sd); // centered (0,1) availability
-	// 	Omega[t] <- inv_logit(Omega_logit_raw[t]*2); // centered (0,1) availability
-	
-	
+	{ // make `ones` local
+		vector[Jmax] ones; // intercept vector
+		ones <- rep_vector(1, Jmax); 
+		
+		for (t in 1:nT) { 
+			matrix[Jmax, nU-1] tU;	// annual covariates, aside from intercept
+			matrix[Jmax, nV-1] tV;
+			
+			tU <- U_mu[nT] + U_raw[nT] .* U_sd[nT]; // center
+			tV <- V_mu[nT] + V_raw[nT] .* V_sd[nT];
+			
+			U[t] <- append_col(ones, tU); // add intercept
+			V[t] <- append_col(ones, tV);
+		}
+	}
 }
 
 
@@ -130,66 +149,78 @@ transformed parameters {
 // = Model =
 // =========
 model {
-  // Priors for hyperparameters
+	
+	// ---- Priors for Hyperparameters ----
   alpha_mu ~ cauchy(0, 1);
   alpha_sd ~ cauchy(0, 2);
   beta_mu ~ cauchy(0, 1);
   beta_sd ~ cauchy(0, 2);
 	
-	// omega hyperparameters (for logit scale)
-	// in R, try: hist(plogis(rnorm(100, mean=rnorm(100, 0, 1), sd=abs(rcauchy(100, 0, 1)))))
-	// Omega_mu ~ normal(0, 1);
-	// Omega_sd ~ cauchy(0, 1);
 	
-	  
-  // Priors for parameters
-	// Omega_logit_raw ~ normal(0, 1); // implies Omega ~ inv_logit(normal(Omega_mu, Omega_sd))
-	Omega ~ beta(1.5,1.5);
+	// ---- Priors for Parameters ----
+	Omega ~ beta(1.5,1.5); // is for all t
 	
   for (u in 1:nU) {
     alpha_raw[u] ~ normal(0, 1); // implies alpha ~ normal(alpha_mu, alpha_sd)
   }
   for (v in 1:nV) {
-    beta_raw[v] ~ normal(0, 1);// implies beta ~ normal(beta_mu, beta_sd)
+    beta_raw[v] ~ normal(0, 1); // implies beta ~ normal(beta_mu, beta_sd)
   }
   
+	for (t in 1:nT) {
+		for (j in 1:Jmax) { 
+			U_raw[t][j] ~ normal(0, 1); // implies U ~ normal(U_mu, U_sd)
+			V_raw[t][j] ~ normal(0, 1); // implies V ~ normal(V_mu, V_sd)
+		}
+	}
   
+	
   // ---- Begin Looping down to Point Observations ----
   for (t in 1:nT) { // loop through years
-    increment_log_prob(bernoulli_log(1, Omega[t]) * N * sum(nJ[t])); // observed, so available
+    increment_log_prob(bernoulli_log(1, Omega[t]) * N * nJ[t]); // observed, so available
     
     if(nJ[t]){
       matrix[nJ[t],nS] logit_psi; // presence probability
-      logit_psi <- block(U[t], 1, 1, nJ[t], nU)*alpha; // block matrix algebra for speed
+			matrix[nJ[t],nS] logit_theta; // detection probability
+			
+      logit_psi <- block(U[t], 1, 1, nJ[t], nU) * alpha; // block matrix algebra for speed
+			logit_theta <- block(V[t], 1, 1, nJ[t], nV) * beta; // block matrix algebra for speed
     
       for (j in 1:nJ[t]) { // sites
       
         if(nK[t,j]){ // if samples in site
           
-          row_vector[N] t_logit_psi;
-          vector[N] lil_lp;
-          matrix[nK[t,j],nS] logit_theta; // detection probability
+          row_vector[N] t_logit_psi; // presence
+					row_vector[N] t_logit_theta; // detection
+          vector[N] lil_lp; // log_inv_logit(logit_psi)
+					vector[N] l1mil_lp; // log1m_inv_logit(logit_psi)
           
           t_logit_psi <- sub_row(logit_psi, j, 1, N);
-          for (nn in 1:N)
-            lil_lp[nn] <- log1m_inv_logit(t_logit_psi[nn]);
-          logit_theta <- block(V[t,j], 1, 1, nK[t,j], nV)*beta;
-          
-          for (k in 1:nK[t,j]) {// sampling events
-            
-            // lp for species that have been observed at some point
-            increment_log_prob(lp_exists(
-              segment(X[t,j,k], 1, N), 
-              t_logit_psi,
-              sub_row(logit_theta, k, 1, N),
-              segment(isUnobs[t,j], 1, N),
-              lil_lp
-            ));
-        
-            for (s in (N+1):nS) { // padded species
-              increment_log_prob(lp_never_obs(logit_psi[j,s], logit_theta[k,s], Omega[t]));
-            } // end second species loop
-          } // end sample loop
+					t_logit_theta <- sub_row(logit_theta, j, 1, N);
+          for (nn in 1:N){
+            l1mil_lp[nn] <- log1m_inv_logit(t_logit_psi[nn]);
+						lil_lp[nn] <- log_inv_logit(t_logit_psi[nn]);
+					}
+					
+					// species that have been observed at some point
+					increment_log_prob(lp_exists(
+            segment(X[t,j], 1, N), // x
+						nK[t,j], // K
+            lil_lp, // vector lil_lp
+            t_logit_theta, // row_vector logit_theta
+            segment(isUnobs[t,j], 1, N), // vector isUnobs
+						l1mil_lp // vector l1mil_lp
+          ));
+					
+					// species that have never been observed	
+					increment_log_prob(lp_never_obs(
+						nK[t,j], // int[] K
+						lil_lp, // vector lil_lp
+						t_logit_theta, // row_vector logit_theta
+						Omega[t], // real Omega
+						l1mil_lp // vector l1mil_lp
+					));
+						
         } // if nK
       } // end site loop
     } // if nJ
