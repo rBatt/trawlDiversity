@@ -18,13 +18,13 @@ load_all("trawl/trawlDiversity")
 
 # medium data set
 set.seed(1337)
-ind <- mpick(ebs.agg2, p=c(stratum=5, year=15), weight=TRUE, limit=60)
+ind <- mpick(ebs.agg2, p=c(stratum=10, year=9), weight=TRUE, limit=60)
 logic <- expression(
 	spp%in%spp[ind]
 	& stratum%in%stratum[ind]
 	& year%in%year[ind]
 )
-ebs.a1 <- ebs.agg2[eval(logic)][pick(spp, 20, w=FALSE)]
+ebs.a1 <- ebs.agg2[eval(logic)][pick(spp, 30, w=TRUE)]
 ebs.a2 <- ebs.a1[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, doy=yday(datetime))]
 
 
@@ -49,7 +49,7 @@ mk_cov_rv(ebs.a2, "doy", across="K", by=c("stratum","year"))
 # = Cast Data for Stan =
 # ======================
 # ---- Get Basic Structure of MSOM Data Input ----
-staticData <- msomData(Data=ebs.a2, n0=30, cov.vars=c(bt="bt", bt2="bt2",doy="doy",yr="yr"), u.form=~bt+bt2, v.form=~doy+yr, valueName="abund", cov.by=c("year","stratum"))
+staticData <- msomData(Data=ebs.a2, n0=10, cov.vars=c(bt="bt", bt2="bt2",doy="doy",yr="yr"), u.form=~bt+bt2, v.form=~doy, valueName="abund", cov.by=c("year","stratum"))
 
 staticData_sd <- msomData(Data=ebs.a2, n0=1, cov.vars=c(bt_sd="bt_sd",doy_sd="doy_sd",bt2_sd="bt2_sd"), u.form=~bt_sd+bt2_sd-1, v.form=~doy_sd-1, valueName="abund", cov.by=c("year","stratum"))[c("U","V")]
 
@@ -105,6 +105,15 @@ for(UV in c("U","V")){
 	}
 }
 
+# ---- Add Sizes of Constant and RV U/V Arrays ----
+staticData$nU_rv <- dim(staticData$U_mu)[3]
+staticData$nV_rv <- dim(staticData$V_mu)[3]
+staticData$nU_c <- dim(staticData$U_c)[3]
+staticData$nV_c <- dim(staticData$V_c)[3]
+
+stopifnot(staticData$nV == staticData$nV_c + staticData$nV_rv)
+stopifnot(staticData$nU == staticData$nU_c + staticData$nU_rv)
+
 # ---- Add a counter for nJ (number of sites in each year) ----
 staticData$nJ <- apply(staticData$nK, 1, function(x)sum(x>0))
 
@@ -122,7 +131,7 @@ ebs_msom <- stan(
 	file=model_file, 
 	data=staticData, 
 	control=list(stepsize=0.01, adapt_delta=0.95),
-	chains=4, iter=20, refresh=2, seed=1337, cores=4, verbose=FALSE
+	chains=1, iter=20, refresh=1, seed=1337, cores=1, verbose=F
 )
 
 
@@ -144,16 +153,13 @@ print(ebs_msom, c("alpha[1,1]", "beta[1,1]", "Omega"));
 
 inspect_params <- c(
 	"alpha_mu","alpha_sd","beta_mu","beta_sd",
-	"alpha[1,1]", "alpha[2,1]", "alpha[3,1]", 
-	"beta[1,1]", "beta[2,1]", "beta[3,1]",
-	"Omega[1]", "Omega[3]"
+	"Omega"
 )
-
 
 
 print(ebs_msom, inspect_params)
 
-traceplot(ebs_msom, inspect_params, inc_warmup=T)
+traceplot(ebs_msom, inspect_params, inc_warmup=F)
 
 pairs(ebs_msom, pars=c("alpha[1,1]","beta[1,1]"))
 
