@@ -200,6 +200,11 @@ model {
       logit_theta <- block(V[t], 1, 1, nJ[t], nV) * beta; // block matrix algebra for speed
     
       for (j in 1:nJ[t]) { // sites
+				// if(t==1){
+				// 	if(j==1){
+				// 		print(logit_psi);
+				// 	}
+				// }
       
         if(nK[t,j]){ // if samples in site
           
@@ -209,6 +214,11 @@ model {
           vector[nS] l1mil_lp; // log1m_inv_logit(logit_psi)
           
           t_logit_psi <- sub_row(logit_psi, j, 1, nS);
+					// if(t==1){
+					// 	if(j==1){
+					// 		print(t_logit_psi);
+					// 	}
+					// }
           t_logit_theta <- sub_row(logit_theta, j, 1, nS);
           for (s in 1:nS){
             l1mil_lp[s] <- log1m_inv_logit(t_logit_psi[s]);
