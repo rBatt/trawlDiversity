@@ -4,7 +4,7 @@
 # ========
 library(devtools)
 library("trawlData")
-load_all("trawl/trawlDiversity")
+library("trawlDiversity")
 
 
 # ======================

@@ -29,7 +29,6 @@
 #' }
 #' @seealso \code{\link{ebs.agg2}}
 #' @import data.table
-#' @export
 "ebs.a"
 
 #' ebs.agg2
@@ -63,5 +62,4 @@
 #' }
 #' @seealso \code{\link{ebs.a}}
 #' @import data.table
-#' @export
 "ebs.agg2"

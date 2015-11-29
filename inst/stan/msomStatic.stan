@@ -30,9 +30,6 @@ functions {
   
   // lp that works as either lp_obs or lp_unobs, depending on isUnobs values
   real lp_exists(int[] x, int K, vector lil_lp, row_vector logit_theta, vector isUnobs, vector l1mil_lp) {
-
-    int D;
-    D <- cols(logit_theta);
     return log_sum_exp(log_sum_exp(lp_obs(x, K, lil_lp, logit_theta)), log_sum_exp(l1mil_lp .* isUnobs));
   }
   
