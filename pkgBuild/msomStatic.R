@@ -53,6 +53,7 @@ staticData <- msomData(Data=ebs.a2, n0=10, cov.vars=c(bt="bt", bt2="bt2",doy="do
 
 staticData_sd <- msomData(Data=ebs.a2, n0=1, cov.vars=c(bt_sd="bt_sd",doy_sd="doy_sd",bt2_sd="bt2_sd"), u.form=~bt_sd+bt2_sd-1, v.form=~doy_sd-1, valueName="abund", cov.by=c("year","stratum"))[c("U","V")]
 
+
 # ---- Split Covariates into Constants and Random Variables ----
 getCovType <- function(UV, type=c("constant","mu","sd")){
 	
@@ -131,7 +132,7 @@ ebs_msom <- stan(
 	file=model_file, 
 	data=staticData, 
 	control=list(stepsize=0.01, adapt_delta=0.95),
-	chains=1, iter=20, refresh=1, seed=1337, cores=1, verbose=F
+	chains=1, iter=50, refresh=1, seed=1337, cores=1, verbose=F
 )
 
 
@@ -149,20 +150,22 @@ max_time/neff_mu
 # ==================================
 # = Printing the Fitted Parameters =
 # ==================================
-print(ebs_msom, c("alpha[1,1]", "beta[1,1]", "Omega"));
 
 inspect_params <- c(
 	"alpha_mu","alpha_sd","beta_mu","beta_sd",
 	"Omega"
 )
 
-
 print(ebs_msom, inspect_params)
 
+
+# ===============
+# = Diagnostics =
+# ===============
+# traceplot of chains
 traceplot(ebs_msom, inspect_params, inc_warmup=F)
 
-pairs(ebs_msom, pars=c("alpha[1,1]","beta[1,1]"))
-
+# historgram of tree depth -- make sure not hugging max
 hist_treedepth <- function(fit) { 
   sampler_params <- get_sampler_params(fit, inc_warmup=FALSE) 
   hist(sapply(sampler_params, function(x) c(x[,'treedepth__']))[,1], breaks=0:20, main="", xlab="Treedepth") 
@@ -171,9 +174,26 @@ hist_treedepth <- function(fit) {
 sapply(ebs_msom@sim$samples, function(x) attr(x, 'args')$control$max_treedepth)
 hist_treedepth(ebs_msom)
 
-Omega <- apply(rstan::extract(ebs_msom, "Omega")[[1]], 2, mean)
+# lp
+traceplot(ebs_msom, "lp__", window=c(1,50), inc_warmup=T);
+
+
+# =====================
+# = Parameter Summary =
+# =====================
+# what is the distribution of omega?
+Omega <- rstan::extract(ebs_msom, "Omega")[[1]]
 plot(density(Omega, from=0, to=1))
 omega_prior_q <- seq(0,1,length.out=length(Omega))
 omega_prior <- dbeta(omega_prior_q, 2, 2)
 lines(omega_prior_q, omega_prior, col="blue")
+
+
+sims <- rstan::extract(ebs_msom)
+logit_psi_mean <- plogis(apply(sims$logit_psi, 2:4, mean))
+logit_theta_mean <- plogis(apply(sims$logit_theta, 2:4, mean))
+
+par(mfrow=c(2,1))
+hist(logit_psi_mean)
+hist(logit_theta_mean)
 

@@ -249,7 +249,12 @@ model {
 // ========================
 // = Generated Quantities =
 // ========================
-// generated quantities {
-//
-// }
+generated quantities {
+  matrix[Jmax,nS] logit_psi[nT]; // presence probability
+  matrix[Jmax,nS] logit_theta[nT]; // detection probability
+  for (t in 1:nT) { // loop through years
+      logit_psi[t] <- U[t] * alpha; // block matrix algebra for speed
+			logit_theta[t] <- V[t] * beta; // block matrix algebra for speed
+  } // end year loop
+}
 
