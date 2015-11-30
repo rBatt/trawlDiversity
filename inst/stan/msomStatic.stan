@@ -259,7 +259,6 @@ model {
 					lp_available_pt1[pos] <- log_sum_exp(log_inv_logit(logit_psi[t][j,s]) + binomial_logit_log(0, nK[t,j], logit_theta[t][j,s]), log1m_inv_logit(logit_psi[t][j,s]));
 					pos <- pos + 1;
 				}
-
 			}
 		}
 		lp_unavailable <- bernoulli_log(0, Omega);
