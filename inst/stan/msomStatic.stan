@@ -13,28 +13,28 @@
 // = Functions =
 // =============
 functions {
-  
+
 	// these functions were part of my failed attempt to vectorize
-	
+
   // ---- log probability functions ----
-  
+
   // lp for species that are observed
   vector lp_obs(int[] x, int K,  vector lil_lp, row_vector logit_theta) {
     return lil_lp + binomial_logit_log(x, K, logit_theta);
   }
-  
+
   // lp for species that aren't observed, but known to exist
   real lp_unobs(int K, vector lil_lp, row_vector logit_theta, vector l1mil_lp) {
     int D;
     D <- cols(logit_theta);
-    return log_sum_exp(log_sum_exp(lp_obs(rep_array(0, D), K, lil_lp, logit_theta)), log_sum_exp(l1mil_lp));
+    return log_sum_exp(sum(lp_obs(rep_array(0, D), K, lil_lp, logit_theta)), sum(l1mil_lp));
   }
-  
+
   // lp that works as either lp_obs or lp_unobs, depending on isUnobs values
   real lp_exists(int[] x, int K, vector lil_lp, row_vector logit_theta, vector isUnobs, vector l1mil_lp) {
-    return log_sum_exp(log_sum_exp(lp_obs(x, K, lil_lp, logit_theta)), log_sum_exp(l1mil_lp .* isUnobs));
+    return log_sum_exp(sum(lp_obs(x, K, lil_lp, logit_theta)), sum(l1mil_lp .* isUnobs));
   }
-  
+
   // lp for species that were never observed
   real lp_never_obs(int K, vector lil_lp, row_vector logit_theta, real Omega, vector l1mil_lp) {
     real lp_unavailable;
@@ -42,11 +42,11 @@ functions {
     int D;
     D <- cols(logit_theta);
     lp_unavailable <- bernoulli_log(0, Omega)*D;
-    lp_available <- log_sum_exp(bernoulli_log(1, Omega)*D, lp_unobs(K, lil_lp, logit_theta, l1mil_lp));
+    lp_available <- bernoulli_log(1, Omega)*D + lp_unobs(K, lil_lp, logit_theta, l1mil_lp);
     return log_sum_exp(lp_unavailable, lp_available);
   }
-  
-  
+
+
 }
 
 
@@ -87,7 +87,9 @@ data {
 // ====================
 transformed data {
 	int<lower=0, upper=(Jmax*nT)> nJ_sum;
+	int<lower=0> n0;
 	
+	n0 <- nS - N;
 	nJ_sum <- sum(nJ);
 }
 
@@ -125,10 +127,7 @@ transformed parameters {
   matrix[Jmax, nV] V[nT]; // detection covariates
 	
 	matrix[Jmax, nS] logit_psi[nT]; // logit presence probability
-	matrix[Jmax, nS] logit_theta[nT]; // logit detection probability
-  
-  // real Omega; // average availability
-  
+	matrix[Jmax, nS] logit_theta[nT]; // logit detection probability  
   
   // ---- define ---- 
   // coefficients
@@ -172,7 +171,6 @@ model {
   beta_sd ~ cauchy(0, 2);
 
   
-  
   // ---- Priors for Parameters ----
   Omega ~ beta(2,2);
   
@@ -191,14 +189,16 @@ model {
   }
   
   
-  // ---- Begin Looping down to Point Observations ----
-	increment_log_prob(bernoulli_log(1, Omega) * N); // observed, so available
+  // ---- Increment Omega for Known Species (Vectorized) ----
+	increment_log_prob(bernoulli_log(1, Omega) * N);
+	
+	// ---- Species that are Known to Exist: Iterative Form ----
 	for (n in 1:N) {
-		// 1 ~ bernoulli(Omega);
+		// 1 ~ bernoulli(Omega); // iterative way to increment Omega for known species
 		for (t in 1:nT) {
 			for (j in 1:Jmax) {
 				if (nK[t,j] > 0) {
-					if ( X[t,j,n] > 0) {
+					if (X[t,j,n] > 0) {
 						increment_log_prob(log_inv_logit(logit_psi[t][j,n]) + binomial_logit_log(X[t,j,n], nK[t,j], logit_theta[t][j,n]));
 					} else {
 						increment_log_prob(log_sum_exp(log_inv_logit(logit_psi[t][j,n]) + binomial_logit_log(0, nK[t,j], logit_theta[t][j,n]), log1m_inv_logit(logit_psi[t][j,n])));
@@ -208,21 +208,58 @@ model {
 		}
 	}
 	
+	// ---- Species that are Known to Exist: Vectorized Form ?? ----
+  // for (t in 1:nT) { // loop through years
+  //
+  //   if(nJ[t]){ // statement only necessary if using failed approach for vectorization
+  //
+  //     for (j in 1:Jmax) { // sites
+  //
+  //       if(nK[t,j]){ // if samples in site
+  //
+  //         row_vector[N] t_logit_psi; // presence
+  //         row_vector[N] t_logit_theta; // detection
+  //         vector[N] lil_lp; // log_inv_logit(logit_psi)
+  //         vector[N] l1mil_lp; // log1m_inv_logit(logit_psi)
+  //
+  //         t_logit_psi <- sub_row(logit_psi[t], j, 1, N);
+  //         t_logit_theta <- sub_row(logit_theta[t], j, 1, N);
+  //
+  //         for (n in 1:N){
+  //           l1mil_lp[n] <- log1m_inv_logit(t_logit_psi[n]);
+  //           lil_lp[n] <- log_inv_logit(t_logit_psi[n]);
+  //         }
+  //
+  //         increment_log_prob(lp_exists(
+  //           segment(X[t,j], 1, N), // x
+  //           nK[t,j], // K
+  //          	lil_lp, // vector lil_lp
+  //           t_logit_theta, // row_vector logit_theta
+  //           segment(isUnobs[t,j], 1, N), // vector isUnobs
+  //           l1mil_lp // vector l1mil_lp
+  //         ));
+  //       } // if nK
+  //     } // end site loop
+  //   } // if nJ
+  // } // end year loop
+
+
+	// ---- Never-Observed Species: Iterative Form ----
 	for (s in (N+1):nS) {
 		real lp_unavailable; // unavail part of never obs prob
 		real lp_available; // available part of never obs prob
 		vector[nJ_sum] lp_available_pt1; // stores 'present but undetected' part of 'never obs but avail' term
 		int pos;
-		
+
 		pos <- 1;
-		
+
 		for (t in 1:nT) {
 			for (j in 1:Jmax) {
 				if (nK[t,j] > 0) {
 					lp_available_pt1[pos] <- log_sum_exp(log_inv_logit(logit_psi[t][j,s]) + binomial_logit_log(0, nK[t,j], logit_theta[t][j,s]), log1m_inv_logit(logit_psi[t][j,s]));
 					pos <- pos + 1;
 				}
-				
+
 			}
 		}
 		lp_unavailable <- bernoulli_log(0, Omega);
@@ -230,17 +267,47 @@ model {
 		increment_log_prob(log_sum_exp(lp_unavailable, lp_available));
 	}
 	
+
+	// ---- Never Observed Species: Vectorized Form?? ----
+ // for (t in 1:nT) { // loop through years
+ //
+ //    if(nJ[t]){ // statement only necessary if using failed approach for vectorization
+ //
+ //      for (j in 1:Jmax) { // sites
+ //
+ //        if(nK[t,j]){ // if samples in site
+ //
+ //          row_vector[n0] t_logit_psi; // presence
+ //          row_vector[n0] t_logit_theta; // detection
+ //          vector[n0] lil_lp; // log_inv_logit(logit_psi)
+ //          vector[n0] l1mil_lp; // log1m_inv_logit(logit_psi)
+ //
+ //          t_logit_psi <- sub_row(logit_psi[t], j, (N+1), n0);
+ //          t_logit_theta <- sub_row(logit_theta[t], j, (N+1), n0);
+ //
+ //          for (s in 1:n0){
+ //            l1mil_lp[s] <- log1m_inv_logit(t_logit_psi[s]);
+ //            lil_lp[s] <- log_inv_logit(t_logit_psi[s]);
+ //          }
+ //
+ //          increment_log_prob(lp_never_obs(
+ //            nK[t,j], // int[] K
+ //            lil_lp, // vector lil_lp
+ //            t_logit_theta, // row_vector logit_theta
+ //            Omega, // real Omega
+ //            l1mil_lp // vector l1mil_lp
+ //          ));
+ //        } // if nK
+ //      } // end site loop
+ //    } // if nJ
+ //  } // end year loop
+ //
 	
+	
+// 	 // ---- old loops ----
 //   for (t in 1:nT) { // loop through years
 //
 //     if(nJ[t]){ // statement only necessary if using failed approach for vectorization
-//
-// 			// failed attempt to vectorize
-//       // matrix[nJ[t],nS] logit_psi; // presence probability
-//       // matrix[nJ[t],nS] logit_theta; // detection probability
-//       //
-//       // logit_psi <- block(U[t], 1, 1, nJ[t], nU) * alpha; // block matrix algebra for speed
-//       // logit_theta <- block(V[t], 1, 1, nJ[t], nV) * beta; // block matrix algebra for speed
 //
 //       for (j in 1:nJ[t]) { // sites
 //
@@ -260,17 +327,6 @@ model {
 //             lil_lp[s] <- log_inv_logit(t_logit_psi[s]);
 //           }
 //
-// 					// failed attempt to vectorize
-//           // species that have been observed at some point
-//           // print("t=",t, ", j=", j, ", lp for lp_exists before =", get_lp());
-//           // increment_log_prob(lp_exists(
-// //             segment(X[t,j], 1, N), // x
-// //             nK[t,j], // K
-// //             segment(lil_lp, 1, N), // vector lil_lp
-// //             segment(t_logit_theta, 1, N), // row_vector logit_theta
-// //             segment(isUnobs[t,j], 1, N), // vector isUnobs
-// //             segment(l1mil_lp, 1, N) // vector l1mil_lp
-// //           ));
 // 					for (n in 1:N) {
 // 						if ( X[t,j,n] > 0) {
 // 							increment_log_prob(lil_lp[n] + binomial_logit_log(X[t,j,n], nK[t,j], t_logit_theta[n]));
@@ -279,15 +335,6 @@ model {
 // 						}
 // 					}
 //
-// 					// failed attempt to vectorize
-//           // species that have never been observed
-//           // increment_log_prob(lp_never_obs(
-//           //   nK[t,j], // int[] K
-//           //   segment(lil_lp, N+1, nS-N), // vector lil_lp
-//           //   segment(t_logit_theta, N+1, nS-N), // row_vector logit_theta
-//           //   Omega, // real Omega
-//           //   segment(l1mil_lp, N+1, nS-N) // vector l1mil_lp
-//           // ));
 // 					for (s in (N+1):nS) {
 // 						real lp_unavailable;
 // 						real lp_available;
@@ -309,11 +356,5 @@ model {
 // = Generated Quantities =
 // ========================
 // generated quantities {
-//   matrix[Jmax,nS] logit_psi[nT]; // presence probability
-//   matrix[Jmax,nS] logit_theta[nT]; // detection probability
-//   for (t in 1:nT) { // loop through years
-//       logit_psi[t] <- U[t] * alpha; // block matrix algebra for speed
-// 			logit_theta[t] <- V[t] * beta; // block matrix algebra for speed
-//   } // end year loop
 // }
 
