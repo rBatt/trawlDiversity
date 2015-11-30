@@ -192,13 +192,9 @@ model {
   
   
   // ---- Begin Looping down to Point Observations ----
-	// increment_log_prob(bernoulli_log(1, Omega) * N); // observed, so available
-	// increment_log_prob(log_sum_exp(bernoulli_log(1, Omega), bernoulli_log(0, Omega)) * (nS - N)); // never observed
-	
-
-	
+	increment_log_prob(bernoulli_log(1, Omega) * N); // observed, so available
 	for (n in 1:N) {
-		1 ~ bernoulli(Omega);
+		// 1 ~ bernoulli(Omega);
 		for (t in 1:nT) {
 			for (j in 1:Jmax) {
 				if (nK[t,j] > 0) {
