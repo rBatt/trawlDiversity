@@ -11,21 +11,21 @@ library("trawlDiversity")
 # = Subset Data to Use =
 # ======================
 # smallest data set
-# ebs.a2 <- ebs.a[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, doy=yday(datetime))]
+ebs.a2 <- ebs.a[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, doy=yday(datetime))]
 
 # largest data set
 # ebs.a2 <- ebs.agg2[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, doy=yday(datetime))]
 
 # medium data set
-set.seed(1337)
-ind <- mpick(ebs.agg2, p=c(stratum=3, year=2), weight=TRUE, limit=60)
-logic <- expression(
-	spp%in%spp[ind]
-	& stratum%in%stratum[ind]
-	& year%in%year[ind]
-)
-ebs.a1 <- ebs.agg2[eval(logic)][pick(spp, 3, w=TRUE)]
-ebs.a2 <- ebs.a1[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, doy=yday(datetime))]
+# set.seed(1337)
+# ind <- mpick(ebs.agg2, p=c(stratum=50, year=10), weight=TRUE, limit=60)
+# logic <- expression(
+# 	spp%in%spp[ind]
+# 	& stratum%in%stratum[ind]
+# 	& year%in%year[ind]
+# )
+# ebs.a1 <- ebs.agg2[eval(logic)][pick(spp, 100, w=TRUE)]
+# ebs.a2 <- ebs.a1[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, doy=yday(datetime))]
 
 
 # ======================================
@@ -49,7 +49,7 @@ mk_cov_rv(ebs.a2, "doy", across="K", by=c("stratum","year"))
 # = Cast Data for Stan =
 # ======================
 # ---- Get Basic Structure of MSOM Data Input ----
-staticData <- msomData(Data=ebs.a2, n0=2, cov.vars=c(bt="bt", bt2="bt2",doy="doy",yr="yr"), u.form=~bt+bt2, v.form=~doy, valueName="abund", cov.by=c("year","stratum"))
+staticData <- msomData(Data=ebs.a2, n0=15, cov.vars=c(bt="bt", bt2="bt2",doy="doy",yr="yr"), u.form=~bt+bt2, v.form=~doy, valueName="abund", cov.by=c("year","stratum"))
 
 staticData_sd <- msomData(Data=ebs.a2, n0=1, cov.vars=c(bt_sd="bt_sd",doy_sd="doy_sd",bt2_sd="bt2_sd"), u.form=~bt_sd+bt2_sd-1, v.form=~doy_sd-1, valueName="abund", cov.by=c("year","stratum"))[c("U","V")]
 
@@ -131,8 +131,8 @@ model_file <- "trawl/trawlDiversity/inst/stan/msomStatic.stan"
 ebs_msom <- stan(
 	file=model_file, 
 	data=staticData, 
-	control=list(stepsize=0.01, adapt_delta=0.99, max_treedepth=15),
-	chains=4, iter=50, refresh=1, seed=1337, cores=4, verbose=F
+	control=list(stepsize=0.01, adapt_delta=0.95, max_treedepth=15),
+	chains=4, iter=100, refresh=1, seed=1337, cores=4, verbose=F
 )
 
 
@@ -152,7 +152,6 @@ max_time/neff_mu
 # ==================================
 
 inspect_params <- c(
-	"logit_psi",
 	"alpha_mu","alpha_sd","beta_mu","beta_sd",
 	"Omega"
 )
@@ -172,11 +171,11 @@ hist_treedepth <- function(fit) {
   hist(sapply(sampler_params, function(x) c(x[,'treedepth__']))[,1], breaks=0:20, main="", xlab="Treedepth") 
   abline(v=15, col=2, lty=1) 
 }
-sapply(ebs_msom@sim$samples, function(x) attr(x, 'args')$control$max_treedepth)
+# sapply(ebs_msom@sim$samples, function(x) attr(x, 'args')$control$max_treedepth)
 hist_treedepth(ebs_msom)
 
 # lp
-traceplot(ebs_msom, "lp__", window=c(1,50), inc_warmup=T);
+traceplot(ebs_msom, "lp__", window=c(1,50), inc_warmup=T)
 
 
 # =====================
@@ -191,10 +190,42 @@ lines(omega_prior_q, omega_prior, col="blue")
 
 
 sims <- rstan::extract(ebs_msom)
-logit_psi_mean <- plogis(apply(sims$logit_psi, 2:4, mean))
-logit_theta_mean <- plogis(apply(sims$logit_theta, 2:4, mean))
+psi_mean <- plogis(apply(sims$logit_psi, 2:4, mean))
+theta_mean <- plogis(apply(sims$logit_theta, 2:4, mean))
 
 par(mfrow=c(2,1))
-hist(logit_psi_mean)
-hist(logit_theta_mean)
+hist(psi_mean)
+hist(theta_mean)
+
+
+psi <- data.table(reshape2::melt(psi_mean, varnames=c("year","site","spp"), value.name="psi"), key=c("year","site","spp"))
+
+# ---- Species Response Curves via Psi and bt ----
+alpha <- apply(sims$alpha, 2:3, mean)
+U <- apply(staticData$U, 3, function(x)seq(min(x), max(x), length.out=100))
+psi_resp <- plogis(U%*%alpha)
+
+plot(U[,2], psi_resp[,1], ylim=range(psi_resp), type='l', col="gray", xlab="bottom temperature")
+for(i in 2:ncol(psi_resp)){
+	lines(U[,2], psi_resp[,i], col="gray")
+}
+par(new=T)
+plot(density(staticData$U[,,"bt"]), xaxt="n",yaxt="n", ylab="",xlab="", main="",type="l", col="blue")
+
+
+# ---- Detectability Response Curve via Theta and doy ----
+beta <- apply(sims$beta, 2:3, mean)
+V <- apply(staticData$V, 3, function(x)seq(min(x), max(x), length.out=100))
+theta_resp <- plogis(V%*%beta)
+
+plot(V[,2], theta_resp[,1], ylim=range(theta_resp), type='l', col="gray", xlab="day of year (scaled)")
+for(i in 2:ncol(theta_resp)){
+	lines(V[,2], theta_resp[,i], col="gray")
+}
+par(new=T)
+plot(density(staticData$V[,,"doy"]), xaxt="n",yaxt="n", ylab="",xlab="", main="",type="l", col="blue")
+
+
+
+
 
