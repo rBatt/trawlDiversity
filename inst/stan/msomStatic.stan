@@ -233,7 +233,7 @@ model {
   //         increment_log_prob(lp_exists(
   //           segment(X[t,j], 1, N), // x
   //           nK[t,j], // K
-  //          	lil_lp, // vector lil_lp
+  //           lil_lp, // vector lil_lp
   //           t_logit_theta, // row_vector logit_theta
   //           segment(isUnobs[t,j], 1, N), // vector isUnobs
   //           l1mil_lp // vector l1mil_lp
