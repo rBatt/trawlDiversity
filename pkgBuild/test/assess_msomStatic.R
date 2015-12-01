@@ -68,7 +68,7 @@ if(Sys.info()["sysname"]=="Windows"){
 # Grid Size
 grid.w <- 9 # Width # 6
 grid.h <- 9 # Height # 11
-grid.t <- 4 # Time
+grid.t <- 10 # Time
 
 
 # ===================
@@ -152,8 +152,8 @@ obs.chance <- function(dim2=ns, dim1=grid.t, dim3=n.obs.reps, rand.gen=rnorm, ch
 # no changes between years (dim1), thus no changes between replicates(dim3)
 # plogis(obs.chance(dim2=6, dim3=2, dim1=7))
 
-t.noID.mus <- c(-0.5, 0.5)
-t.noID.sd <- 1
+t.noID.mus <- seq(0, 2, length.out=grid.t)
+t.noID.sd <- 0.05
 t.noID <- plogis(obs.chance(dim2=ns, dim1=grid.t, dim3=n.obs.reps, mean=t.noID.mus, sd=t.noID.sd))
 
 
@@ -323,7 +323,7 @@ sim_msom <- stan(
 	file=model_file, 
 	data=staticData, 
 	control=list(stepsize=0.01, adapt_delta=0.95, max_treedepth=15),
-	chains=4, iter=150, refresh=1, seed=1337, cores=4, verbose=F
+	chains=4, iter=100, refresh=1, seed=1337, cores=4, verbose=F
 )
 
 
@@ -355,7 +355,7 @@ psi.true <- aperm(psi.true[,,,1], c(3,1,2))
 sims <- rstan::extract(sim_msom)
 psi_mean <- plogis(apply(sims$logit_psi, 2:4, mean))
 
-plot(psi.true, psi_mean[,,1:30])
+plot(psi.true, psi_mean[,,1:ns])
 
 # ================================
 # = Get True and Estimated Theta =
