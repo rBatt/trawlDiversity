@@ -40,9 +40,6 @@ if(Sys.info()["sysname"]=="Linux"){
 sim.location <- "~/Documents/School&Work/pinskyPost/trawl/Scripts/SimFunctions"
 invisible(sapply(paste(sim.location, list.files(sim.location), sep="/"), source, .GlobalEnv))
 
-data.location <- "./trawl/Scripts/DataFunctions"
-invisible(sapply(paste(data.location, list.files(data.location), sep="/"), source, .GlobalEnv))
-
 stat.location <- "./trawl/Scripts/StatFunctions"
 invisible(sapply(paste(stat.location, list.files(stat.location), sep="/"), source, .GlobalEnv))
 
@@ -66,24 +63,24 @@ if(Sys.info()["sysname"]=="Windows"){
 # = Grid Options =
 # ================
 # Grid Size
-grid.w <- 9 # Width # 6
+grid.w <- 20 # Width # 6
 grid.h <- 9 # Height # 11
-grid.t <- 10 # Time
+grid.t <- 2 # Time
 
 
 # ===================
 # = Species Options =
 # ===================
-ns <- 30 # Number of Species
-n0s <- 20
+ns <- 20 # Number of Species
+n0s <- 5
 
 
 # ======================
 # = Simulation Options =
 # ======================
 n.obs.reps <- 1 # number of time to observe the same true process (each observation is analyzed separately)
-n.ss <- 4 # number of substrata (for observation)
-n.ss.mu <- trunc((n.ss*grid.w*grid.h)*(50/100)) #max(trunc((n.ss*grid.w*grid.h)/3*2), grid.w*grid.h) # total substrata observed
+n.ss <- 9 # number of substrata (for observation)
+n.ss.mu <- trunc((n.ss*grid.w*grid.h)*(100/100)) #max(trunc((n.ss*grid.w*grid.h)/3*2), grid.w*grid.h) # total substrata observed
 base.chance <- 1 #plogis(rnorm(ns)) #rbeta(ns,2,2) #runif(n=ns, 0.2, 0.8) # baseline detectability (before ID chance)
 
 # Create chance to be identified if caught
@@ -152,8 +149,8 @@ obs.chance <- function(dim2=ns, dim1=grid.t, dim3=n.obs.reps, rand.gen=rnorm, ch
 # no changes between years (dim1), thus no changes between replicates(dim3)
 # plogis(obs.chance(dim2=6, dim3=2, dim1=7))
 
-t.noID.mus <- seq(0, 2, length.out=grid.t)
-t.noID.sd <- 0.05
+t.noID.mus <- 0 #seq(0, 2, length.out=grid.t)
+t.noID.sd <- 0.1
 t.noID <- plogis(obs.chance(dim2=ns, dim1=grid.t, dim3=n.obs.reps, mean=t.noID.mus, sd=t.noID.sd))
 
 
@@ -245,48 +242,6 @@ staticData <- msomData(Data=sim_dt, n0=n0s, cov.vars=c(bt="bt", bt2="bt2",yr="yr
 staticData_sd <- msomData(Data=sim_dt, n0=1, cov.vars=c(bt_sd="bt_sd",yr_sd="yr_sd",bt2_sd="bt2_sd"), u.form=~bt_sd+bt2_sd-1, v.form=~yr_sd-1, valueName="abund", cov.by=c("year","stratum"))[c("U","V")]
 
 
-# ---- Split Covariates into Constants and Random Variables ----
-getCovType <- function(UV, type=c("constant","mu","sd")){
-	
-	# Dimension Sizes, Number, and Names
-	dims <- dim(staticData[[UV]])
-	nD <- length(dims)
-	dn <- dimnames(staticData[[UV]])[[nD]]
-	dn_sd <- dimnames(staticData_sd[[UV]])[[nD]]
-	
-	# Get Names of Desired Covariates
-	covNames <- switch(type,
-		constant = dn[!dn%in%gsub("_sd","",dn_sd)],
-		mu = dn[dn%in%gsub("_sd","",dn_sd)],
-		sd = dn_sd
-	)
-	
-	# Get the Desired Covariates
-	covOut <- switch(type,
-		constant = staticData[[UV]][,,covNames],
-		mu = staticData[[UV]][,,covNames],
-		sd = staticData_sd[[UV]][,,covNames]
-	)
-	
-	# Convert to Array, Get Dimension Information
-	covOut <- as.array(covOut)
-	cO_dims <- dim(covOut)
-	cO_nD <- length(cO_dims)
-	
-	# Make Sure covOut Dimensions match Full Cov Dimensions
-	if(cO_nD<nD){
-		# if here, I'm guessing it's because length(covNames) is 1
-		# and in that case, I want an array of the orignal major dims to be returned
-		stopifnot(length(covNames)==1)
-		
-		cO_newDim <- c(cO_dims,rep(1,nD-cO_nD)) 
-		covOut <- array(covOut, dim=cO_newDim, dimnames=c(dimnames(covOut),covNames))
-	}
-	
-	# Return
-	return(covOut)
-}
-
 # ---- Do the Splitting Function ----
 for(UV in c("U","V")){
 	for(type in c("constant","mu","sd")){
@@ -319,12 +274,43 @@ staticData$X <- apply(staticData$X, c(1,2,4), function(x)sum(x))
 library(rstan)
 model_file <- "trawl/trawlDiversity/inst/stan/msomStatic.stan"
 
-sim_msom <- stan(
+sim_msom <- rstan::stan(
 	file=model_file, 
 	data=staticData, 
 	control=list(stepsize=0.01, adapt_delta=0.95, max_treedepth=15),
-	chains=4, iter=100, refresh=1, seed=1337, cores=4, verbose=F
+	chains=4, iter=100, seed=1337, cores=4, verbose=F
 )
+
+# ==================================
+# = Printing the Fitted Parameters =
+# ==================================
+
+inspect_params <- c(
+	"alpha_mu","alpha_sd","beta_mu","beta_sd",
+	"Omega"
+)
+
+print(sim_msom, inspect_params)
+
+
+# ===============
+# = Diagnostics =
+# ===============
+# traceplot of chains
+rstan::traceplot(sim_msom, inspect_params, inc_warmup=F)
+
+# historgram of tree depth -- make sure not hugging max
+hist_treedepth <- function(fit) { 
+  sampler_params <- get_sampler_params(fit, inc_warmup=FALSE) 
+  hist(sapply(sampler_params, function(x) c(x[,'treedepth__']))[,1], breaks=0:20, main="", xlab="Treedepth") 
+  abline(v=10, col=2, lty=1) 
+}
+# sapply(ebs_msom@sim$samples, function(x) attr(x, 'args')$control$max_treedepth)
+hist_treedepth(sim_msom)
+
+# lp
+rstan::traceplot(sim_msom, "lp__", window=c(1,50), inc_warmup=T)
+
 
 
 # ==============================
@@ -356,10 +342,117 @@ sims <- rstan::extract(sim_msom)
 psi_mean <- plogis(apply(sims$logit_psi, 2:4, mean))
 
 plot(psi.true, psi_mean[,,1:ns])
+# plot(psi.true[,,5], psi_mean[,,5])
+# txtplot(psi.true, psi_mean[,,1:ns])
+
+Omega <- rstan::extract(sim_msom, "Omega")[[1]]
+plot(density(Omega, from=0, to=1))
+omega_prior_q <- seq(0,1,length.out=length(Omega))
+omega_prior <- dbeta(omega_prior_q, 2, 2)
+lines(omega_prior_q, omega_prior, col="blue")
+
+sims <- rstan::extract(sim_msom)
+
+# txtdensity(psi_mean)
+# txtdensity(theta_mean)
 
 # ================================
 # = Get True and Estimated Theta =
 # ================================
 
+# Options
+use.logit.p <- FALSE
+agg.p <- FALSE
+
+# True p
+get.pTrue <- function(x, use.logit=FALSE, agg=FALSE){
+	mini.get.pTrue <- function(x){
+		op <- attr(x, "obs.params")
+		miniP <- t(op$tax.chance)*op$base.chance
+	}
+	p.true <- lapply(x, mini.get.pTrue)
+	p.true <- array(unlist(p.true,F,F),dim=c(ns,grid.t,n.obs.reps))
+	
+	return(p.true)
+	
+}
+p.true <- aperm(get.pTrue(big.out.obs, use.logit.p, agg.p)[,,1], dim=c(2,1))
+theta_mean <- plogis(apply(sims$logit_theta, 2:4, mean))
+plot(p.true, apply(theta_mean[,,1:ns], c(1,3), mean))
+
+# =============================
+# = Estimated response curves =
+# =============================
+par(mfrow=c(2,1), mar=c(2.5,2.5,0.1,0.1), mgp=c(1,0.1,0), tcl=-0.1, ps=9)
+# ---- Species Response Curves via Psi and bt ----
+alpha <- apply(sims$alpha, 2:3, mean)
+U <- apply(staticData$U, 3, function(x)seq(min(x), max(x), length.out=100))
+psi_resp <- plogis(U%*%alpha)
+
+plot(U[,2], psi_resp[,1], ylim=range(psi_resp), type='l', col="gray", xlab="bottom temperature")
+for(i in 2:ncol(psi_resp)){
+	lines(U[,2], psi_resp[,i], col="gray")
+}
+par(new=T)
+plot(density(staticData$U[,,"bt"]), xaxt="n",yaxt="n", ylab="",xlab="", main="",type="l", col="blue")
+
+
+# ---- Detectability Response Curve via Theta and doy ----
+beta <- apply(sims$beta, 2:3, mean)
+V <- apply(staticData$V, 3, function(x)seq(min(x), max(x), length.out=100))
+theta_resp <- plogis(V%*%beta)
+
+plot(V[,2], theta_resp[,1], ylim=range(theta_resp), type='l', col="gray", xlab="year")
+for(i in 2:ncol(theta_resp)){
+	lines(V[,2], theta_resp[,i], col="gray")
+}
+par(new=T)
+plot(density(staticData$V[,,"yr"], from=min(staticData$V[,,"yr"]), to=max(staticData$V[,,"yr"])), xaxt="n",yaxt="n", ylab="",xlab="", main="",type="l", col="blue")
+
+# =====================================
+# = True Values in Estimate Intervals =
+# =====================================
+Rhat_all <- summary(sim_msom)[[1]][,"Rhat"]
+Rhat_psi <- aperm(psi_mean, 3:1) # just for array structure
+Rhat_psi[] <- Rhat_all[grepl("logit_psi", names(Rhat_all))]
+Rhat_psi <- aperm(Rhat_psi, 3:1)
+Rhat_psi_good <- (Rhat_psi > 0.99 & Rhat_psi < 1.01)[,,1:ns]
+
+quant_prob <- 0.001
+psi_lower <- plogis(apply(sims$logit_psi, 2:4, quantile, probs=quant_prob))
+psi_upper <- plogis(apply(sims$logit_psi, 2:4, quantile, probs=1-quant_prob))
+
+sum(psi.true > psi_lower[,,1:ns] & psi.true < psi_upper[,,1:ns])/(length(psi.true))
+
+
+o_psi <- order(psi.true)
+plot(psi_lower[o_psi], ylim=range(c(psi_upper, psi_lower)), type="l", col="blue")
+lines(psi_upper[o_psi], type="l", col="red")
+lines(psi.true[o_psi], col="black")
+
+# sum(psi.true[Rhat_psi_good] > psi_lower[,,1:ns][Rhat_psi_good] & psi.true[Rhat_psi_good] < psi_upper[,,1:ns][Rhat_psi_good])/(sum(Rhat_psi_good))
+
+# =================
+# = Compare Alpha =
+# =================
+alpha_123 <- apply(sims$alpha, 2:3, mean)[,1:ns]
+alpha1_true <- attr(big.out.obs[[1]], "u.a0")
+alpha2_true <- attr(big.out.obs[[1]], "a3")
+alpha3_true <- attr(big.out.obs[[1]], "a4")
+alpha_true <- list(alpha1_true, alpha2_true, alpha3_true)
+
+par(mfrow=c(3,1), mar=c(2,2,0.1,0.1), mgp=c(1,0.1,0), tcl=-0.1, ps=10)
+plot(alpha1_true, alpha_123[1,])
+plot(alpha2_true, alpha_123[2,])
+plot(alpha3_true, alpha_123[3,])
+
+
+# ---- Boxplots of posterior, with true in blue, ALPHA ----
+par(mfrow=c(3,1), mar=c(2,2,0.1,0.1), mgp=c(1,0.1,0), tcl=-0.1, ps=10)
+alpha_123_df <- reshape2::melt(sims$alpha[,,1:ns])
+for(i in 1:3){ # 3 alphas
+	boxplot(value~Var3+Var2, data=alpha_123_df[alpha_123_df[,"Var2"]==i,])
+	points(alpha_true[[i]], col="blue", pch=19)
+}
 
 
