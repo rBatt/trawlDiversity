@@ -6,9 +6,9 @@
 #' @param staticDataUV_sd the output of msomData, containing at least U or V element, where the covariates have the "_sd" suffix attached to their names, and these covariates correspond to similarly named (sans-suffix) elements of U and V in staticDataUV
 #' @param UV character of length 1, indicating whether to treat
 
-
+#' @export
 # ---- Split Covariates into Constants and Random Variables ----
-getCovType <- function(UV=c("U","V"), type=c("constant","mu","sd")){
+getCovType <- function(staticDataUV, staticDataUV_sd, UV=c("U","V"), type=c("constant","mu","sd")){
 	
 	UV <- match.arg(UV)
 	
@@ -16,7 +16,7 @@ getCovType <- function(UV=c("U","V"), type=c("constant","mu","sd")){
 	dims <- dim(staticDataUV[[UV]])
 	nD <- length(dims)
 	dn <- dimnames(staticDataUV[[UV]])[[nD]]
-	dn_sd <- dimnames(staticDataUV[[UV]])[[nD]]
+	dn_sd <- dimnames(staticDataUV_sd[[UV]])[[nD]]
 	
 	# Get Names of Desired Covariates
 	covNames <- switch(type,
