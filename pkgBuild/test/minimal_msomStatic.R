@@ -325,7 +325,7 @@ model {
   //         increment_log_prob(lp_exists(
   //           segment(X[t,j], 1, N), // x
   //           nK[t,j], // K
-  //          	lil_lp, // vector lil_lp
+  //           lil_lp, // vector lil_lp
   //           t_logit_theta, // row_vector logit_theta
   //           segment(isUnobs[t,j], 1, N), // vector isUnobs
   //           l1mil_lp // vector l1mil_lp
@@ -393,6 +393,52 @@ model {
  //    } // if nJ
  //  } // end year loop
  //
+	
+	
+// 	 // ---- old loops ----
+//   for (t in 1:nT) { // loop through years
+//
+//     if(nJ[t]){ // statement only necessary if using failed approach for vectorization
+//
+//       for (j in 1:nJ[t]) { // sites
+//
+//
+//         if(nK[t,j]){ // if samples in site
+//
+//           row_vector[nS] t_logit_psi; // presence
+//           row_vector[nS] t_logit_theta; // detection
+//           vector[nS] lil_lp; // log_inv_logit(logit_psi)
+//           vector[nS] l1mil_lp; // log1m_inv_logit(logit_psi)
+//
+//           t_logit_psi <- sub_row(logit_psi[t], j, 1, nS);
+//           t_logit_theta <- sub_row(logit_theta[t], j, 1, nS);
+//
+//           for (s in 1:nS){
+//             l1mil_lp[s] <- log1m_inv_logit(t_logit_psi[s]);
+//             lil_lp[s] <- log_inv_logit(t_logit_psi[s]);
+//           }
+//
+// 					for (n in 1:N) {
+// 						if ( X[t,j,n] > 0) {
+// 							increment_log_prob(lil_lp[n] + binomial_logit_log(X[t,j,n], nK[t,j], t_logit_theta[n]));
+// 						} else {
+// 							increment_log_prob(log_sum_exp(lil_lp[n] + binomial_logit_log(0, nK[t,j], t_logit_theta[n]), l1mil_lp[n]));
+// 						}
+// 					}
+//
+// 					for (s in (N+1):nS) {
+// 						real lp_unavailable;
+// 						real lp_available;
+// 						lp_unavailable <- bernoulli_log(0, Omega);
+// 						lp_available <- bernoulli_log(1, Omega) + log_sum_exp(lil_lp[s] + binomial_logit_log(0, nK[t,j], t_logit_theta[s]), l1mil_lp[s]);
+// 						increment_log_prob(log_sum_exp(lp_unavailable, lp_available));
+// 						// increment_log_prob(log_sum_exp(lil_lp[s] + binomial_logit_log(0, nK[t,j], t_logit_theta[s]), l1mil_lp[s]));
+// 					}
+//
+//         } // if nK
+//       } // end site loop
+//     } // if nJ
+//   } // end year loop
   
 } // end model
 
