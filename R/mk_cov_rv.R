@@ -40,17 +40,17 @@ mk_cov_rv_pow <- function(X, cName, across, by, pow=2){
 	cn_pow <- paste0(cName, pow)
 	cn_pow_sd <- paste0(cn_pow, "_sd")
 	
-	#' Propagate standard deviation from raising to power
-	#'
-	#' Calculates the standard deviation of a random variable created by multiplying another RV by a constant and raising it to a power
-	#'
-	#' @param A The random variables being operated on
-	#' @param sigma_A Standard deviations of A
-	#' @param b The exponent
-	#' @param a the multiplication coefficient
-	#'
-	#' @details
-	#' Of the form f = a*A^b. Sigma must be provided. Elements of A are treated as potentially separate RV's.
+	##' Propagate standard deviation from raising to power
+	##'
+	##' Calculates the standard deviation of a random variable created by multiplying another RV by a constant and raising it to a power
+	##'
+	##' @param A The random variables being operated on
+	##' @param sigma_A Standard deviations of A
+	##' @param b The exponent
+	##' @param a the multiplication coefficient
+	##'
+	##' @details
+	##' Of the form f = a*A^b. Sigma must be provided. Elements of A are treated as potentially separate RV's.
 	prop_sd_pow <- function(A, sigma_A, b=2, a=1){
 		f <- a*A^b
 		sigma_f <- (f*b*sigma_A)
