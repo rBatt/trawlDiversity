@@ -20,7 +20,7 @@
 #' mk_cov_rv_pow(X, "a", across="K", by="b", pow=2)
 #' 
 #' @import trawlData
-#' @export
+#' @export mk_cov_rv mk_cov_rv_pow
 mk_cov_rv <- function(X, cName, across, by){
 	cn_sd <- paste0(cName, "_sd")
 	sd2 <- function(x, ...){
@@ -33,7 +33,6 @@ mk_cov_rv <- function(X, cName, across, by){
 }
  
 #' @describeIn mk_cov_rv Get the mean and SD of a covariate, and the same for the covariate^pow
-#' @export
 mk_cov_rv_pow <- function(X, cName, across, by, pow=2){
 	mk_cov_rv(X, cName, across, by)
 	cn_sd <- paste0(cName, "_sd")
