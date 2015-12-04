@@ -28,18 +28,20 @@ msomData <- function(Data, n0=10, formula=year~stratum~K~spp, cov.vars=c(bt="bte
 	requireNamespace("reshape2", quietly = TRUE)
 	
 	cov.vars0 <- cov.vars
-	cov.vars <<- cov.vars # stupid bug
+	# cov.vars <<- cov.vars # stupid bug
 	if(!is.null(u_rv)){
 		to_add <- paste0(u_rv,"_sd")
 		names(to_add) <- paste0(u_rv,"_sd")
-		cov.vars <<- c(cov.vars, to_add)
+		cov.vars <- c(cov.vars, to_add)
 	}
 	if(!is.null(v_rv)){
 		to_add <- paste0(v_rv,"_sd")
 		names(to_add) <- paste0(v_rv,"_sd")
-		cov.vars <<- c(cov.vars, to_add)
+		cov.vars <- c(cov.vars, to_add)
 	}
 	# cov.vars <<- cov.vars
+	# globalenv()
+	# assign
 	
 	if(class(formula)=="formula"){
 		gno <- unlist(strsplit(deparse(formula), "\\s*~\\s*"))
@@ -66,10 +68,12 @@ msomData <- function(Data, n0=10, formula=year~stratum~K~spp, cov.vars=c(bt="bte
 	) # used to indicate which values in Xc are NA, basically
 
 
-	una.cov <- expression({
-		structure(lapply(eval(s2c(cov.vars)), una, na.rm=TRUE),.Names=names(cov.vars))
+	una.cov <- quote({
+		structure(lapply(eval(s2c(cov.vars), envir=.SD), una, na.rm=TRUE),.Names=names(cov.vars))
 	})
 	cov.tjk <- Data[,eval(una.cov), keyby=cov.by] # also setting key
+	
+	
 
 	# Fill in NA covariates
 	# Define expression & functions to fill using mean
@@ -90,18 +94,13 @@ msomData <- function(Data, n0=10, formula=year~stratum~K~spp, cov.vars=c(bt="bte
 			as(fill.mean(x), cl)
 		}	
 	}
-	fillMean.cov <- expression({
-		structure(
-			c(
-				lapply(eval(s2c(names(cov.vars))), fm2)
-			),
-			.Names=names(cov.vars)
-		)
+	fillMean.cov <- quote({
+		structure(lapply(eval(s2c(names(cov.vars)), envir=.SD), fm2),.Names=names(cov.vars))
 	})
 
 	cov.tjk[,c(names(cov.vars)):=eval(fillMean.cov),by=c(cov.by[-length(cov.by)])]
-
-
+	# cov.tjk[,c(names(cov.vars)):=structure(lapply(eval(s2c(names(cov.vars)), envir=.SD), fm2),.Names=names(cov.vars)),by=c(cov.by[-length(cov.by)])]
+	
 
 	# Check
 	stopifnot(!any(is.na(cov.tjk))) # can't have any NA's with my current simple approach
