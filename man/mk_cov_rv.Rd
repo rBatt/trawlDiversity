@@ -42,6 +42,9 @@ Of the form f = a*A^b. Sigma must be provided. Elements of A are treated as pote
 \section{Functions}{
 \itemize{
 \item \code{mk_cov_rv_pow}: Get the mean and SD of a covariate, and the same for the covariate^pow
+Propagate standard deviation from raising to power
+
+Calculates the standard deviation of a random variable created by multiplying another RV by a constant and raising it to a power
 }}
 \examples{
 X <- data.table(a=rnorm(1000), b=sample(letters, 1000, replace=TRUE), key="b")

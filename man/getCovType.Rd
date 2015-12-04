@@ -4,14 +4,15 @@
 \alias{getCovType}
 \title{Get Covariate Type}
 \usage{
-getCovType(UV = c("U", "V"), type = c("constant", "mu", "sd"))
+getCovType(staticDataUV, staticDataUV_sd, UV = c("U", "V"),
+  type = c("constant", "mu", "sd"))
 }
 \arguments{
-\item{UV}{character of length 1, indicating whether to treat}
-
 \item{staticDataUV}{the output of msomData, containing at least U or V element}
 
 \item{staticDataUV_sd}{the output of msomData, containing at least U or V element, where the covariates have the "_sd" suffix attached to their names, and these covariates correspond to similarly named (sans-suffix) elements of U and V in staticDataUV}
+
+\item{UV}{character of length 1, indicating whether to treat}
 }
 \description{
 Given the output of \code{\link{msomData}}, get the type of covariates (constant or mean of random variable, or sd of random variable).
