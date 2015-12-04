@@ -6,7 +6,7 @@ library("rbLib")
 library("rstan")
 
 set.seed(1337)
-sim_out <- sim_occ(ns=8, grid.w=3, grid.h=5, grid.t=3, n0s=0, h.slope=5, detect.mus=c(0,1), alpha_mu=c(0.5, 0.75, 0), alpha_sd=c(0.5, 0.01, 0), format.msom="jags")
+sim_out <- sim_occ(ns=12, grid.w=5, grid.h=7, grid.t=3, h.slope=0.5, w.sd=0.5, n0s=5, detect.mus=c(0,0.5,1), n.ss=9, alpha_mu=c(0.75, 0.25, -5), alpha_sd=c(0.5, 0.015, 0.01), format.msom="jags")
 big.out.obs <- sim_out[["big.out.obs"]]
 dims <- attr(big.out.obs[[1]], "dims")
 grid.w <- dims["grid.w"]
@@ -15,9 +15,10 @@ grid.t <- dims["grid.t"]
 ns <- dims["ns"]
 n.obs.reps <- length(big.out.obs)
 
-par(mfrow=c(2,1))
+par(mfrow=c(3,1))
 plot_simResp(big.out.obs[[1]])
 hist(values(attr(big.out.obs[[1]], "grid.X")))
+plot(density(values(attr(big.out.obs[[1]], "grid.X")), bw=0.01))
 
 # ========================================
 # = Analyze simData with Stan msomStatic =
@@ -45,8 +46,8 @@ spp2msom_2dt <- function(big.simDat, simCov){
 sim_dt <- spp2msom_2dt(sim_out[["big.simDat"]], simCov=sim_out[["formatted"]]$simCov)
 
 # aggregate and transform (^2) btemp
-# mk_cov_rv_pow(sim_dt, "bt", across="K", by=c("stratum","year"), pow=2)
-mk_cov_rv(sim_dt, "bt", across="K", by=c("stratum","year"))
+mk_cov_rv_pow(sim_dt, "bt", across="K", by=c("stratum","year"), pow=2)
+mk_cov_rv(sim_dt, c("bt"), across="K", by=c("stratum","year"))
 
 # scale and aggregate doy
 sim_dt[,yr:=as.numeric(year)]
@@ -56,7 +57,7 @@ sim_dt[,obs_rep:=as.numeric(n.obs.reps)]
 # sim_dt <- sim_dt[n.obs.reps==1]
 stopifnot(sim_dt[,all(n.obs.reps==1)])
 
-staticData <- msomData(Data=sim_dt, n0=2, cov.vars=c(bt="bt",yr="yr"), u.form=~bt, v.form=~yr, valueName="abund", cov.by=c("year","stratum"))
+staticData <- msomData(Data=sim_dt, n0=2, cov.vars=c(bt="bt",bt2="bt2",yr="yr"), u.form=~bt+bt2, v.form=~yr, valueName="abund", cov.by=c("year","stratum"))
 
 # ---- Get Basic Structure of MSOM Data Input ----
 # staticData <- msomData(Data=sim_dt, n0=2, cov.vars=c(bt="bt",yr="yr"), u.form=~bt, v.form=~yr, valueName="abund", cov.by=c("year","stratum"))
@@ -104,16 +105,16 @@ for(i in 2:ns){
 # dev.off()
 
 
-naive <- glm(c(pmin(staticData$X[,,], 1)) ~ rep(c(staticData$U[,,2]), dim(staticData$X)[3]), family="binomial")
-summary(naive)
+# naive <- glm(c(pmin(staticData$X[,,], 1)) ~ rep(c(staticData$U[,,2]), dim(staticData$X)[3]), family="binomial")
+# summary(naive)
 
-plot(rep(c(staticData$U[,,2]), dim(staticData$X)[3]), c(pmin(staticData$X[,,], 1)))
-plot(fitted(naive), type="l")
-
-sim_dt2 <- sim_dt
-sim_dt2 <- sim_dt2[,list(abund=max(abund), bt=mean(bt)) ,by=c("stratum","spp","year")]
-summary(glmer(abund~bt + (1|spp) + (spp-1|spp), data=sim_dt2, family="binomial"))
-summary(glm(abund~bt, data=sim_dt2, family="binomial"))
+# plot(rep(c(staticData$U[,,2]), dim(staticData$X)[3]), c(pmin(staticData$X[,,], 1)))
+# plot(fitted(naive), type="l")
+#
+# sim_dt2 <- sim_dt
+# sim_dt2 <- sim_dt2[,list(abund=max(abund), bt=mean(bt)) ,by=c("stratum","spp","year")]
+# summary(glmer(abund~bt + (1|spp) + (spp-1|spp), data=sim_dt2, family="binomial"))
+# summary(glm(abund~bt, data=sim_dt2, family="binomial"))
 
 
 # =====================
@@ -125,7 +126,7 @@ sim_msom <- rstan::stan(
 	file=model_file, 
 	data=staticData, 
 	control=list(stepsize=0.01, adapt_delta=0.95, max_treedepth=15),
-	chains=4, iter=100, seed=1337, cores=4, verbose=F
+	chains=4, iter=30, seed=1337, cores=4, verbose=F
 )
 
 # ==================================
@@ -139,8 +140,8 @@ inspect_params <- c(
 sims <- rstan::extract(sim_msom)
 
 print(sim_msom, inspect_params)
-attr(big.out.obs[[1]], "a3")
-apply(sims$alpha, 2:3, mean)[,1:ns]
+# attr(big.out.obs[[1]], "a3")
+# apply(sims$alpha, 2:3, mean)[,1:ns]
 
 
 # ===============
@@ -163,10 +164,20 @@ rstan::traceplot(sim_msom, "lp__", window=c(1,50), inc_warmup=T)
 
 
 
-# ==============================
-# = Get True and Estimated Psi =
-# ==============================
-# ---- True Psi ----
+# =========
+# = Omega =
+# =========
+Omega <- rstan::extract(sim_msom, "Omega")[[1]]
+plot(density(Omega, from=0, to=1))
+omega_prior_q <- seq(0,1,length.out=length(Omega))
+omega_prior <- dbeta(omega_prior_q, 2, 2)
+lines(omega_prior_q, omega_prior, col="blue")
+
+
+# =================
+# = Psi and Theta =
+# =================
+# ---- Psi ----
 use.logit.psi <- FALSE
 agg.psi <- FALSE
 dim.conv1 <- c(grid.w*grid.h, ns, grid.t, n.obs.reps)
@@ -187,27 +198,14 @@ psi.true <- get.psiTrue(big.out.obs[[1]], use.logit.psi, agg.psi)
 # psi.true <- aperm(apply(psi.true, c(1,2,3), mean), c(3,1,2))
 psi.true <- aperm(psi.true[,,,1], c(3,1,2))
 
-# ---- Estimated Psi ----
 psi_mean <- plogis(apply(sims$logit_psi, 2:4, mean))
 
-plot(psi.true, psi_mean[,,1:ns])
 # plot(psi.true[,,5], psi_mean[,,5])
 # txtplot(psi.true, psi_mean[,,1:ns])
 
-Omega <- rstan::extract(sim_msom, "Omega")[[1]]
-plot(density(Omega, from=0, to=1))
-omega_prior_q <- seq(0,1,length.out=length(Omega))
-omega_prior <- dbeta(omega_prior_q, 2, 2)
-lines(omega_prior_q, omega_prior, col="blue")
 
 
-# txtdensity(psi_mean)
-# txtdensity(theta_mean)
-
-# ================================
-# = Get True and Estimated Theta =
-# ================================
-
+# ---- Theta ----
 # Options
 use.logit.p <- FALSE
 agg.p <- FALSE
@@ -226,7 +224,14 @@ get.pTrue <- function(x, use.logit=FALSE, agg=FALSE){
 }
 p.true <- aperm(get.pTrue(big.out.obs, use.logit.p, agg.p)[,,1], dim=c(2,1))
 theta_mean <- plogis(apply(sims$logit_theta, 2:4, mean))
-plot(p.true, apply(theta_mean[,,1:ns], c(1,3), mean))
+
+# ---- Plot Psi Theta ----
+png("~/Desktop/psi_theta_est_vs_true.png", width=2.5, height=5, res=150, units="in")
+par(mfrow=c(2,1), mar=c(2,2,0.3,0.2), mgp=c(1,0.1,0), tcl=-0.1, ps=10)
+plot(psi.true, psi_mean[,,1:ns], xlab="psi true", ylab="psi hat")
+plot(p.true, apply(theta_mean[,,1:ns], c(1,3), mean), xlab="theta true", ylab="theta hat")
+dev.off()
+
 
 # =============================
 # = Estimated response curves =
@@ -234,7 +239,7 @@ plot(p.true, apply(theta_mean[,,1:ns], c(1,3), mean))
 par(mfrow=c(2,1), mar=c(2.5,2.5,0.1,0.1), mgp=c(1,0.1,0), tcl=-0.1, ps=9)
 # ---- Species Response Curves via Psi and bt ----
 alpha <- apply(sims$alpha, 2:3, mean)
-U <- apply(staticData$U, 3, function(x)seq(min(x), max(x), length.out=100))
+U <- staticData$U[1,,][order(staticData$U[1,,][,2]),]
 psi_resp <- plogis(U%*%alpha)
 
 plot(U[,2], psi_resp[,1], ylim=range(psi_resp), type='l', col="gray", xlab="bottom temperature")
@@ -266,7 +271,7 @@ Rhat_psi[] <- Rhat_all[grepl("logit_psi", names(Rhat_all))]
 Rhat_psi <- aperm(Rhat_psi, 3:1)
 Rhat_psi_good <- (Rhat_psi > 0.99 & Rhat_psi < 1.01)[,,1:ns]
 
-quant_prob <- 0.025
+quant_prob <- 0.1
 psi_lower <- plogis(apply(sims$logit_psi, 2:4, quantile, probs=quant_prob))
 psi_upper <- plogis(apply(sims$logit_psi, 2:4, quantile, probs=1-quant_prob))
 
@@ -286,22 +291,23 @@ lines(psi.true[o_psi], col="black")
 alpha_123 <- apply(sims$alpha, 2:3, mean)[,1:ns]
 alpha1_true <- attr(big.out.obs[[1]], "u.a0")
 alpha2_true <- attr(big.out.obs[[1]], "a3")
-# alpha3_true <- attr(big.out.obs[[1]], "a4")
-# alpha_true <- list(alpha1_true, alpha2_true, alpha3_true)
-alpha_true <- list(alpha1_true, alpha2_true)
+alpha3_true <- attr(big.out.obs[[1]], "a4")
+alpha_true <- list(alpha1_true, alpha2_true, alpha3_true)
+# alpha_true <- list(alpha1_true, alpha2_true)
 
-par(mfrow=c(2,1), mar=c(2,2,0.1,0.1), mgp=c(1,0.1,0), tcl=-0.1, ps=10)
-plot(alpha1_true, alpha_123[1,])
-plot(alpha2_true, alpha_123[2,])
+# par(mfrow=c(2,1), mar=c(2,2,0.1,0.1), mgp=c(1,0.1,0), tcl=-0.1, ps=10)
+# plot(alpha1_true, alpha_123[1,])
+# plot(alpha2_true, alpha_123[2,])
 # plot(alpha3_true, alpha_123[3,])
 
 
 # ---- Boxplots of posterior, with true in blue, ALPHA ----
-par(mfrow=c(2,1), mar=c(2,2,0.1,0.1), mgp=c(1,0.1,0), tcl=-0.1, ps=10)
+png("~/Desktop/alpha_est_boxplots_blueDotTrue.png", width=2.5, height=5, res=150, units="in")
+par(mfrow=c(3,1), mar=c(2,2,0.1,0.1), mgp=c(1,0.1,0), tcl=-0.1, ps=10)
 alpha_123_df <- reshape2::melt(sims$alpha[,,1:ns])
-for(i in 1:2){ # 3 alphas
-	boxplot(value~Var3+Var2, data=alpha_123_df[alpha_123_df[,"Var2"]==i,])
+for(i in 1:3){ # 3 alphas
+	boxplot(value~Var3+Var2, data=alpha_123_df[alpha_123_df[,"Var2"]==i,], ylab=paste0("alpha[",i,"] posterior"), xlab="speices ID")
 	points(alpha_true[[i]], col="blue", pch=19)
 }
-
+dev.off()
 
