@@ -165,15 +165,17 @@ transformed parameters {
 model {
   
   // ---- Priors for Hyperparameters ----
-	// alpha_mu ~ cauchy(0, 1);
-	// alpha_sd ~ cauchy(0, 2);
+	alpha_mu ~ cauchy(0, 1);
+	// alpha_mu ~ normal(0, 5);
+	alpha_sd ~ cauchy(0, 2);
 	
-	alpha_mu[1] ~ cauchy(0, 1);
-  alpha_mu[2] ~ normal(0.75, 0.01); // cauchy(0, 1);
-	alpha_sd[1] ~ cauchy(0, 1);
-  alpha_sd[2] ~ normal(0.01, 0.00001); //cauchy(0, 2);
+	// alpha_mu[1] ~ cauchy(0, 1);
+	//   alpha_mu[2] ~ normal(0.75, 0.01); // cauchy(0, 1);
+	// alpha_sd[1] ~ cauchy(0, 1);
+	//   alpha_sd[2] ~ normal(0.01, 0.00001); //cauchy(0, 2);
 	
   beta_mu ~ cauchy(0, 1);
+	// beta_mu ~ normal(0, 5);
   beta_sd ~ cauchy(0, 2);
 
   
