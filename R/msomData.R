@@ -2,7 +2,7 @@
 #' 
 #' Format Data for MSOM
 #' 
-#' @param Data A data.table containing response variable and covariates
+#' @param Data A data.table containing response variable and covariates. Must have a \code{\link(key)}
 #' @param n0 An integer indicating the number of never-observed species to add
 #' @param formula A formula indicating the dimensions of the output array (only Default tested)
 #' @param cov.vars A named character vector of covariates, where character elements correspond to columns \code{Data}, and names will be predictor names in model
@@ -10,11 +10,14 @@
 #' @param v.form Formula for covariates to be included in V, the matrix of detection covariates
 #' @param valueName Character indicating column name containing response in \code{Data}
 #' @param cov.by Chracter vector of dimension names for covariates; order matters, specify most specific last. Should be elements in \code{formula}, and columns in \code{Data}.
+#' @param u_rv,v_rv Character string indicating variable names in \code{u.form} or \code{v.form} that should be converted from representation as predictors whose values are known precisely (casually referred to as "constant") to predictors that are random variables ("rv"). If NULL (default), it is assumed that all predictors are known precisely. See 'Details'.
 #' 
 #' @details
 #' Only the defaults have been tested. Arguments that should be manipulated include \code{u.form}, \code{v.form}, \code{cov.vars}, and \code{n0}. Other values can be changed if they are only being adjusted to conform with column names in \code{Data}. Otherwise, it is unlikely that this function will behave as desired. In particular, the nesting of year, stratum, and K has to be the same (or whatever names are used).
 #' 
 #' Casting of \code{Data} is done via \code{trawlCast}. 0's are filled where appropriate, and NA's indicate no sampling. In the output, all NA's are replaced with 0's. However, the \code{nK} element of the output list indicates how many of the K are actually samples, and because K is not ordered, any 0's beyond the magnitude indicated in nK for that year-stratum combination are actually the NA's.
+#' 
+#' With regard to \code{u_rv} and \code{v_rv}, the intercept term cannot be converted to a random variable representation, although categorical predictors can (note, though, that the reference level will be embedded in the intercept, and thus it is implied to be known excactly). Terms represented in the formula with special notation (a:b, a*b, etc) will not be converted, although if a formula is \code{u.form=~a*b}, and \code{u_rv=c("a")}, a column that would be named "a" in the model matrix will be encoded as a random variable, whereas colmns "a:b" and "b" will not be RV's.
 #' 
 #' @return
 #' A named list appropriate for use with msomStatic.stan
