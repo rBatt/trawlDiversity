@@ -38,6 +38,8 @@ spp2msom_2dt <- function(big.simDat, simCov){
 
 	test <- test.spp[test.cov1]
 	
+	setkey(test, year, stratum, K, spp)
+	
 	return(test)
 }
 sim_dt <- spp2msom_2dt(sim_out[["big.simDat"]], simCov=sim_out[["formatted"]]$simCov)
