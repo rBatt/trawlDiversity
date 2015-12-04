@@ -27,7 +27,19 @@ msomData <- function(Data, n0=10, formula=year~stratum~K~spp, cov.vars=c(bt="bte
 	requireNamespace("trawlData", quietly = TRUE)
 	requireNamespace("reshape2", quietly = TRUE)
 	
+	cov.vars0 <- cov.vars
 	cov.vars <<- cov.vars # stupid bug
+	if(!is.null(u_rv)){
+		to_add <- paste0(u_rv,"_sd")
+		names(to_add) <- paste0(u_rv,"_sd")
+		cov.vars <<- c(cov.vars, to_add)
+	}
+	if(!is.null(v_rv)){
+		to_add <- paste0(v_rv,"_sd")
+		names(to_add) <- paste0(v_rv,"_sd")
+		cov.vars <<- c(cov.vars, to_add)
+	}
+	# cov.vars <<- cov.vars
 	
 	if(class(formula)=="formula"){
 		gno <- unlist(strsplit(deparse(formula), "\\s*~\\s*"))
@@ -54,21 +66,6 @@ msomData <- function(Data, n0=10, formula=year~stratum~K~spp, cov.vars=c(bt="bte
 	) # used to indicate which values in Xc are NA, basically
 
 
-	# Get covariates for U
-	# Choose names of covariates
-	# The names of the vector are the names you'll get in the end
-	# The character elements of the vector should correspond to columns
-	# cov.vars <- c(bt="btemp",doy="doy",yr="year") # order does not matter
-	# cov.vars <- c(btemp="bt",doy="doy",year="yr") # if wanted opposite convention
-
-	# Grouping for covariates
-	# Correspond to column names
-	# cov.by <- c("year","stratum","K")# the order matters! most specific last
-
-	# Aggregate covariates
-	# Define expression to agg by 
-	# applying una() function
-	# Sets names, too
 	una.cov <- expression({
 		structure(lapply(eval(s2c(cov.vars)), una, na.rm=TRUE),.Names=names(cov.vars))
 	})
@@ -119,7 +116,18 @@ msomData <- function(Data, n0=10, formula=year~stratum~K~spp, cov.vars=c(bt="bte
 	
 	
 	# Get Covariates (U and V)
-	getUV <- function(form){
+	get_form_sd <- function(form, uv_rv){
+		for(i in 1:length(uv_rv)){
+			form <- formula(gsub(paste0("\\b(",uv_rv[i],")","\\b"), "\\1_sd", deparse(form)))
+		}
+		formula(paste0(gsub(paste0("\\b(\\w+(?<!_sd))\\b"), "0", deparse(form), perl=TRUE), " -1"))
+	}
+	
+	getUV <- function(form, do_sd=FALSE, uv_rv=NULL){
+		if(do_sd){
+			stopifnot(!is.null(uv_rv))
+			form <- get_form_sd(form=form, uv_rv=uv_rv)
+		}
 		UV.m <- model.matrix(form, model.frame(form,data=cov.f, na.action=na.pass))
 		ncUV <- ncol(UV.m)
 		nrUV <- nrow(UV.m)
@@ -132,14 +140,13 @@ msomData <- function(Data, n0=10, formula=year~stratum~K~spp, cov.vars=c(bt="bte
 	
 		reshape2::acast(UV.dt, formula=UV.form, value.var="value")
 	}
-
-	U <- getUV(u.form)
+	
+	U <- getUV(form=u.form)
 	nU <- tail(dim(U),1)
 
 	V <- getUV(v.form)
 	nV <- tail(dim(V),1)
-
-
+	
 	# Add never-observed species to array
 	add_neverObs <- function(x, n0){
 		fillA <- do.call(`[`, c(list(x), rep(TRUE, length(dim(x))-1), 1))
@@ -173,7 +180,7 @@ msomData <- function(Data, n0=10, formula=year~stratum~K~spp, cov.vars=c(bt="bte
 
 	U[is.na(U)] <- 0
 	V[is.na(V)] <- 0
-
+	
 	out <- list(
 		X=X,
 		U=U,
@@ -188,6 +195,39 @@ msomData <- function(Data, n0=10, formula=year~stratum~K~spp, cov.vars=c(bt="bte
 		nS=nS,
 		isUnobs=isUnobs
 	)
+	
+
+	# ---- Add in Random Varaibles of U and V where Needed ----
+	uv_sd <- list()
+	if(!is.null(u_rv)){
+		uv_sd$U <- getUV(form=u.form, do_sd=TRUE, uv_rv=u_rv)
+	}
+	if(!is.null(v_rv)){
+		uv_sd$V <- getUV(form=v.form, do_sd=TRUE, uv_rv=v_rv)
+	}
+	
+	for(UV in c("U","V")){
+		for(type in c("constant","mu","sd")){
+			if(type!="constant" & ((UV=="U" & is.null(u_rv)) | (UV=="V" & is.null(v_rv)))){
+				out[[paste(UV,type,sep="_")]] <- array(0, dim=c(head(dim(out[[UV]]),-1), 0))
+			}else{
+				switch(type,
+					constant={out[[paste0(UV,"_c")]] <- getCovType(out, uv_sd, UV,type)},
+					{out[[paste(UV,type,sep="_")]] <- getCovType(out, uv_sd, UV,type)}
+				)
+			}
+		}
+	}
+
+	# ---- Add Sizes of Constant and RV U/V Arrays ----
+	out$nU_rv <- dim(out$U_mu)[3]
+	out$nV_rv <- dim(out$V_mu)[3]
+	out$nU_c <- dim(out$U_c)[3]
+	out$nV_c <- dim(out$V_c)[3]
+
+	stopifnot(out$nV == out$nV_c + out$nV_rv)
+	stopifnot(out$nU == out$nU_c + out$nU_rv)
+	
 	
 	return(out)
 }
