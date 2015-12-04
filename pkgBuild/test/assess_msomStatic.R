@@ -53,7 +53,8 @@ sim_dt[,yr:=as.numeric(year)]
 sim_dt[,obs_rep:=as.numeric(n.obs.reps)]
 # mk_cov_rv(sim_dt, "yr", across="K", by=c("stratum","year"))
 
-sim_dt <- sim_dt[n.obs.reps==1]
+# sim_dt <- sim_dt[n.obs.reps==1]
+stopifnot(sim_dt[,all(n.obs.reps==1)])
 
 staticData <- msomData(Data=sim_dt, n0=2, cov.vars=c(bt="bt",yr="yr"), u.form=~bt, v.form=~yr, valueName="abund", cov.by=c("year","stratum"))
 
@@ -90,13 +91,19 @@ staticData$X <- apply(staticData$X, c(1,2,4), function(x)sum(x))
 
 
 # ---- Check Data Format and Simpler Reg Results ----
-sim_dt[,plot(stratum, bt)] # useful in simulated examples
+# png("~/Desktop/issue103_diagnosis.png", width=4, height=7, res=150, units="in")
+par(mfrow=c(4,1), ps=10, mar=c(3,3,0.1,0.1), mgp=c(1.5,0.1,0), tcl=-0.1)
+sim_dt[,plot(stratum, bt, xlab="stratum (from sim_dt, not inferred)", ylab="btemp (from sim_dt)")] # useful in simulated examples
+sim_dt[,plot(bt, abund, ylab="presence/ absence from sim_dt", xlab="btemp from sim_dt")]
+plot(staticData$U[1,,"bt"], ylab="btemp from U", xlab="stratum (as inferred from column order in U)\nShould be same as first plot, if not, there will be mismatch")
 
-
-plot(staticData$U[,,2], staticData$X[,,1], pch=21)
+plot(staticData$U[,,"bt"], pmin(staticData$X[,,1],1), pch=21, ylab="presence/ absence from X", xlab="btemp from U\nIf not same as 2nd plot, X is scrambled relative to U")
 for(i in 2:ns){
-	points(staticData$U[,,2], staticData$X[,,1], pch=21)
+	points(staticData$U[,,"bt"], pmin(staticData$X[,,i],1), pch=21)
 }
+# dev.off()
+
+
 naive <- glm(c(pmin(staticData$X[,,], 1)) ~ rep(c(staticData$U[,,2]), dim(staticData$X)[3]), family="binomial")
 summary(naive)
 
@@ -118,7 +125,7 @@ sim_msom <- rstan::stan(
 	file=model_file, 
 	data=staticData, 
 	control=list(stepsize=0.01, adapt_delta=0.95, max_treedepth=15),
-	chains=1, iter=100, seed=1337, cores=4, verbose=F
+	chains=4, iter=100, seed=1337, cores=4, verbose=F
 )
 
 # ==================================
@@ -129,6 +136,7 @@ inspect_params <- c(
 	"alpha_mu","alpha_sd","beta_mu","beta_sd",# "alpha",
 	"Omega"
 )
+sims <- rstan::extract(sim_msom)
 
 print(sim_msom, inspect_params)
 attr(big.out.obs[[1]], "a3")
@@ -180,7 +188,6 @@ psi.true <- get.psiTrue(big.out.obs[[1]], use.logit.psi, agg.psi)
 psi.true <- aperm(psi.true[,,,1], c(3,1,2))
 
 # ---- Estimated Psi ----
-sims <- rstan::extract(sim_msom)
 psi_mean <- plogis(apply(sims$logit_psi, 2:4, mean))
 
 plot(psi.true, psi_mean[,,1:ns])
@@ -259,7 +266,7 @@ Rhat_psi[] <- Rhat_all[grepl("logit_psi", names(Rhat_all))]
 Rhat_psi <- aperm(Rhat_psi, 3:1)
 Rhat_psi_good <- (Rhat_psi > 0.99 & Rhat_psi < 1.01)[,,1:ns]
 
-quant_prob <- 0.001
+quant_prob <- 0.025
 psi_lower <- plogis(apply(sims$logit_psi, 2:4, quantile, probs=quant_prob))
 psi_upper <- plogis(apply(sims$logit_psi, 2:4, quantile, probs=1-quant_prob))
 
@@ -283,7 +290,7 @@ alpha2_true <- attr(big.out.obs[[1]], "a3")
 # alpha_true <- list(alpha1_true, alpha2_true, alpha3_true)
 alpha_true <- list(alpha1_true, alpha2_true)
 
-par(mfrow=c(3,1), mar=c(2,2,0.1,0.1), mgp=c(1,0.1,0), tcl=-0.1, ps=10)
+par(mfrow=c(2,1), mar=c(2,2,0.1,0.1), mgp=c(1,0.1,0), tcl=-0.1, ps=10)
 plot(alpha1_true, alpha_123[1,])
 plot(alpha2_true, alpha_123[2,])
 # plot(alpha3_true, alpha_123[3,])
