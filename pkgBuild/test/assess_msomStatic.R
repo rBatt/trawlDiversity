@@ -6,7 +6,7 @@ library("rbLib")
 library("rstan")
 
 set.seed(1337)
-sim_out <- sim_occ(ns=8, grid.w=3, grid.h=10, grid.t=2, n0s=0, h.slope=3, detect.mus=c(0,1), alpha_mu=c(0.5, 0, 0), alpha_sd=c(0.5, 0.25, 0), format.msom="jags")
+sim_out <- sim_occ(ns=8, grid.w=3, grid.h=5, grid.t=3, n0s=0, h.slope=5, detect.mus=c(0,1), alpha_mu=c(0.5, 0.75, 0), alpha_sd=c(0.5, 0.01, 0), format.msom="jags")
 big.out.obs <- sim_out[["big.out.obs"]]
 dims <- attr(big.out.obs[[1]], "dims")
 grid.w <- dims["grid.w"]
@@ -53,7 +53,7 @@ sim_dt[,obs_rep:=as.numeric(n.obs.reps)]
 
 sim_dt <- sim_dt[n.obs.reps==1]
 
-staticData <- msomData(Data=sim_dt, n0=2, cov.vars=c(bt="bt",yr="yr"), u.form=~bt, v.form=~yr, valueName="abund", cov.by=c("year","stratum"), u_rv=c("bt"))
+staticData <- msomData(Data=sim_dt, n0=2, cov.vars=c(bt="bt",yr="yr"), u.form=~bt, v.form=~yr, valueName="abund", cov.by=c("year","stratum"))
 
 # ---- Get Basic Structure of MSOM Data Input ----
 # staticData <- msomData(Data=sim_dt, n0=2, cov.vars=c(bt="bt",yr="yr"), u.form=~bt, v.form=~yr, valueName="abund", cov.by=c("year","stratum"))
@@ -86,19 +86,37 @@ staticData$nJ <- apply(staticData$nK, 1, function(x)sum(x>0))
 # ---- Aggregate abundance across samples ----
 staticData$X <- apply(staticData$X, c(1,2,4), function(x)sum(x))
 
-as.data.table(melt(staticData$X))
+
+# ---- Check Data Format and Simpler Reg Results ----
+sim_dt[,plot(stratum, bt)] # useful in simulated examples
+
+
+plot(staticData$U[,,2], staticData$X[,,1], pch=21)
+for(i in 2:ns){
+	points(staticData$U[,,2], staticData$X[,,1], pch=21)
+}
+naive <- glm(c(pmin(staticData$X[,,], 1)) ~ rep(c(staticData$U[,,2]), dim(staticData$X)[3]), family="binomial")
+summary(naive)
+
+plot(rep(c(staticData$U[,,2]), dim(staticData$X)[3]), c(pmin(staticData$X[,,], 1)))
+plot(fitted(naive), type="l")
+
+sim_dt2 <- sim_dt
+sim_dt2 <- sim_dt2[,list(abund=max(abund), bt=mean(bt)) ,by=c("stratum","spp","year")]
+summary(glmer(abund~bt + (1|spp) + (spp-1|spp), data=sim_dt2, family="binomial"))
+summary(glm(abund~bt, data=sim_dt2, family="binomial"))
+
 
 # =====================
 # = Fit Model in Stan =
 # =====================
-library(rstan)
 model_file <- "trawl/trawlDiversity/inst/stan/msomStatic.stan"
 
 sim_msom <- rstan::stan(
 	file=model_file, 
 	data=staticData, 
 	control=list(stepsize=0.01, adapt_delta=0.95, max_treedepth=15),
-	chains=4, iter=100, seed=1337, cores=4, verbose=F
+	chains=1, iter=100, seed=1337, cores=4, verbose=F
 )
 
 # ==================================
@@ -106,11 +124,13 @@ sim_msom <- rstan::stan(
 # ==================================
 
 inspect_params <- c(
-	"alpha_mu","alpha_sd","beta_mu","beta_sd",
+	"alpha_mu","alpha_sd","beta_mu","beta_sd",# "alpha",
 	"Omega"
 )
 
 print(sim_msom, inspect_params)
+attr(big.out.obs[[1]], "a3")
+apply(sims$alpha, 2:3, mean)[,1:ns]
 
 
 # ===============
@@ -171,7 +191,6 @@ omega_prior_q <- seq(0,1,length.out=length(Omega))
 omega_prior <- dbeta(omega_prior_q, 2, 2)
 lines(omega_prior_q, omega_prior, col="blue")
 
-sims <- rstan::extract(sim_msom)
 
 # txtdensity(psi_mean)
 # txtdensity(theta_mean)
