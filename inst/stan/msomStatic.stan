@@ -165,8 +165,14 @@ transformed parameters {
 model {
   
   // ---- Priors for Hyperparameters ----
-  alpha_mu ~ cauchy(0, 1);
-  alpha_sd ~ cauchy(0, 2);
+	// alpha_mu ~ cauchy(0, 1);
+	// alpha_sd ~ cauchy(0, 2);
+	
+	alpha_mu[1] ~ cauchy(0, 1);
+  alpha_mu[2] ~ normal(0.75, 0.01); // cauchy(0, 1);
+	alpha_sd[1] ~ cauchy(0, 1);
+  alpha_sd[2] ~ normal(0.01, 0.00001); //cauchy(0, 2);
+	
   beta_mu ~ cauchy(0, 1);
   beta_sd ~ cauchy(0, 2);
 
@@ -199,9 +205,10 @@ model {
 			for (j in 1:Jmax) {
 				if (nK[t,j] > 0) {
 					if (X[t,j,n] > 0) {
-						increment_log_prob(log_inv_logit(logit_psi[t][j,n]) + binomial_logit_log(X[t,j,n], nK[t,j], logit_theta[t][j,n]));
+						// increment_log_prob(log_inv_logit(logit_psi[t][j,n]) + binomial_logit_log(X[t,j,n], nK[t,j], logit_theta[t][j,n]));
+						increment_log_prob(bernoulli_logit_log(1, logit_psi[t][j,n]) + binomial_logit_log(X[t,j,n], nK[t,j], logit_theta[t][j,n]));
 					} else {
-						increment_log_prob(log_sum_exp(log_inv_logit(logit_psi[t][j,n]) + binomial_logit_log(0, nK[t,j], logit_theta[t][j,n]), log1m_inv_logit(logit_psi[t][j,n])));
+						increment_log_prob(log_sum_exp(bernoulli_logit_log(1, logit_psi[t][j,n]) + binomial_logit_log(0, nK[t,j], logit_theta[t][j,n]), bernoulli_logit_log(0, logit_psi[t][j,n])));
 					}
 				}
 			}
@@ -256,7 +263,8 @@ model {
 		for (t in 1:nT) {
 			for (j in 1:Jmax) {
 				if (nK[t,j] > 0) {
-					lp_available_pt1[pos] <- log_sum_exp(log_inv_logit(logit_psi[t][j,s]) + binomial_logit_log(0, nK[t,j], logit_theta[t][j,s]), log1m_inv_logit(logit_psi[t][j,s]));
+					// lp_available_pt1[pos] <- log_sum_exp(log_inv_logit(logit_psi[t][j,s]) + binomial_logit_log(0, nK[t,j], logit_theta[t][j,s]), log1m_inv_logit(logit_psi[t][j,s]));
+						lp_available_pt1[pos] <- log_sum_exp(bernoulli_logit_log(1, logit_psi[t][j,s]) + binomial_logit_log(0, nK[t,j], logit_theta[t][j,s]), bernoulli_logit_log(0, logit_psi[t][j,s]));
 					pos <- pos + 1;
 				}
 			}
@@ -355,5 +363,6 @@ model {
 // = Generated Quantities =
 // ========================
 // generated quantities {
+// 	print(alpha);
 // }
 
