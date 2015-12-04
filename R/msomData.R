@@ -24,6 +24,8 @@
 #' @export
 msomData <- function(Data, n0=10, formula=year~stratum~K~spp, cov.vars=c(bt="btemp",doy="doy",yr="year"), u.form=~bt+I(bt^2), v.form=~doy+I(doy^2)+yr, valueName="abund", cov.by=c("year","stratum","K"), u_rv=NULL, v_rv=NULL){
 	
+	stopifnot(!is.null(key(Data)))
+	
 	requireNamespace("trawlData", quietly = TRUE)
 	requireNamespace("reshape2", quietly = TRUE)
 	
@@ -99,20 +101,27 @@ msomData <- function(Data, n0=10, formula=year~stratum~K~spp, cov.vars=c(bt="bte
 	})
 
 	cov.tjk[,c(names(cov.vars)):=eval(fillMean.cov),by=c(cov.by[-length(cov.by)])]
-	# cov.tjk[,c(names(cov.vars)):=structure(lapply(eval(s2c(names(cov.vars)), envir=.SD), fm2),.Names=names(cov.vars)),by=c(cov.by[-length(cov.by)])]
 	
-
 	# Check
 	stopifnot(!any(is.na(cov.tjk))) # can't have any NA's with my current simple approach
 
 	# Set up template for expanding covariates
 	template <- unique(data.table(reshape2:::melt(Xc), key=c(cov.by)))[,eval(trawlData::s2c(cov.by))]
-	template[,c(names(template)):=lapply(.SD, as.character)]
-	cov.tjk[,c(cov.by):=lapply(.SD[,eval(trawlData::s2c(cov.by))], as.character)]
+	
+	# Attempt to coerce classes of columns in template to those in cov.tjk
+	# Won't promote integer to numeric or double, though
+	# See the following: http://stackoverflow.com/q/34091811/2343633
+	cov.class <- sapply(cov.tjk[,eval(s2c(names(template)))], class)
+	for(col in names(template)){
+		set(template, j=col, value=as(template[[col]], cov.class[col]))
+	}
+	
+	# template[,c(names(template)):=lapply(.SD, as.character)]
+	# cov.tjk[,c(cov.by):=lapply(.SD[,eval(trawlData::s2c(cov.by))], as.character)]
 
 	# Fill out (expand) covariate data.table
 	cov.f <- merge(template, cov.tjk, all=TRUE, by=cov.by) # filled cov
-	
+
 	
 	# Get Covariates (U and V)
 	get_form_sd <- function(form, uv_rv){
