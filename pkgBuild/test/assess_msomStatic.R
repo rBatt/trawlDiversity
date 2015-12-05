@@ -226,11 +226,11 @@ p.true <- aperm(get.pTrue(big.out.obs, use.logit.p, agg.p)[,,1], dim=c(2,1))
 theta_mean <- plogis(apply(sims$logit_theta, 2:4, mean))
 
 # ---- Plot Psi Theta ----
-png("~/Desktop/psi_theta_est_vs_true.png", width=2.5, height=5, res=150, units="in")
+# png("~/Desktop/psi_theta_est_vs_true.png", width=2.5, height=5, res=150, units="in")
 par(mfrow=c(2,1), mar=c(2,2,0.3,0.2), mgp=c(1,0.1,0), tcl=-0.1, ps=10)
 plot(psi.true, psi_mean[,,1:ns], xlab="psi true", ylab="psi hat")
 plot(p.true, apply(theta_mean[,,1:ns], c(1,3), mean), xlab="theta true", ylab="theta hat")
-dev.off()
+# dev.off()
 
 
 # =============================
@@ -302,12 +302,12 @@ alpha_true <- list(alpha1_true, alpha2_true, alpha3_true)
 
 
 # ---- Boxplots of posterior, with true in blue, ALPHA ----
-png("~/Desktop/alpha_est_boxplots_blueDotTrue.png", width=2.5, height=5, res=150, units="in")
+# png("~/Desktop/alpha_est_boxplots_blueDotTrue.png", width=2.5, height=5, res=150, units="in")
 par(mfrow=c(3,1), mar=c(2,2,0.1,0.1), mgp=c(1,0.1,0), tcl=-0.1, ps=10)
 alpha_123_df <- reshape2::melt(sims$alpha[,,1:ns])
 for(i in 1:3){ # 3 alphas
 	boxplot(value~Var3+Var2, data=alpha_123_df[alpha_123_df[,"Var2"]==i,], ylab=paste0("alpha[",i,"] posterior"), xlab="speices ID")
-	points(alpha_true[[i]], col="blue", pch=19)
+	# points(alpha_true[[i]], col="blue", pch=19)
 }
-dev.off()
+# dev.off()
 

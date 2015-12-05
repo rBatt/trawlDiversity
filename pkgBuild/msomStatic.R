@@ -49,71 +49,7 @@ mk_cov_rv(ebs.a2, "doy", across="K", by=c("stratum","year"))
 # = Cast Data for Stan =
 # ======================
 # ---- Get Basic Structure of MSOM Data Input ----
-staticData <- msomData(Data=ebs.a2, n0=25, cov.vars=c(bt="bt", bt2="bt2",doy="doy",yr="yr"), u.form=~bt+bt2, v.form=~doy, valueName="abund", cov.by=c("year","stratum"))
-
-staticData_sd <- msomData(Data=ebs.a2, n0=1, cov.vars=c(bt_sd="bt_sd",doy_sd="doy_sd",bt2_sd="bt2_sd"), u.form=~bt_sd+bt2_sd-1, v.form=~doy_sd-1, valueName="abund", cov.by=c("year","stratum"))[c("U","V")]
-
-
-# ---- Split Covariates into Constants and Random Variables ----
-getCovType <- function(UV, type=c("constant","mu","sd")){
-	
-	# Dimension Sizes, Number, and Names
-	dims <- dim(staticData[[UV]])
-	nD <- length(dims)
-	dn <- dimnames(staticData[[UV]])[[nD]]
-	dn_sd <- dimnames(staticData_sd[[UV]])[[nD]]
-	
-	# Get Names of Desired Covariates
-	covNames <- switch(type,
-		constant = dn[!dn%in%gsub("_sd","",dn_sd)],
-		mu = dn[dn%in%gsub("_sd","",dn_sd)],
-		sd = dn_sd
-	)
-	
-	# Get the Desired Covariates
-	covOut <- switch(type,
-		constant = staticData[[UV]][,,covNames],
-		mu = staticData[[UV]][,,covNames],
-		sd = staticData_sd[[UV]][,,covNames]
-	)
-	
-	# Convert to Array, Get Dimension Information
-	covOut <- as.array(covOut)
-	cO_dims <- dim(covOut)
-	cO_nD <- length(cO_dims)
-	
-	# Make Sure covOut Dimensions match Full Cov Dimensions
-	if(cO_nD<nD){
-		# if here, I'm guessing it's because length(covNames) is 1
-		# and in that case, I want an array of the orignal major dims to be returned
-		stopifnot(length(covNames)==1)
-		
-		cO_newDim <- c(cO_dims,rep(1,nD-cO_nD)) 
-		covOut <- array(covOut, dim=cO_newDim, dimnames=c(dimnames(covOut),covNames))
-	}
-	
-	# Return
-	return(covOut)
-}
-
-# ---- Do the Splitting Function ----
-for(UV in c("U","V")){
-	for(type in c("constant","mu","sd")){
-		switch(type,
-			constant={staticData[[paste0(UV,"_c")]] <- getCovType(UV,type)},
-			{staticData[[paste(UV,type,sep="_")]] <- getCovType(UV,type)}
-		)
-	}
-}
-
-# ---- Add Sizes of Constant and RV U/V Arrays ----
-staticData$nU_rv <- dim(staticData$U_mu)[3]
-staticData$nV_rv <- dim(staticData$V_mu)[3]
-staticData$nU_c <- dim(staticData$U_c)[3]
-staticData$nV_c <- dim(staticData$V_c)[3]
-
-stopifnot(staticData$nV == staticData$nV_c + staticData$nV_rv)
-stopifnot(staticData$nU == staticData$nU_c + staticData$nU_rv)
+staticData <- msomData(Data=ebs.a2, n0=3, cov.vars=c(bt="bt", bt2="bt2",doy="doy",yr="yr"), u.form=~bt+bt2, v.form=~doy, valueName="abund", cov.by=c("year","stratum"), u_rv=c("bt","bt2"), v_rv=c("doy"))
 
 # ---- Add a counter for nJ (number of sites in each year) ----
 staticData$nJ <- apply(staticData$nK, 1, function(x)sum(x>0))
@@ -131,8 +67,8 @@ model_file <- "trawl/trawlDiversity/inst/stan/msomStatic.stan"
 ebs_msom <- stan(
 	file=model_file, 
 	data=staticData, 
-	control=list(stepsize=0.01, adapt_delta=0.93, max_treedepth=10),
-	chains=4, iter=100, refresh=1, seed=1337, cores=4, verbose=F
+	control=list(stepsize=0.01, adapt_delta=0.95, max_treedepth=15),
+	chains=4, iter=50, refresh=1, seed=1337, cores=4, verbose=F
 )
 
 
@@ -210,7 +146,7 @@ png("~/Desktop/psi_theta_responseCurves_full.png", width=3.5, height=6, units="i
 par(mfrow=c(2,1), mar=c(2.5,2.5,0.1,0.1), mgp=c(1,0.1,0), tcl=-0.1, ps=9)
 # ---- Species Response Curves via Psi and bt ----
 alpha <- apply(sims$alpha, 2:3, mean)
-U <- apply(staticData$U, 3, function(x)seq(min(x), max(x), length.out=100))
+U <- staticData$U[1,,][order(staticData$U[1,,][,2]),]
 psi_resp <- plogis(U%*%alpha)
 
 plot(U[,2], psi_resp[,1], ylim=range(psi_resp), type='l', col="gray", xlab="bottom temperature")
@@ -219,6 +155,7 @@ for(i in 2:ncol(psi_resp)){
 }
 par(new=T)
 plot(density(staticData$U[,,"bt"]), xaxt="n",yaxt="n", ylab="",xlab="", main="",type="l", col="blue")
+
 
 
 # ---- Detectability Response Curve via Theta and doy ----

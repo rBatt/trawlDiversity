@@ -4,53 +4,31 @@
 staticData <- structure(list(X = structure(c(5, 5, 7, 6, 5, 5, 3, 4, 3, 5, 
 5, 7, 5, 5, 4, 3, 4, 3, 5, 5, 7, 4, 4, 3, 3, 4, 3, 5, 5, 7, 3, 
 3, 1, 3, 4, 3, 5, 5, 7, 1, 2, 0, 2, 3, 3, 0, 0, 0, 0, 0, 0, 0, 
-0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-0, 0, 0, 0, 0, 0, 0, 0), .Dim = c(3L, 3L, 30L)), U = structure(c(1, 
-1, 1, 1, 1, 1, 1, 1, 1, 1.5, 1.9, 3.55714285714286, 3.04666666666667, 
-3.1375, 3.43076923076923, 0.757142857142857, 2.23333333333333, 
-1.83333333333333, 2.25, 3.61, 12.6532653061224, 9.28217777777778, 
-9.84390625, 11.7701775147929, 0.573265306122449, 4.98777777777778, 
-3.36111111111111), .Dim = c(3L, 3L, 3L), .Dimnames = list(c("2000", 
-"2001", "2002"), c("-165.5 57.5", "-172.5 57.5", "-175.5 60.5"
-), c("Intercept", "bt", "bt2"))), V = structure(c(1, 1, 1, 1, 
-1, 1, 1, 1, 1, -0.969346902235006, -1.18168003320077, -0.988305217499807, 
-1.23430779578139, 0.546320512882449, 0.383255975311323, 0.732161892780821, 
-1.07016869783088, 1.26457457980063), .Dim = c(3L, 3L, 2L), .Dimnames = list(
-    c("2000", "2001", "2002"), c("-165.5 57.5", "-172.5 57.5", 
-    "-175.5 60.5"), c("Intercept", "doy"))), nU = 3L, nV = 2L, 
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), .Dim = c(3L, 
+3L, 8L)), U = structure(c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1.5, 1.9, 
+3.55714285714286, 3.04666666666667, 3.1375, 3.43076923076923, 
+0.757142857142857, 2.23333333333333, 1.83333333333333, 2.25, 
+3.61, 12.6532653061224, 9.28217777777778, 9.84390625, 11.7701775147929, 
+0.573265306122449, 4.98777777777778, 3.36111111111111), .Dim = c(3L, 
+3L, 3L), .Dimnames = list(c("2000", "2001", "2002"), c("-165.5 57.5", 
+"-172.5 57.5", "-175.5 60.5"), c("Intercept", "bt", "bt2"))), 
+    V = structure(c(1, 1, 1, 1, 1, 1, 1, 1, 1, -0.969346902235006, 
+    -1.18168003320077, -0.988305217499807, 1.23430779578139, 
+    0.546320512882449, 0.383255975311323, 0.732161892780821, 
+    1.07016869783088, 1.26457457980063), .Dim = c(3L, 3L, 2L), .Dimnames = list(
+        c("2000", "2001", "2002"), c("-165.5 57.5", "-172.5 57.5", 
+        "-175.5 60.5"), c("Intercept", "doy"))), nU = 3L, nV = 2L, 
     nK = structure(c(5, 5, 7, 6, 5, 5, 3, 4, 3), .Dim = c(3L, 
     3L), .Dimnames = structure(list(year = c("2000", "2001", 
     "2002"), stratum = c("-165.5 57.5", "-172.5 57.5", "-175.5 60.5"
     )), .Names = c("year", "stratum"))), nT = 3L, Jmax = 3L, 
-    Kmax = 7L, N = 5L, nS = 30, isUnobs = structure(c(0L, 0L, 
+    Kmax = 7L, N = 5L, nS = 8, isUnobs = structure(c(0L, 0L, 
     0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 
     0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 
     0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 1L, 0L, 0L, 0L, 1L, 1L, 
     1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 
-    1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 
-    1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 
-    1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 
-    1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 
-    1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 
-    1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 
-    1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 
-    1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 
-    1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 
-    1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 
-    1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 
-    1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 
-    1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 
-    1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L), .Dim = c(3L, 
-    3L, 30L)), U_c = structure(c(1, 1, 1, 1, 1, 1, 1, 1, 1), .Dim = c(3L, 
+    1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L), .Dim = c(3L, 3L, 
+    8L)), U_c = structure(c(1, 1, 1, 1, 1, 1, 1, 1, 1), .Dim = c(3L, 
     3L, 1L), .Dimnames = list(c("2000", "2001", "2002"), c("-165.5 57.5", 
     "-172.5 57.5", "-175.5 60.5"), "Intercept")), U_mu = structure(c(1.5, 
     1.9, 3.55714285714286, 3.04666666666667, 3.1375, 3.43076923076923, 
@@ -90,16 +68,6 @@ staticData <- structure(list(X = structure(c(5, 5, 7, 6, 5, 5, 3, 4, 3, 5,
 # = Stan Model =
 # ==============
 model_file="
-// ===============
-// = Conventions =
-// ===============
-// Data Structures:
-  // Arrays: last index is fastest (most specific, smallest)
-  // Matrices: first index (row) is fastest
-// Notation:
-  // Scalar capital letters are the maximum value for their lowercase counterpart (t = 1, 2, ..., T)
-  // Greek letters are parameters
-  // State variables and covariates are capital Roman letters (X, Z, Y, U)
 
 // =============
 // = Functions =
@@ -157,12 +125,11 @@ data {
     int N; // total number of observed species (anywhere, ever)
     int<lower=1> nS; // size of super population, includes unknown species
     vector[nS] isUnobs[nT,Jmax]; // was a species unobserved (across all K) each site-year?
-    // int isObs[nT,Jmax,nS]; // binary {0,1} version of X, opposite of isUnobs
     
-    int nU_c; // number of presence covariates that are constants
-    int nV_c; // number of detection covariates that are contants
-    int nU_rv; // number of presence covariates that are random variables (params)
-    int nV_rv; // number of detection covariates that are random variables (params)
+    int<lower=0, upper=nU> nU_c; // number of presence covariates that are constants
+    int<lower=0, upper=nV> nV_c; // number of detection covariates that are contants
+    int<lower=0, upper=nU> nU_rv; // number of presence covariates that are random variables (params)
+    int<lower=0, upper=nV> nV_rv; // number of detection covariates that are random variables (params)
     matrix[Jmax, nU_c] U_c[nT]; // psi (presence) covariates that are consants
     matrix[Jmax, nV_c] V_c[nT]; // theta (detection) covariates that are consants
     matrix[Jmax,nU_rv] U_mu[nT]; // sample mean for psi covariates (U)
@@ -257,11 +224,10 @@ transformed parameters {
 model {
   
   // ---- Priors for Hyperparameters ----
-  alpha_mu ~ cauchy(0, 1);
-  alpha_sd ~ cauchy(0, 2);
+	alpha_mu ~ cauchy(0, 1);
+	alpha_sd ~ cauchy(0, 2);
   beta_mu ~ cauchy(0, 1);
   beta_sd ~ cauchy(0, 2);
-
   
   // ---- Priors for Parameters ----
   Omega ~ beta(2,2);
@@ -292,8 +258,9 @@ model {
 				if (nK[t,j] > 0) {
 					if (X[t,j,n] > 0) {
 						increment_log_prob(log_inv_logit(logit_psi[t][j,n]) + binomial_logit_log(X[t,j,n], nK[t,j], logit_theta[t][j,n]));
+						// increment_log_prob(bernoulli_logit_log(1, logit_psi[t][j,n]) + binomial_logit_log(X[t,j,n], nK[t,j], logit_theta[t][j,n])); // alternative to above
 					} else {
-						increment_log_prob(log_sum_exp(log_inv_logit(logit_psi[t][j,n]) + binomial_logit_log(0, nK[t,j], logit_theta[t][j,n]), log1m_inv_logit(logit_psi[t][j,n])));
+						increment_log_prob(log_sum_exp(bernoulli_logit_log(1, logit_psi[t][j,n]) + binomial_logit_log(0, nK[t,j], logit_theta[t][j,n]), bernoulli_logit_log(0, logit_psi[t][j,n])));
 					}
 				}
 			}
@@ -349,6 +316,7 @@ model {
 			for (j in 1:Jmax) {
 				if (nK[t,j] > 0) {
 					lp_available_pt1[pos] <- log_sum_exp(log_inv_logit(logit_psi[t][j,s]) + binomial_logit_log(0, nK[t,j], logit_theta[t][j,s]), log1m_inv_logit(logit_psi[t][j,s]));
+						// lp_available_pt1[pos] <- log_sum_exp(bernoulli_logit_log(1, logit_psi[t][j,s]) + binomial_logit_log(0, nK[t,j], logit_theta[t][j,s]), bernoulli_logit_log(0, logit_psi[t][j,s])); // alternative to above
 					pos <- pos + 1;
 				}
 			}
@@ -393,53 +361,6 @@ model {
  //    } // if nJ
  //  } // end year loop
  //
-	
-	
-// 	 // ---- old loops ----
-//   for (t in 1:nT) { // loop through years
-//
-//     if(nJ[t]){ // statement only necessary if using failed approach for vectorization
-//
-//       for (j in 1:nJ[t]) { // sites
-//
-//
-//         if(nK[t,j]){ // if samples in site
-//
-//           row_vector[nS] t_logit_psi; // presence
-//           row_vector[nS] t_logit_theta; // detection
-//           vector[nS] lil_lp; // log_inv_logit(logit_psi)
-//           vector[nS] l1mil_lp; // log1m_inv_logit(logit_psi)
-//
-//           t_logit_psi <- sub_row(logit_psi[t], j, 1, nS);
-//           t_logit_theta <- sub_row(logit_theta[t], j, 1, nS);
-//
-//           for (s in 1:nS){
-//             l1mil_lp[s] <- log1m_inv_logit(t_logit_psi[s]);
-//             lil_lp[s] <- log_inv_logit(t_logit_psi[s]);
-//           }
-//
-// 					for (n in 1:N) {
-// 						if ( X[t,j,n] > 0) {
-// 							increment_log_prob(lil_lp[n] + binomial_logit_log(X[t,j,n], nK[t,j], t_logit_theta[n]));
-// 						} else {
-// 							increment_log_prob(log_sum_exp(lil_lp[n] + binomial_logit_log(0, nK[t,j], t_logit_theta[n]), l1mil_lp[n]));
-// 						}
-// 					}
-//
-// 					for (s in (N+1):nS) {
-// 						real lp_unavailable;
-// 						real lp_available;
-// 						lp_unavailable <- bernoulli_log(0, Omega);
-// 						lp_available <- bernoulli_log(1, Omega) + log_sum_exp(lil_lp[s] + binomial_logit_log(0, nK[t,j], t_logit_theta[s]), l1mil_lp[s]);
-// 						increment_log_prob(log_sum_exp(lp_unavailable, lp_available));
-// 						// increment_log_prob(log_sum_exp(lil_lp[s] + binomial_logit_log(0, nK[t,j], t_logit_theta[s]), l1mil_lp[s]));
-// 					}
-//
-//         } // if nK
-//       } // end site loop
-//     } // if nJ
-//   } // end year loop
-  
 } // end model
 
 

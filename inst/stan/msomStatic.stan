@@ -1,13 +1,3 @@
-// ===============
-// = Conventions =
-// ===============
-// Data Structures:
-  // Arrays: last index is fastest (most specific, smallest)
-  // Matrices: first index (row) is fastest
-// Notation:
-  // Scalar capital letters are the maximum value for their lowercase counterpart (t = 1, 2, ..., T)
-  // Greek letters are parameters
-  // State variables and covariates are capital Roman letters (X, Z, Y, U)
 
 // =============
 // = Functions =
@@ -65,12 +55,11 @@ data {
     int N; // total number of observed species (anywhere, ever)
     int<lower=1> nS; // size of super population, includes unknown species
     vector[nS] isUnobs[nT,Jmax]; // was a species unobserved (across all K) each site-year?
-    // int isObs[nT,Jmax,nS]; // binary {0,1} version of X, opposite of isUnobs
     
-    int nU_c; // number of presence covariates that are constants
-    int nV_c; // number of detection covariates that are contants
-    int nU_rv; // number of presence covariates that are random variables (params)
-    int nV_rv; // number of detection covariates that are random variables (params)
+    int<lower=0, upper=nU> nU_c; // number of presence covariates that are constants
+    int<lower=0, upper=nV> nV_c; // number of detection covariates that are contants
+    int<lower=0, upper=nU> nU_rv; // number of presence covariates that are random variables (params)
+    int<lower=0, upper=nV> nV_rv; // number of detection covariates that are random variables (params)
     matrix[Jmax, nU_c] U_c[nT]; // psi (presence) covariates that are consants
     matrix[Jmax, nV_c] V_c[nT]; // theta (detection) covariates that are consants
     matrix[Jmax,nU_rv] U_mu[nT]; // sample mean for psi covariates (U)
@@ -166,18 +155,9 @@ model {
   
   // ---- Priors for Hyperparameters ----
 	alpha_mu ~ cauchy(0, 1);
-	// alpha_mu ~ normal(0, 5);
 	alpha_sd ~ cauchy(0, 2);
-	
-	// alpha_mu[1] ~ cauchy(0, 1);
-	//   alpha_mu[2] ~ normal(0.75, 0.01); // cauchy(0, 1);
-	// alpha_sd[1] ~ cauchy(0, 1);
-	//   alpha_sd[2] ~ normal(0.01, 0.00001); //cauchy(0, 2);
-	
   beta_mu ~ cauchy(0, 1);
-	// beta_mu ~ normal(0, 5);
   beta_sd ~ cauchy(0, 2);
-
   
   // ---- Priors for Parameters ----
   Omega ~ beta(2,2);
@@ -207,8 +187,8 @@ model {
 			for (j in 1:Jmax) {
 				if (nK[t,j] > 0) {
 					if (X[t,j,n] > 0) {
-						// increment_log_prob(log_inv_logit(logit_psi[t][j,n]) + binomial_logit_log(X[t,j,n], nK[t,j], logit_theta[t][j,n]));
-						increment_log_prob(bernoulli_logit_log(1, logit_psi[t][j,n]) + binomial_logit_log(X[t,j,n], nK[t,j], logit_theta[t][j,n]));
+						increment_log_prob(log_inv_logit(logit_psi[t][j,n]) + binomial_logit_log(X[t,j,n], nK[t,j], logit_theta[t][j,n]));
+						// increment_log_prob(bernoulli_logit_log(1, logit_psi[t][j,n]) + binomial_logit_log(X[t,j,n], nK[t,j], logit_theta[t][j,n])); // alternative to above
 					} else {
 						increment_log_prob(log_sum_exp(bernoulli_logit_log(1, logit_psi[t][j,n]) + binomial_logit_log(0, nK[t,j], logit_theta[t][j,n]), bernoulli_logit_log(0, logit_psi[t][j,n])));
 					}
@@ -265,8 +245,8 @@ model {
 		for (t in 1:nT) {
 			for (j in 1:Jmax) {
 				if (nK[t,j] > 0) {
-					// lp_available_pt1[pos] <- log_sum_exp(log_inv_logit(logit_psi[t][j,s]) + binomial_logit_log(0, nK[t,j], logit_theta[t][j,s]), log1m_inv_logit(logit_psi[t][j,s]));
-						lp_available_pt1[pos] <- log_sum_exp(bernoulli_logit_log(1, logit_psi[t][j,s]) + binomial_logit_log(0, nK[t,j], logit_theta[t][j,s]), bernoulli_logit_log(0, logit_psi[t][j,s]));
+					lp_available_pt1[pos] <- log_sum_exp(log_inv_logit(logit_psi[t][j,s]) + binomial_logit_log(0, nK[t,j], logit_theta[t][j,s]), log1m_inv_logit(logit_psi[t][j,s]));
+						// lp_available_pt1[pos] <- log_sum_exp(bernoulli_logit_log(1, logit_psi[t][j,s]) + binomial_logit_log(0, nK[t,j], logit_theta[t][j,s]), bernoulli_logit_log(0, logit_psi[t][j,s])); // alternative to above
 					pos <- pos + 1;
 				}
 			}
@@ -311,53 +291,6 @@ model {
  //    } // if nJ
  //  } // end year loop
  //
-	
-	
-// 	 // ---- old loops ----
-//   for (t in 1:nT) { // loop through years
-//
-//     if(nJ[t]){ // statement only necessary if using failed approach for vectorization
-//
-//       for (j in 1:nJ[t]) { // sites
-//
-//
-//         if(nK[t,j]){ // if samples in site
-//
-//           row_vector[nS] t_logit_psi; // presence
-//           row_vector[nS] t_logit_theta; // detection
-//           vector[nS] lil_lp; // log_inv_logit(logit_psi)
-//           vector[nS] l1mil_lp; // log1m_inv_logit(logit_psi)
-//
-//           t_logit_psi <- sub_row(logit_psi[t], j, 1, nS);
-//           t_logit_theta <- sub_row(logit_theta[t], j, 1, nS);
-//
-//           for (s in 1:nS){
-//             l1mil_lp[s] <- log1m_inv_logit(t_logit_psi[s]);
-//             lil_lp[s] <- log_inv_logit(t_logit_psi[s]);
-//           }
-//
-// 					for (n in 1:N) {
-// 						if ( X[t,j,n] > 0) {
-// 							increment_log_prob(lil_lp[n] + binomial_logit_log(X[t,j,n], nK[t,j], t_logit_theta[n]));
-// 						} else {
-// 							increment_log_prob(log_sum_exp(lil_lp[n] + binomial_logit_log(0, nK[t,j], t_logit_theta[n]), l1mil_lp[n]));
-// 						}
-// 					}
-//
-// 					for (s in (N+1):nS) {
-// 						real lp_unavailable;
-// 						real lp_available;
-// 						lp_unavailable <- bernoulli_log(0, Omega);
-// 						lp_available <- bernoulli_log(1, Omega) + log_sum_exp(lil_lp[s] + binomial_logit_log(0, nK[t,j], t_logit_theta[s]), l1mil_lp[s]);
-// 						increment_log_prob(log_sum_exp(lp_unavailable, lp_available));
-// 						// increment_log_prob(log_sum_exp(lil_lp[s] + binomial_logit_log(0, nK[t,j], t_logit_theta[s]), l1mil_lp[s]));
-// 					}
-//
-//         } // if nK
-//       } // end site loop
-//     } // if nJ
-//   } // end year loop
-  
 } // end model
 
 
@@ -365,6 +298,5 @@ model {
 // = Generated Quantities =
 // ========================
 // generated quantities {
-// 	print(alpha);
 // }
 
