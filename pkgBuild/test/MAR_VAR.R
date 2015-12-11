@@ -35,7 +35,6 @@ nU <- 1 # don't change
 e_sd <- 1
 
 A <- matrix(c(0.1, 10), nrow=nX, ncol=1)
-# B <- matrix(c(0.5, -0.8, 0.2,  0.8), nrow=nX, ncol=nX)
 B <- matrix(c(0.75, -0.8, 0.2,  0.95), nrow=nX, ncol=nX)
 C <- matrix(c(0,1), nrow=nX, ncol=nU)
 
@@ -123,4 +122,4 @@ traceplot(model_w_data, inc_warmup=FALSE, pars=c("A","B","C"))
 # = Summary =
 # ===========
 #' #Summary  
-#' All three models estimated the coefficients and intercepts ~correctly (`ar` didn't print out the intercept terms, oddly, but it at least got the coefficients pretty close). Both VAR and the Stan model estimated all parameters quite accurately. Note: In a previous version of the simulation I had lagged the effect of nutrients on phytoplankton. Although this lag was not represented in the Stan model, it nonetheless estimated a fairly accurate value for the nutrient-phytoplankton coefficient; in this case, the VAR estimated the coefficient as ~0.
+#' All three models estimated the coefficients and intercepts ~correctly (`ar` didn't print out the intercept terms, oddly, but it at least got the coefficients pretty close). Both VAR and the Stan model estimated all parameters quite accurately.
