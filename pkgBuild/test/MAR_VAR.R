@@ -9,7 +9,7 @@
 #'   
 #' Multivariate autogressive (MAR) and vector autoregressive (VAR) are the same thing, ecologists call them MAR. Here we fit a MAR(1) model and include covariates. The model is fit using `stats::ar()`, `vars::VAR()`, and a model written in Stan. A VAR model was written in Stan by Rob Trangucci, Ryan Batt added covariates to it and put this document together.  Find related discussions on the Stan users mailing list [here](https://groups.google.com/forum/#!topic/stan-users/PmGMnqXRD28) and [here](https://groups.google.com/forum/#!topic/stan-users/8RerHVzxjUQ).  
 #' 
-#' The model presented here is framed after [Ives et al. (2003)](https://paperpile.com/shared/XfSD1V); in particular, Eq. 27 (quoting from the paper):   
+#' The model presented here is framed after [Ives et al. (2003)](http://www.esajournals.org/doi/abs/10.1890/0012-9615(2003)073[0301:ECSAEI]2.0.CO;2); in particular, Eq. 27 (quoting from the paper):   
 #'  $$X_t = A + BX_{t-1} + CU_t + E_t$$  
 #' "where $U_t$ is a $q \times 1$ vector containing the values of $q$ covariates at time $t$, and $C$ is a $p \times q$ matrix whose elements $c_ij$ give the strength of effect of covariates $j$ on species $i$. The covariates $U_t$ can be any factors that affect the system ..."  
 #' 
