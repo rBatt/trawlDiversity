@@ -112,7 +112,7 @@ ebs_msom <- stan(
 	file=model_file, 
 	data=stanData, 
 	control=list(stepsize=0.01, adapt_delta=0.95, max_treedepth=15),
-	chains=2, iter=4, seed=1337, cores=2, verbose=F, refresh=1
+	chains=2, iter=4, seed=1337, cores=1, verbose=F, refresh=1
 )
 
 save.image(renameNow(paste0("trawlDiversity/pkgBuild/test/msomStatic_mediumLargeEBS_",tag,"_end",".RData")), compress="xz")
