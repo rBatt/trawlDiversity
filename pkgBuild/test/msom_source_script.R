@@ -54,7 +54,7 @@ mk_cov_rv_pow(ebs.a2, "doy", across="K", by=c("stratum","year"), pow=2)
 # = Cast Data for Stan =
 # ======================
 # ---- Get Basic Structure of MSOM Data Input ----
-dynData <- msomData(Data=ebs.a2, n0=20, cov.vars=c(bt="bt",bt2="bt2",yr="yr", doy="doy"), u.form=~bt+bt2, v.form=~doy+doy2+year, valueName="abund", cov.by=c("year","stratum"), v_rv=c("doy","doy2"))
+dynData <- msomData(Data=ebs.a2, n0=20, cov.vars=c(bt="bt",bt2="bt2",yr="yr", doy="doy", doy2="doy2"), u.form=~bt+bt2, v.form=~doy+doy2+year, valueName="abund", cov.by=c("year","stratum"), v_rv=c("doy","doy2"))
 
 # ---- Add a counter for nJ (number of sites in each year) ----
 dynData$nJ <- apply(dynData$nK, 1, function(x)sum(x>0))
