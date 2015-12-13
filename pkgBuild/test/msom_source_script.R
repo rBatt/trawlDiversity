@@ -67,6 +67,8 @@ dynData$X <- apply(dynData$X, c(1,2,4), function(x)sum(x))
 # =====================
 model_file <- "trawl/trawlDiversity/inst/stan/msomDynamic.stan"
 
+save.image(renameNow("trawl/trawlDiversity/pkgBuild/test/msomDynamic_fullEBS_preSave.RData"))
+
 ebs_msom <- stan(
 	file=model_file, 
 	data=dynData, 
