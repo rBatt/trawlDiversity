@@ -78,4 +78,4 @@ ebs_msom <- stan(
 )
 
 
-save.image(renameNow("trawlDiversity/pkgBuild/test/msomDynamic_fullEBS.RData"))
+save.image(renameNow("trawlDiversity/pkgBuild/test/msomDynamic_fullEBS.RData"), compress="xz")
