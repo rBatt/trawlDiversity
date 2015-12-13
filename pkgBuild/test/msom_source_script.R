@@ -65,9 +65,9 @@ dynData$X <- apply(dynData$X, c(1,2,4), function(x)sum(x))
 # =====================
 # = Fit Model in Stan =
 # =====================
-model_file <- "trawl/trawlDiversity/inst/stan/msomDynamic.stan"
+model_file <- "trawlDiversity/inst/stan/msomDynamic.stan"
 
-save.image(renameNow("trawl/trawlDiversity/pkgBuild/test/msomDynamic_fullEBS_preSave.RData"))
+save.image(renameNow("trawlDiversity/pkgBuild/test/msomDynamic_fullEBS_preSave.RData"))
 
 ebs_msom <- stan(
 	file=model_file, 
@@ -77,4 +77,4 @@ ebs_msom <- stan(
 )
 
 
-save.image(renameNow("trawl/trawlDiversity/pkgBuild/test/msomDynamic_fullEBS.RData"))
+save.image(renameNow("trawlDiversity/pkgBuild/test/msomDynamic_fullEBS.RData"))
