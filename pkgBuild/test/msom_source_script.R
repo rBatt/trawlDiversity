@@ -31,7 +31,7 @@ library("rstan")
 
 # # Medium-large data set
 set.seed(1337)
-ebs.a1 <- ebs.agg2[pick(spp, 200, w=TRUE)]
+ebs.a1 <- ebs.agg2[pick(spp, 100, w=TRUE)]
 ebs.a2 <- ebs.a1[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, stemp=stemp, depth=depth, doy=yday(datetime))]
 
 # largest data set
