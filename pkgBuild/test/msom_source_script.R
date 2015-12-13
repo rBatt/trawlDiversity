@@ -71,7 +71,7 @@ ebs_msom <- stan(
 	file=model_file, 
 	data=dynData, 
 	control=list(stepsize=0.01, adapt_delta=0.95, max_treedepth=15),
-	chains=4, iter=100, seed=1337, cores=4, verbose=F
+	chains=4, iter=200, seed=1337, cores=4, verbose=F
 )
 
 
