@@ -9,6 +9,9 @@ library("rbLib")
 library("rstan")
 
 
+# run on amphiprion: 
+# nohup R CMD BATCH -cwd --no-save trawlDiversity/pkgBuild/test/msom_source_script.R &
+
 # ======================
 # = Subset Data to Use =
 # ======================
@@ -64,19 +67,6 @@ ebs.a2[,depth:=(depth-depth.mu)/depth.sd]
 mk_cov_rv_pow(ebs.a2, "depth", across="K", by=c("stratum","year"), pow=2)
 
 
-# =============
-# = Kill NA's =
-# =============
-# replace NA's with mean 0 and sd 1E3
-na_to_0 <- function(x){x[is.na(x)] <- 0; x}
-na_to_big <- function(x, big=1E3){x[is.na(x)] <- big; x}
-cov.vars_use_n <- names(cov.vars_use)
-cov.vars_use_n_sd <- paste0(cov.vars_use_n, "_sd")
-ebs.a2[,c(cov.vars_use_n):=lapply(eval(s2c(cov.vars_use_n)), na_to_0)]
-ebs.a2[,c(cov.vars_use_n_sd):=lapply(eval(s2c(cov.vars_use_n_sd)), na_to_big)]
-# ebs.a2[stratum=="-171.5 57.5"  & year==1994]
-
-
 # ======================
 # = Cast Data for Stan =
 # ======================
@@ -85,6 +75,20 @@ stanData <- msomData(Data=ebs.a2, n0=50, cov.vars=cov.vars_use, u.form=~bt+bt2+d
 
 stanData$nJ <- apply(stanData$nK, 1, function(x)sum(x>0)) # number of sites in each year
 stanData$X <- apply(stanData$X, c(1,2,4), function(x)sum(x)) # agg abund across samples
+
+
+# =============
+# = Kill NA's =
+# =============
+# replace NA mu's with 0
+# replace NA sd's with 1E3
+na_to_0 <- function(x){x[is.na(x)] <- 0; x}
+na_to_big <- function(x, big=1E3){x[is.na(x)] <- big; x}
+stanData$U_mu <- na_to_0(stanData$U_mu)
+stanData$U_sd <- na_to_big(stanData$U_sd)
+stanData$V_mu <- na_to_0(stanData$V_mu)
+stanData$V_sd <- na_to_big(stanData$V_sd)
+stopifnot(!any(sapply(stanData, function(x)any(is.na(x)))))
 
 
 # =====================
