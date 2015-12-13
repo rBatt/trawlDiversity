@@ -30,12 +30,12 @@ library("rstan")
 # ebs.a2 <- ebs.a1[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, stemp=stemp, depth=depth, doy=yday(datetime))]
 
 # # Medium-large data set
-set.seed(1337)
-ebs.a1 <- ebs.agg2[pick(spp, 100, w=TRUE)]
-ebs.a2 <- ebs.a1[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, stemp=stemp, depth=depth, doy=yday(datetime))]
+# set.seed(1337)
+# ebs.a1 <- ebs.agg2[pick(spp, 100, w=TRUE)]
+# ebs.a2 <- ebs.a1[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, stemp=stemp, depth=depth, doy=yday(datetime))]
 
 # largest data set
-# ebs.a2 <- ebs.agg2[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, stemp=stemp, depth=depth, doy=yday(datetime))]
+ebs.a2 <- ebs.agg2[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, stemp=stemp, depth=depth, doy=yday(datetime))]
 
 
 # ==================
@@ -104,7 +104,7 @@ model_file <- "trawlDiversity/inst/stan/msomStatic.stan"
 
 tag <- paste0("start_", format.Date(Sys.time(),"%Y-%m-%d_%H-%M-%S"))
 
-save.image(paste0("trawlDiversity/pkgBuild/test/msomStatic_mediumLargeEBS_preSave_",tag,".RData"))
+save.image(paste0("trawlDiversity/pkgBuild/test/msomStatic_fullEBS_preSave_",tag,".RData"))
 
 sessionInfo()
 
@@ -112,7 +112,7 @@ ebs_msom <- stan(
 	file=model_file, 
 	data=stanData, 
 	control=list(stepsize=0.01, adapt_delta=0.95, max_treedepth=15),
-	chains=2, iter=4, seed=1337, cores=1, verbose=F, refresh=1
+	chains=1, iter=200, seed=1337, cores=1, verbose=F, refresh=1
 )
 
-save.image(renameNow(paste0("trawlDiversity/pkgBuild/test/msomStatic_mediumLargeEBS_",tag,"_end",".RData")), compress="xz")
+save.image(renameNow(paste0("trawlDiversity/pkgBuild/test/msomStatic_fullEBS_",tag,"_end",".RData")), compress="xz")
