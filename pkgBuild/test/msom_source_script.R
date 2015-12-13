@@ -99,6 +99,8 @@ model_file <- "trawlDiversity/inst/stan/msomStatic.stan"
 
 save.image(renameNow("trawlDiversity/pkgBuild/test/msomStatic_fullEBS_preSave.RData"))
 
+sessionInfo()
+
 ebs_msom <- stan(
 	file=model_file, 
 	data=stanData, 
