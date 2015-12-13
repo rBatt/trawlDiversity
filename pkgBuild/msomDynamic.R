@@ -91,8 +91,15 @@ max_time/neff_mu
 # ==================================
 
 inspect_params <- c(
-	"alpha_mu","alpha_sd","beta_mu[1]","beta_sd[1]",
-	"phi[1]","gamma[1]",
+	"alpha_mu","alpha_sd","beta_mu[1]","beta_sd[1]","phi_mu","phi_sd","gamma_mu","gamma_sd",
+	paste0("alpha[1,",sample(1:dynData$nS,3),"]"),
+	paste0("alpha[2,",sample(1:dynData$nS,3),"]"),
+	paste0("alpha[3,",sample(1:dynData$nS,3),"]"),
+	paste0("beta[1,",sample(1:dynData$nS,3),"]"),
+	paste0("beta[2,",sample(1:dynData$nS,3),"]"),
+	paste0("phi[",sample(1:dynData$nS,10),"]"),
+	paste0("gamma[",sample(1:dynData$nS,10),"]"),
+	"logit_psi_t1_raw[2,1]",
 	"Omega"
 )
 
@@ -103,7 +110,7 @@ print(ebs_msom, inspect_params)
 # = Diagnostics =
 # ===============
 # traceplot of chains
-rstan::traceplot(ebs_msom, inspect_params, inc_warmup=F)
+rstan::traceplot(ebs_msom, inspect_params, inc_warmup=T)
 
 # historgram of tree depth -- make sure not hugging max
 hist_treedepth <- function(fit) { 
@@ -122,8 +129,8 @@ rstan::traceplot(ebs_msom, "lp__", window=c(1,50), inc_warmup=T)
 # = Parameter Summary =
 # =====================
 # what is the distribution of omega?
-par(mfrow=c(2,1), mar=c(2.5,2.5,0.1,0.1), mgp=c(1,0.1,0), tcl=-0.1, ps=9)
 png("~/Desktop/omega_full.png", width=3.5, height=3.5, units="in", res=150)
+par(mfrow=c(1,1), mar=c(2.5,2.5,0.1,0.1), mgp=c(1,0.1,0), tcl=-0.1, ps=9)
 Omega <- rstan::extract(ebs_msom, "Omega")[[1]]
 plot(density(Omega, from=0, to=1))
 omega_prior_q <- seq(0,1,length.out=length(Omega))
@@ -134,11 +141,15 @@ dev.off()
 sims <- rstan::extract(ebs_msom)
 psi_mean <- plogis(apply(sims$logit_psi, 2:4, mean))
 theta_mean <- plogis(apply(sims$logit_theta, 2:4, mean))
+phi_mean <- plogis(apply(sims$phi, 2, mean))
+gamma_mean <- plogis(apply(sims$gamma, 2, mean))
 
-png("~/Desktop/psi_theta_problem_full.png", width=3.5, height=6, units='in', res=150)
-par(mfrow=c(2,1), mar=c(2.5,2.5,0.1,0.1), mgp=c(1,0.1,0), tcl=-0.1, ps=9)
+png("~/Desktop/psi_theta_problem_full.png", width=5, height=5, units='in', res=150)
+par(mfrow=c(2,2), mar=c(2.5,2.5,0.1,0.1), mgp=c(1,0.1,0), tcl=-0.1, ps=9)
 hist(psi_mean)
 hist(theta_mean)
+hist(phi_mean)
+hist(gamma_mean)
 dev.off()
 
 
@@ -175,7 +186,49 @@ par(new=T)
 plot(density(dynData$V[,,"doy"]), xaxt="n",yaxt="n", ylab="",xlab="", main="",type="l", col="blue")
 dev.off()
 
+
+# ---- alpha boxplots ----
+alpha_123 <- apply(sims$alpha, 2:3, mean)[,1:dynData$nS]
+
+# ---- Boxplots of posterior ALPHA ----
+# png("~/Desktop/alpha_est_boxplots_blueDotTrue.png", width=2.5, height=5, res=150, units="in")
+par(mfrow=c(3,1), mar=c(2,2,0.1,0.1), mgp=c(1,0.1,0), tcl=-0.1, ps=10)
+alpha_123_df <- reshape2::melt(sims$alpha[,,1:dynData$nS])
+for(i in 1:3){ # 3 alphas
+	boxplot(value~Var3+Var2, data=alpha_123_df[alpha_123_df[,"Var2"]==i,], ylab=paste0("alpha[",i,"] posterior"), xlab="speices ID")
+}
+# dev.off()
+
+
+# ---- beta boxplots ----
+beta_123 <- apply(sims$beta, 2:3, mean)[,1:dynData$nS]
+
+# ---- Boxplots of posterior Beta ----
+# png("~/Desktop/beta_est_boxplots_blueDotTrue.png", width=2.5, height=5, res=150, units="in")
+par(mfrow=c(3,1), mar=c(2,2,0.1,0.1), mgp=c(1,0.1,0), tcl=-0.1, ps=10)
+beta_123_df <- reshape2::melt(sims$beta[,,1:dynData$nS])
+for(i in 1:3){ # 3 betas
+	boxplot(value~Var3+Var2, data=beta_123_df[beta_123_df[,"Var2"]==i,], ylab=paste0("beta[",i,"] posterior"), xlab="speices ID")
+}
+# dev.off()
+
+
+# ---- Boxplots of posterior Phi ----
+# png("~/Desktop/phi_est_boxplots_blueDotTrue.png", width=2.5, height=5, res=150, units="in")
+par(mfrow=c(2,1), mar=c(2,2,0.1,0.1), mgp=c(1,0.1,0), tcl=-0.1, ps=10)
+phi_123_df <- reshape2::melt(sims$phi[,1:dynData$nS])
+boxplot(value~Var2, data=phi_123_df, ylab=paste0("phi posterior"), xlab="speices ID")
+gamma_123_df <- reshape2::melt(sims$gamma[,1:dynData$nS])
+boxplot(value~Var2, data=gamma_123_df, ylab=paste0("gamma posterior"), xlab="speices ID")
+
+# dev.off()
+
+
+
+
 # ---- save ----
-save.image("trawl/trawlDiversity/pkgBuild/test/msomStatic_medium.RData")
+save.image("trawl/trawlDiversity/pkgBuild/test/msomDynamic_medium.RData")
 
 
+ebs_msom_sso <- as.shinystan(ebs_msom)
+deploy_shinystan(ebs_msom_sso)

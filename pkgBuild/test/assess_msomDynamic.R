@@ -6,7 +6,7 @@ library("rbLib")
 library("rstan")
 
 set.seed(1337)
-sim_out <- sim_occ(ns=12, grid.w=5, grid.h=7, grid.t=30, h.slope=0.5, w.sd=0.5, n0s=5, detect.mus=c(0,0.5,1), n.ss=9, alpha_mu=c(0.75, 0.25, -5), alpha_sd=c(0.5, 0.015, 0.01), format.msom="jags", dynamic=TRUE, D.frac=0, M.frac=0)
+sim_out <- sim_occ(ns=12, grid.w=5, grid.h=7, grid.t=15, h.slope=0.5, w.sd=0.5, n0s=5, detect.mus=c(0,0.5,1), n.ss=9, alpha_mu=c(0.75, 0.25, -5), alpha_sd=c(0.5, 0.015, 0.01), format.msom="jags", dynamic=TRUE, D.frac=0, M.frac=0)
 big.out.obs <- sim_out[["big.out.obs"]]
 dims <- attr(big.out.obs[[1]], "dims")
 grid.w <- dims["grid.w"]
@@ -126,42 +126,42 @@ sim_msom <- rstan::stan(
 	file=model_file, 
 	data=staticData, 
 	control=list(stepsize=0.01, adapt_delta=0.95, max_treedepth=15),
-	chains=4, iter=30, seed=1337, cores=4, verbose=F
+	chains=4, iter=50, seed=1337, cores=4, verbose=F
 )
-
-# ==================================
-# = Printing the Fitted Parameters =
-# ==================================
-
-inspect_params <- c(
-	"alpha_mu","alpha_sd","beta_mu","beta_sd",# "alpha",
-	"phi","gamma",
-	"Omega"
-)
-sims <- rstan::extract(sim_msom)
-
-print(sim_msom, inspect_params)
-# attr(big.out.obs[[1]], "a3")
-# apply(sims$alpha, 2:3, mean)[,1:ns]
-
-
-# ===============
-# = Diagnostics =
-# ===============
-# traceplot of chains
-rstan::traceplot(sim_msom, inspect_params, inc_warmup=F)
-
-# historgram of tree depth -- make sure not hugging max
-hist_treedepth <- function(fit) { 
-  sampler_params <- get_sampler_params(fit, inc_warmup=FALSE) 
-  hist(sapply(sampler_params, function(x) c(x[,'treedepth__']))[,1], breaks=0:20, main="", xlab="Treedepth") 
-  abline(v=10, col=2, lty=1) 
-}
-# sapply(ebs_msom@sim$samples, function(x) attr(x, 'args')$control$max_treedepth)
-hist_treedepth(sim_msom)
-
-# lp
-rstan::traceplot(sim_msom, "lp__", window=c(1,50), inc_warmup=T)
+#
+# # ==================================
+# # = Printing the Fitted Parameters =
+# # ==================================
+#
+# inspect_params <- c(
+# 	"alpha_mu","alpha_sd","beta_mu","beta_sd",# "alpha",
+# 	"phi","gamma",
+# 	"Omega"
+# )
+# sims <- rstan::extract(sim_msom)
+#
+# print(sim_msom, inspect_params)
+# # attr(big.out.obs[[1]], "a3")
+# # apply(sims$alpha, 2:3, mean)[,1:ns]
+#
+#
+# # ===============
+# # = Diagnostics =
+# # ===============
+# # traceplot of chains
+# rstan::traceplot(sim_msom, inspect_params, inc_warmup=F)
+#
+# # historgram of tree depth -- make sure not hugging max
+# hist_treedepth <- function(fit) {
+#   sampler_params <- get_sampler_params(fit, inc_warmup=FALSE)
+#   hist(sapply(sampler_params, function(x) c(x[,'treedepth__']))[,1], breaks=0:20, main="", xlab="Treedepth")
+#   abline(v=10, col=2, lty=1)
+# }
+# # sapply(ebs_msom@sim$samples, function(x) attr(x, 'args')$control$max_treedepth)
+# hist_treedepth(sim_msom)
+#
+# # lp
+# rstan::traceplot(sim_msom, "lp__", window=c(1,50), inc_warmup=T)
 
 
 
