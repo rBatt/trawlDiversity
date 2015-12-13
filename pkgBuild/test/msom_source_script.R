@@ -71,7 +71,7 @@ mk_cov_rv_pow(ebs.a2, "depth", across="K", by=c("stratum","year"), pow=2)
 # = Cast Data for Stan =
 # ======================
 # ---- Get Basic Structure of MSOM Data Input ----
-stanData <- msomData(Data=ebs.a2, n0=50, cov.vars=cov.vars_use, u.form=~bt+bt2+depth+depth^2+yr, v.form=~doy+doy2+year, valueName="abund", cov.by=c("year","stratum"), v_rv=c("doy","doy2"))
+stanData <- msomData(Data=ebs.a2, n0=50, cov.vars=cov.vars_use, u.form=~bt+bt2+depth+depth^2+yr, v.form=~year, valueName="abund", cov.by=c("year","stratum"))
 
 stanData$nJ <- apply(stanData$nK, 1, function(x)sum(x>0)) # number of sites in each year
 stanData$X <- apply(stanData$X, c(1,2,4), function(x)sum(x)) # agg abund across samples
@@ -97,7 +97,9 @@ stopifnot(!any(sapply(stanData, function(x)any(is.na(x)))))
 model_file <- "trawlDiversity/inst/stan/msomStatic.stan"
 # model_file <- "trawlDiversity/inst/stan/msomDynamic.stan"
 
-save.image(renameNow("trawlDiversity/pkgBuild/test/msomStatic_fullEBS_preSave.RData"))
+tag <- paste0("start_", format.Date(Sys.time(),"%Y-%m-%d_%H-%M-%S"))
+
+save.image(paste0("trawlDiversity/pkgBuild/test/msomStatic_fullEBS_preSave_",tag,".RData"))
 
 sessionInfo()
 
@@ -108,5 +110,4 @@ ebs_msom <- stan(
 	chains=4, iter=150, seed=1337, cores=4, verbose=F, refresh=1
 )
 
-
-save.image(renameNow("trawlDiversity/pkgBuild/test/msomStatic_fullEBS.RData"), compress="xz")
+save.image(renameNow(paste0("trawlDiversity/pkgBuild/test/msomStatic_fullEBS_",tag,"_end",".RData")), compress="xz")
