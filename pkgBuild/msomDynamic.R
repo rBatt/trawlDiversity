@@ -191,37 +191,36 @@ dev.off()
 alpha_123 <- apply(sims$alpha, 2:3, mean)[,1:dynData$nS]
 
 # ---- Boxplots of posterior ALPHA ----
-# png("~/Desktop/alpha_est_boxplots_blueDotTrue.png", width=2.5, height=5, res=150, units="in")
+png("~/Desktop/alpha_est_boxplots.png", width=5, height=5, res=200, units="in")
 par(mfrow=c(3,1), mar=c(2,2,0.1,0.1), mgp=c(1,0.1,0), tcl=-0.1, ps=10)
 alpha_123_df <- reshape2::melt(sims$alpha[,,1:dynData$nS])
 for(i in 1:3){ # 3 alphas
 	boxplot(value~Var3+Var2, data=alpha_123_df[alpha_123_df[,"Var2"]==i,], ylab=paste0("alpha[",i,"] posterior"), xlab="speices ID")
 }
-# dev.off()
+dev.off()
 
 
 # ---- beta boxplots ----
 beta_123 <- apply(sims$beta, 2:3, mean)[,1:dynData$nS]
 
 # ---- Boxplots of posterior Beta ----
-# png("~/Desktop/beta_est_boxplots_blueDotTrue.png", width=2.5, height=5, res=150, units="in")
+png("~/Desktop/beta_est_boxplots.png", width=5, height=5, res=200, units="in")
 par(mfrow=c(3,1), mar=c(2,2,0.1,0.1), mgp=c(1,0.1,0), tcl=-0.1, ps=10)
 beta_123_df <- reshape2::melt(sims$beta[,,1:dynData$nS])
-for(i in 1:3){ # 3 betas
-	boxplot(value~Var3+Var2, data=beta_123_df[beta_123_df[,"Var2"]==i,], ylab=paste0("beta[",i,"] posterior"), xlab="speices ID")
-}
-# dev.off()
+boxplot(value~Var3+Var2, data=beta_123_df[beta_123_df[,"Var2"]==1,], ylab=paste0("beta[",1,"] posterior"), xlab="speices ID")
+boxplot(value~Var3+Var2, data=beta_123_df[beta_123_df[,"Var2"]==5,], ylab=paste0("beta[",5,"] posterior"), xlab="speices ID")
+boxplot(value~Var3+Var2, data=beta_123_df[beta_123_df[,"Var2"]==31,], ylab=paste0("beta[",31,"] posterior"), xlab="speices ID")
+dev.off()
 
 
 # ---- Boxplots of posterior Phi ----
-# png("~/Desktop/phi_est_boxplots_blueDotTrue.png", width=2.5, height=5, res=150, units="in")
+png("~/Desktop/phi_est_boxplots_blueDotTrue.png", width=5, height=5, res=200, units="in")
 par(mfrow=c(2,1), mar=c(2,2,0.1,0.1), mgp=c(1,0.1,0), tcl=-0.1, ps=10)
 phi_123_df <- reshape2::melt(sims$phi[,1:dynData$nS])
-boxplot(value~Var2, data=phi_123_df, ylab=paste0("phi posterior"), xlab="speices ID")
+boxplot(value~Var2, data=phi_123_df, ylab=paste0("phi posterior"), xlab="speices ID", cex=0.5)
 gamma_123_df <- reshape2::melt(sims$gamma[,1:dynData$nS])
-boxplot(value~Var2, data=gamma_123_df, ylab=paste0("gamma posterior"), xlab="speices ID")
-
-# dev.off()
+boxplot(value~Var2, data=gamma_123_df, ylab=paste0("gamma posterior"), xlab="speices ID", cex=0.5)
+dev.off()
 
 
 
