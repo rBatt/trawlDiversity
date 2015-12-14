@@ -30,12 +30,12 @@ library("rstan")
 # ebs.a2 <- ebs.a1[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, stemp=stemp, depth=depth, doy=yday(datetime))]
 
 # # Medium-large data set
-set.seed(1337)
-ebs.a1 <- ebs.agg2[pick(spp, 20, w=TRUE)]
-ebs.a2 <- ebs.a1[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, stemp=stemp, depth=depth, doy=yday(datetime))]
+# set.seed(1337)
+# ebs.a1 <- ebs.agg2[pick(spp, 20, w=TRUE)]
+# ebs.a2 <- ebs.a1[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, stemp=stemp, depth=depth, doy=yday(datetime))]
 
 # largest data set
-# ebs.a2 <- ebs.agg2[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, stemp=stemp, depth=depth, doy=yday(datetime))]
+ebs.a2 <- ebs.agg2[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, stemp=stemp, depth=depth, doy=yday(datetime))]
 
 
 # ==================
@@ -76,7 +76,7 @@ mk_cov_rv_pow(ebs.a2, "depth", across="K", by=c("stratum","year"), pow=2)
 # = Cast Data for Stan =
 # ======================
 # ---- Get Basic Structure of MSOM Data Input ----
-stanData <- msomData(Data=ebs.a2, n0=50, cov.vars=cov.vars_use, u.form=~bt+bt2+depth+depth^2+yr, v.form=~year, valueName="abund", cov.by=c("year","stratum"))
+stanData <- msomData(Data=ebs.a2, n0=50, cov.vars=cov.vars_use, u.form=~bt, v.form=~yr, valueName="abund", cov.by=c("year","stratum"))
 
 stanData$nJ <- apply(stanData$nK, 1, function(x)sum(x>0)) # number of sites in each year
 stanData$X <- apply(stanData$X, c(1,2,4), function(x)sum(x)) # agg abund across samples
@@ -104,7 +104,9 @@ model_file <- "trawlDiversity/inst/stan/msomDynamic.stan"
 
 tag <- paste0("start_", format.Date(Sys.time(),"%Y-%m-%d_%H-%M-%S"))
 
-save.image(paste0("trawlDiversity/pkgBuild/test/msomDynamic_fullEBS_preSave_4chain",tag,".RData"))
+tag
+
+save.image(paste0("trawlDiversity/pkgBuild/test/msomDynamic_full_simple_EBS_preSave_4chain",tag,".RData"))
 
 sessionInfo()
 
@@ -115,4 +117,4 @@ ebs_msom <- stan(
 	chains=4, iter=200, seed=1337, cores=4, verbose=F, refresh=1
 )
 
-save.image(renameNow(paste0("trawlDiversity/pkgBuild/test/msomDynamic_fullEBS_4chain",tag,"_end",".RData")), compress="xz")
+save.image(renameNow(paste0("trawlDiversity/pkgBuild/test/msomDynamic_full_simple_EBS_4chain",tag,"_end",".RData")), compress="xz")
