@@ -19,15 +19,15 @@ library("rstan")
 # ebs.a2 <- ebs.a[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, doy=yday(datetime))]
 #
 # # medium data set
-# set.seed(1337)
-# ind <- mpick(ebs.agg2, p=c(stratum=10, year=10), weight=TRUE, limit=60)
-# logic <- expression(
-# 	spp%in%spp[ind]
-# 	& stratum%in%stratum[ind]
-# 	& year%in%year[ind]
-# )
-# ebs.a1 <- ebs.agg2[eval(logic)][pick(spp, 20, w=FALSE)]
-# ebs.a2 <- ebs.a1[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, stemp=stemp, depth=depth, doy=yday(datetime))]
+set.seed(1337)
+ind <- mpick(ebs.agg2, p=c(stratum=10, year=10), weight=TRUE, limit=60)
+logic <- expression(
+	spp%in%spp[ind]
+	& stratum%in%stratum[ind]
+	& year%in%year[ind]
+)
+ebs.a1 <- ebs.agg2[eval(logic)][pick(spp, 20, w=FALSE)]
+ebs.a2 <- ebs.a1[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, stemp=stemp, depth=depth, doy=yday(datetime))]
 
 # # Medium-large data set
 # set.seed(1337)
@@ -35,7 +35,7 @@ library("rstan")
 # ebs.a2 <- ebs.a1[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, stemp=stemp, depth=depth, doy=yday(datetime))]
 
 # largest data set
-ebs.a2 <- ebs.agg2[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, stemp=stemp, depth=depth, doy=yday(datetime))]
+# ebs.a2 <- ebs.agg2[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, stemp=stemp, depth=depth, doy=yday(datetime))]
 
 
 # ==================
