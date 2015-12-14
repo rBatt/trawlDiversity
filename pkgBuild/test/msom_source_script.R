@@ -19,15 +19,15 @@ library("rstan")
 # ebs.a2 <- ebs.a[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, doy=yday(datetime))]
 #
 # # medium data set
-set.seed(1337)
-ind <- mpick(ebs.agg2, p=c(stratum=40, year=31), weight=TRUE, limit=60)
-logic <- expression(
-	spp%in%spp[ind]
-	& stratum%in%stratum[ind]
-	& year%in%year[ind]
-)
-ebs.a1 <- ebs.agg2[eval(logic)][pick(spp, 200, w=FALSE)]
-ebs.a2 <- ebs.a1[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, stemp=stemp, depth=depth, doy=yday(datetime))]
+# set.seed(1337)
+# ind <- mpick(ebs.agg2, p=c(stratum=40, year=31), weight=TRUE, limit=60)
+# logic <- expression(
+# 	spp%in%spp[ind]
+# 	& stratum%in%stratum[ind]
+# 	& year%in%year[ind]
+# )
+# ebs.a1 <- ebs.agg2[eval(logic)][pick(spp, 200, w=FALSE)]
+# ebs.a2 <- ebs.a1[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, stemp=stemp, depth=depth, doy=yday(datetime))]
 
 # # Medium-large data set
 # set.seed(1337)
@@ -35,7 +35,7 @@ ebs.a2 <- ebs.a1[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, bt
 # ebs.a2 <- ebs.a1[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, stemp=stemp, depth=depth, doy=yday(datetime))]
 
 # largest data set
-# ebs.a2 <- ebs.agg2[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, stemp=stemp, depth=depth, doy=yday(datetime))]
+ebs.a2 <- ebs.agg2[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, stemp=stemp, depth=depth, doy=yday(datetime))]
 
 
 # ==================
@@ -104,7 +104,7 @@ model_file <- "trawlDiversity/inst/stan/msomDynamic.stan"
 
 tag <- paste0("start_", format.Date(Sys.time(),"%Y-%m-%d_%H-%M-%S"))
 
-save.image(paste0("trawlDiversity/pkgBuild/test/msomDynamic_40St_30Yr_200Spp_EBS_preSave_4chain",tag,".RData"))
+save.image(paste0("trawlDiversity/pkgBuild/test/msomDynamic_full_EBS_4chain_4iter",tag,".RData"))
 
 sessionInfo()
 
@@ -112,7 +112,7 @@ ebs_msom <- stan(
 	file=model_file, 
 	data=stanData, 
 	control=list(stepsize=0.01, adapt_delta=0.95, max_treedepth=15),
-	chains=4, iter=150, seed=1337, cores=4, verbose=F, refresh=1
+	chains=4, iter=4, seed=1337, cores=4, verbose=F, refresh=1
 )
 
-save.image(renameNow(paste0("trawlDiversity/pkgBuild/test/msomDynamic_40St_30Yr_200Spp_EBS_4chain",tag,"_end",".RData")), compress="xz")
+save.image(renameNow(paste0("trawlDiversity/pkgBuild/test/msomDynamic_full_EBS_4chain_4iter",tag,"_end",".RData")), compress="xz")
