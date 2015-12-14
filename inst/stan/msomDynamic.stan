@@ -158,10 +158,10 @@ model {
 	alpha_sd ~ cauchy(0, 2);
   beta_mu ~ cauchy(0, 1);
   beta_sd ~ cauchy(0, 2);
-	phi_mu ~ normal(0, 1);
-	phi_sd ~ cauchy(0, 1);
-	gamma_mu ~ normal(0, 1);
-	gamma_sd ~ cauchy(0, 1);
+	phi_mu ~ cauchy(0, 1);
+	phi_sd ~ cauchy(0, 2);
+	gamma_mu ~ cauchy(0, 1);
+	gamma_sd ~ cauchy(0, 2);
 	
 	  
   // ---- Priors for Parameters ----
