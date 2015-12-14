@@ -99,12 +99,12 @@ stopifnot(!any(sapply(stanData, function(x)any(is.na(x)))))
 # =====================
 # = Fit Model in Stan =
 # =====================
-model_file <- "trawlDiversity/inst/stan/msomStatic.stan"
-# model_file <- "trawlDiversity/inst/stan/msomDynamic.stan"
+# model_file <- "trawlDiversity/inst/stan/msomStatic.stan"
+model_file <- "trawlDiversity/inst/stan/msomDynamic.stan"
 
 tag <- paste0("start_", format.Date(Sys.time(),"%Y-%m-%d_%H-%M-%S"))
 
-save.image(paste0("trawlDiversity/pkgBuild/test/msomStatic_fullEBS_preSave_",tag,".RData"))
+save.image(paste0("trawlDiversity/pkgBuild/test/msomDynamic_fullEBS_preSave_4chain",tag,".RData"))
 
 sessionInfo()
 
@@ -112,7 +112,7 @@ ebs_msom <- stan(
 	file=model_file, 
 	data=stanData, 
 	control=list(stepsize=0.01, adapt_delta=0.95, max_treedepth=15),
-	chains=1, iter=200, seed=1337, cores=1, verbose=F, refresh=1
+	chains=4, iter=200, seed=1337, cores=4, verbose=F, refresh=1
 )
 
-save.image(renameNow(paste0("trawlDiversity/pkgBuild/test/msomStatic_fullEBS_",tag,"_end",".RData")), compress="xz")
+save.image(renameNow(paste0("trawlDiversity/pkgBuild/test/msomDynamic_fullEBS_4chain",tag,"_end",".RData")), compress="xz")
