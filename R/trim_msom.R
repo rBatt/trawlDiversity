@@ -47,7 +47,7 @@ trim_msom <- function(reg, gridSize=1, plot=FALSE){
 		metaCols = c("reg","datetime","season","year","lon","lat","stratum","common","species"),
 		meta.action = "unique1"
 	)
-	X.agg1[nAgg!=1,j={par(mar=c(0,0,3,0),mfrow=rbLib::auto.mfrow(lu(spp))); for(i in 1:lu(spp)){trawlData::sppImg(unique(spp)[i],unique(common)[i])}}]
+	# X.agg1[nAgg!=1,j={par(mar=c(0,0,3,0),mfrow=rbLib::auto.mfrow(lu(spp))); for(i in 1:lu(spp)){trawlData::sppImg(unique(spp)[i],unique(common)[i])}}]
 
 	# drop new "time" column
 	# change name of agg to indicate step
