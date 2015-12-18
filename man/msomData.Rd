@@ -10,7 +10,7 @@ msomData(Data, n0 = 10, formula = year ~ stratum ~ K ~ spp,
   cov.by = c("year", "stratum", "K"), u_rv = NULL, v_rv = NULL)
 }
 \arguments{
-\item{Data}{A data.table containing response variable and covariates. Must have a \code{\link(key)}}
+\item{Data}{A data.table containing response variable and covariates. Must have a \code{\link{key}}}
 
 \item{n0}{An integer indicating the number of never-observed species to add}
 

@@ -2,7 +2,7 @@
 #' 
 #' Format Data for MSOM
 #' 
-#' @param Data A data.table containing response variable and covariates. Must have a \code{\link(key)}
+#' @param Data A data.table containing response variable and covariates. Must have a \code{\link{key}}
 #' @param n0 An integer indicating the number of never-observed species to add
 #' @param formula A formula indicating the dimensions of the output array (only Default tested)
 #' @param cov.vars A named character vector of covariates, where character elements correspond to columns \code{Data}, and names will be predictor names in model
