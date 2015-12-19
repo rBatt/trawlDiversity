@@ -52,9 +52,9 @@ model{
 	}
 	
 	# Phi and Gamma priors
-	phi_mu_logit ~ dnorm(0, 10)
+	phi_mu_logit ~ dnorm(0, 1/10)
 	phi_tau ~ dgamma(0.1, 0.1)
-	gamma_mu_logit ~ dnorm(0, 10)
+	gamma_mu_logit ~ dnorm(0, 1/10)
 	gamma_tau ~ dgamma(0.1, 0.1)
 	for(s in 1:nS){
 		logit(phi[s]) ~ dnorm(phi_mu_logit, phi_tau)
