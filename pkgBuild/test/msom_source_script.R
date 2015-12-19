@@ -7,6 +7,28 @@ library("trawlData")
 library("trawlDiversity")
 library("rbLib")
 library("rstan")
+library("parallel")
+
+
+# =========
+# = Cores =
+# =========
+# if(Sys.info()["sysname"]=="Windows"){
+# 	nC <- floor(detectCores()*0.75)
+# 	registerDoParallel(cores=nC)
+# }else if(Sys.info()["sysname"]=="Linux"){
+# 	registerDoParallel(floor(detectCores()*0.5))
+# }else{
+# 	registerDoParallel()
+# }
+
+
+# ===========
+# = Options =
+# ===========
+chains = 4
+cores = 4
+iter = 50
 
 
 # run on amphiprion: 
@@ -16,26 +38,8 @@ library("rstan")
 # = Subset Data to Use =
 # ======================
 # smallest data set
-# ebs.a2 <- ebs.a[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, doy=yday(datetime))]
-#
-# # medium data set
-# set.seed(1337)
-# ind <- mpick(ebs.agg2, p=c(stratum=40, year=31), weight=TRUE, limit=60)
-# logic <- expression(
-# 	spp%in%spp[ind]
-# 	& stratum%in%stratum[ind]
-# 	& year%in%year[ind]
-# )
-# ebs.a1 <- ebs.agg2[eval(logic)][pick(spp, 200, w=FALSE)]
-# ebs.a2 <- ebs.a1[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, stemp=stemp, depth=depth, doy=yday(datetime))]
-
-# # Medium-large data set
-# set.seed(1337)
-# ebs.a1 <- ebs.agg2[pick(spp, 20, w=TRUE)]
-# ebs.a2 <- ebs.a1[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, stemp=stemp, depth=depth, doy=yday(datetime))]
-
-# largest data set
-ebs.a2 <- ebs.agg2[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, stemp=stemp, depth=depth, doy=yday(datetime))]
+ebs.a1 <- trim_msom("ebs", gridSize=1, plot=FALSE)
+ebs.a2 <- ebs.a1[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, stemp=stemp, depth=depth, doy=yday(datetime))]
 
 
 # ==================
@@ -76,10 +80,12 @@ mk_cov_rv_pow(ebs.a2, "depth", across="K", by=c("stratum","year"), pow=2)
 # = Cast Data for Stan =
 # ======================
 # ---- Get Basic Structure of MSOM Data Input ----
+setkey(ebs.a2, year, stratum, K, spp)
 stanData <- msomData(Data=ebs.a2, n0=50, cov.vars=cov.vars_use, u.form=~bt+bt2+depth+depth^2+yr, v.form=~year, valueName="abund", cov.by=c("year","stratum"))
 
 stanData$nJ <- apply(stanData$nK, 1, function(x)sum(x>0)) # number of sites in each year
 stanData$X <- apply(stanData$X, c(1,2,4), function(x)sum(x)) # agg abund across samples
+
 
 
 # =============
@@ -102,17 +108,62 @@ stopifnot(!any(sapply(stanData, function(x)any(is.na(x)))))
 # model_file <- "trawlDiversity/inst/stan/msomStatic.stan"
 model_file <- "trawlDiversity/inst/stan/msomDynamic.stan"
 
-tag <- paste0("start_", format.Date(Sys.time(),"%Y-%m-%d_%H-%M-%S"))
+tag <- paste0("start", format.Date(Sys.time(),"%Y-%m-%d_%H-%M-%S"))
 
-save.image(paste0("trawlDiversity/pkgBuild/test/msomDynamic_full_EBS_4chain_4iter",tag,".RData"))
+file_prefix <- paste0(
+	"nT",stanData$nT,"_",
+	"Jmax",stanData$Jmax, "_",
+	"Kmax",stanData$Kmax, "_",
+	"N",stanData$N, "_",
+	"nS",stanData$nS
+)
+
+file_stan_options <- paste0(
+	"chains",chains,"_",
+	"iter",iter,"_",
+	"cores",cores
+)
+
+run_info <- paste(file_prefix, file_stan_options, sep="_")
+
+file_path <- file.path("trawlDiversity","pkgBuild","test")
+	
+save.image(file.path(file_path, paste0("msomDynamic_ebs_", tag,".RData")))
 
 sessionInfo()
 
-ebs_msom <- stan(
-	file=model_file, 
-	data=stanData, 
-	control=list(stepsize=0.01, adapt_delta=0.95, max_treedepth=15),
-	chains=4, iter=4, seed=1337, cores=4, verbose=F, refresh=1
+ebs_msom_model <- stan_model(file=model_file, auto_write=TRUE)
+stan_control <- list(stepsize=0.01, adapt_delta=0.95, max_treedepth=15)
+
+t_out <- sampling(
+		object=ebs_msom_model,
+		data=stanData,
+		control=stan_control,
+		pars= c("Omega", "alpha_mu", "alpha_sd", "beta_mu", "beta_sd", "phi_mu", "phi_sd", "gamma_mu", "gamma_sd", "phi", "gamma", "logit_psi", "logit_theta"),
+		chains=2, iter=4, seed=1337, cores=1, verbose=F, refresh=1
 )
 
-save.image(renameNow(paste0("trawlDiversity/pkgBuild/test/msomDynamic_full_EBS_4chain_4iter",tag,"_end",".RData")), compress="xz")
+
+# stan(
+# 	file=model_file,
+# 	data=stanData,
+# 	control=stan_control,
+# 	chains=1, iter=2, seed=1337, cores=1, verbose=F, refresh=1
+# )
+
+do_stan <- function(x, object, data, iter){
+	sampling(
+			object=object, 
+			data=stanData, 
+			control=stan_control,
+			pars= c("Omega", "alpha_mu", "alpha_sd", "beta_mu", "beta_sd", "phi_mu", "phi_sd", "gamma_mu", "gamma_sd", "phi", "gamma", "logit_psi", "logit_theta"),
+			chains=1, iter=iter, seed=1337, cores=1, verbose=F, refresh=1, chain_id=x
+	)
+}
+
+out <- do_stan(1, ebs_msom_model, data=stanData, iter=iter)
+
+out <- mclapply(1:chains, do_stan, data=stanData, object=ebs_msom_model, iter=iter, mc.cores=cores, mc.preschedule=FALSE)
+# read1 <- read_stan_csv("ebs_msom_samples1")
+file.path(file_path, paste0("msomDynamic_ebs_", tag,"_end",".RData"))
+save.image(renameNow(file.path(file_path, paste0("msomDynamic_ebs_", tag,"_end",".RData"))), compress="xz")
