@@ -1,0 +1,97 @@
+data{
+	
+}
+
+model{
+
+	# Omega prior
+	Omega ~ dunif(0,1)
+	for(s in 1:nS){
+		w[s] ~ dern(Omega)
+	}
+	
+	# Covariate Priors
+	for(t in 1:nT){
+		for(j in 1:Jmax){
+			
+			# Presence covariates
+			for(uc in 1:nU_c){
+				U[t,j,uc] <- U_c[t,j,uc]
+			}
+			for(urv in 1:nU_rv){
+				U[t,j,urv+nU_c] ~ dnorm(U_mu[t,j,urv+nU_c], U_tau[t,j,urv+nU_c])
+			}
+			
+			# Detection covariates
+			for(vc in 1:nV_c){
+				V[t,j,vc] <- V_c[t,j,vc]
+			}
+			for(vrv in 1:nV_rv){
+				V[t,j,vrv+nV_c] ~ dnorm(V_mu[t,j,vrv+nV_c], V_tau[t,j,vrv+nV_c])
+			}
+			
+		}
+	}
+	
+	# Alpha priors
+	for(u in 1:nU){
+			alpha_mu[u] ~ dnorm(0, 1/1E3)
+			alpha_tau[u] ~ dgamma(0.1, 0.1)
+			for(s in 1:nS){
+				alpha[u, s] ~ dnorm(alpha_mu[u], alpha_tau[u])
+			}
+	}
+	
+	# Beta priors
+	for(v in 1:nV){
+		beta_mu[u] ~ dnorm(0, 1/1E3)
+		beta_tau[u] ~ dgamma(0.1, 0.1)
+		for(s in 1:nS){
+			beta[u, s] ~ dnorm(beta_mu[u], beta_tau[u])
+		}
+	}
+	
+	# Phi and Gamma priors
+	phi_mu_logit ~ dnorm(0, 10)
+	phi_tau ~ dgamma(0.1, 0.1)
+	gamma_mu_logit ~ dnorm(0, 10)
+	gamma_tau ~ dgamma(0.1, 0.1)
+	for(s in 1:nS){
+		logit(phi[s]) ~ dnorm(phi_mu_logit, phi_tau)
+		logit(gamma[s]) ~ dnorm(gamma_mu_logit, gamma_tau)
+	}
+	
+	# Make square matrices with phi/gamma on diagonal, 0 elsewhere
+	for(s in 1:nS){
+		for(s2 in 1:nS){
+			# ones[s, s2] <- ifelse(s==s2, 1, 0)
+			phi_mat[s,s2] <- ifelse(s==s2, phi[s], 0)
+			gamma_mat[s,s2] <- ifelse(s==s2, gamma[s], 0)
+		}
+	}
+	
+	
+
+	# Presence and Detectability
+	logit(Psi[1,,]) <- U[1,,]%*%alpha # U[1,,] is Jmax by nU, alpha is nU by nS
+	for(j in 1:Jmax){
+		Z[1,j,] ~ dern(Psi[1,j,] * w)
+	}
+	logit(Theta[1,,]) <- V[1,,]%*%beta
+	for(t in 2:nT){
+		logit(Psi[t,,]) <- U[t,,]%*%alpha + Z[t-1,,]%*%phi_mat + (1-Z[t-1,,])%*%gamma_mat
+		logit(Theta[t,,]) <- V[t,,]%*%beta
+	}
+	
+	
+	# Likelihood
+	for(t in 1:nT){
+		for(j in 1:Jmax){
+			for(s in 1:nS){
+				X[t,j,s] ~ dbinom(Psi[t,j,s] * Theta[t,j,s], nK[t,j])
+			}
+		}
+	}
+
+}
+
