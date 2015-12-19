@@ -1,16 +1,85 @@
-data{
-	
-}
+
+# ======================================
+# = Input Data Formats and Definitions =
+# ======================================
+# ---- Dimensions ----
+# nT integer scalar, the number of eyars
+# Jmax integer scalar, the number of sites in any year, ever
+# nS integer scalar, the number of species, including the 'zero species'
+
+# nK integer matrix[nT, Jmax], the number of hauls (replicates, K) in each site-year
+
+# nU integer scalar, the number of presence covariates (both in U_c and U_rv)
+# nU_c integer scalar, the number of presence covariates that are known with certainty
+# nU_rv integer scalar, the number of presence covariates that are expressed as random variables
+# nV, nV_c, nV_rv, the detection equivalents of the corresponding U values
+
+# ---- Covariates ----
+# U_c real array[nT, Jmax, nU_c], the values of the presence covariates known with certainty
+# U_mu real array[nT, Jmax, nU_rv], the means of the presence covariates that are expressed as random variables
+# U_tau real array[nT, Jmax, nU_rv] the 1/sd^2 of the presence covariates that are rv's
+# V_c, V_mu, V_tau, the detection equivalents of the corresponding U values
+
+# ---- Observed State ----
+# X integer {X | X \in \N, 0 <= X <= nK} array[nT, Jmax, nS], the number of hauls containing a given species in a site-year
+
+
+# =================================================
+# = Output Parameters of Interest and Definitions =
+# =================================================
+# ---- Membership ----
+# Omega, real scalar, overall probability of community membership
+# w, integer binary {0, 1} vector[nS], 1 if a species belongs, 0 if it does not
+
+# ---- Presence and Detection Coefficients ----
+# alpha real matrix[nU, nS], coefficients relating covariates to presence probability (phi) on logit scale
+# alpha_mu real vector[nU], for each covariate, the among-species means in alpha
+# alpha_tau real vector[nU], for each covariate, the among-species 1/sd^2 in alpha
+# beta real matrix[nV, nS], coefficients relating covariates to detection probability (Theta) on logit scale
+# beta_mu real vector[nV], among-species mean of each covariate's coefficient (alpha)
+# beta_tau real vector[nV], among-species 1/sd^2 of each covariate's coefficient (alpha)
+
+# ---- Persistence and Colonization ----
+# phi real {phi| phi \in \R, 0 <= phi <= 1} vector[nS], species-specific persistence
+# phi_mu_logit real {phi_mu_logit \in \R} scalar, the among-species mean of logit(phi)
+# phi_tau_logit real {phi_mu_logit \in \R} scalar, the among-species 1/sd^2 of logit(phi)
+# gamma real {gamma| gamma \in \R, 0 <= gamma <= 1} vector[nS], species-specific colonization
+# gamma_mu_logit real {gamma_mu_logit \in \R} scalar, the among-species mean of logit(gamma)
+# gamma_tau_logit real {gamma_mu_logit \in \R} scalar, the among-species 1/sd^2 of logit(gamma)
+
+# ---- Presence and Detection (coefficient-covariate products) ----
+# Psi real {Psi | Psi \in \R, 0 <= Psi <= 1} array[nT, Jmax, nS], species presence prob for each site-year
+# Theta real {Theta | Theta \in \R, 0 <= Theta <= 1} array[nT, Jmax, nS] species detection prob for each site-year
+
+# ---- Latent State ----
+# Z integer binary {0, 1} array[nT, Jmax, nS], 1 if a species is present, 0 if it is not. Note that X is the number of hauls containing a species in a site-year, whereas Z indicates whether *any* hauls contained a species in a site-year.
+
+# ====================
+# = Equation Summary =
+# ====================
+# X(t) = Z(t) * Theta(t) # observation
+# Z(t) = Psi(t) * w # true
+# Psi(t) = U(t) * alpha + Z(t-1)*phi_mat + (1-Z(t-1))*gamma_mat # presence
+# Theta(t) = V(t) * beta # detection
+
+# where X(t) are the observed site level abundances of each species in year t, 
+# Z is the binary indicator of true presence/ absence,
+# w is the binary indicator of community membership,
+# the probabilities of presence and detection are Psi and Theta,
+# the presence and detection covaraites are U and V (w/ corresponding coefficients alpha and beta),
+# and the coefficients of peristence and colonization are phi and gamma
+
 
 model{
 
 	# Omega prior
-	Omega ~ dunif(0,1)
+	Omega ~ dunif(0,1) # wouldn't a ~beta(0.5, 0.5) be better? There shouldn't be a lot of intermediate probs ...
 	for(s in 1:nS){
 		w[s] ~ dern(Omega)
 	}
 	
 	# Covariate Priors
+	# This section needs to be rewritten for 1) neither U nor V have rv's, 2/3) just U or V have rv's
 	for(t in 1:nT){
 		for(j in 1:Jmax){
 			
@@ -44,38 +113,39 @@ model{
 	
 	# Beta priors
 	for(v in 1:nV){
-		beta_mu[u] ~ dnorm(0, 1/1E3)
-		beta_tau[u] ~ dgamma(0.1, 0.1)
+		beta_mu[v] ~ dnorm(0, 1/1E3)
+		beta_tau[v] ~ dgamma(0.1, 0.1)
 		for(s in 1:nS){
-			beta[u, s] ~ dnorm(beta_mu[u], beta_tau[u])
+			beta[v, s] ~ dnorm(beta_mu[v], beta_tau[v])
 		}
 	}
 	
 	# Phi and Gamma priors
+	# Morgan had phi and gamma indexed by species *and* year; I just have species
 	phi_mu_logit ~ dnorm(0, 1/10)
-	phi_tau ~ dgamma(0.1, 0.1)
+	phi_tau_logit ~ dgamma(0.1, 0.1)
 	gamma_mu_logit ~ dnorm(0, 1/10)
-	gamma_tau ~ dgamma(0.1, 0.1)
+	gamma_tau_logit ~ dgamma(0.1, 0.1)
 	for(s in 1:nS){
-		logit(phi[s]) ~ dnorm(phi_mu_logit, phi_tau)
-		logit(gamma[s]) ~ dnorm(gamma_mu_logit, gamma_tau)
+		logit(phi[s]) ~ dnorm(phi_mu_logit, phi_tau_logit)
+		logit(gamma[s]) ~ dnorm(gamma_mu_logit, gamma_tau_logit)
 	}
 	
 	# Make square matrices with phi/gamma on diagonal, 0 elsewhere
 	for(s in 1:nS){
-		for(s2 in 1:nS){
-			# ones[s, s2] <- ifelse(s==s2, 1, 0)
-			phi_mat[s,s2] <- ifelse(s==s2, phi[s], 0)
-			gamma_mat[s,s2] <- ifelse(s==s2, gamma[s], 0)
+		for(ss in 1:nS){
+			# ones[s, s2] <- ifelse(s==s2, 1, 0) # does JAGS have shorthand for identity?
+			phi_mat[s,ss] <- ifelse(s==ss, phi[s], 0) # does JAGS have shorthand for diagonal square matrix?
+			gamma_mat[s,ss] <- ifelse(s==ss, gamma[s], 0)
 		}
 	}
 	
 	
 
 	# Presence and Detectability
-	logit(Psi[1,,]) <- U[1,,]%*%alpha # U[1,,] is Jmax by nU, alpha is nU by nS
+	logit(Psi[1,,]) <- U[1,,]%*%alpha # U[1,,] is Jmax by nU, alpha is nU by nS; is this a fair way to estimate initial?
 	for(j in 1:Jmax){
-		Z[1,j,] ~ dern(Psi[1,j,] * w)
+		Z[1,j,] ~ dern(Psi[1,j,] * w) # you can't do this in Stan ... but so convenient!
 	}
 	logit(Theta[1,,]) <- V[1,,]%*%beta
 	for(t in 2:nT){
@@ -88,7 +158,7 @@ model{
 	for(t in 1:nT){
 		for(j in 1:Jmax){
 			for(s in 1:nS){
-				X[t,j,s] ~ dbinom(Psi[t,j,s] * Theta[t,j,s], nK[t,j])
+				X[t,j,s] ~ dbinom(Z[t,j,s] * Theta[t,j,s], nK[t,j]) # instead of Z, Psi, or Psi*w? Just Psi seems bad, but what are the implications of using Psi*w instead of Z?
 			}
 		}
 	}
