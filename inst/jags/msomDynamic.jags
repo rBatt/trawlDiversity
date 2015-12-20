@@ -88,7 +88,7 @@ model{
 				U[t,j,uc] <- U_c[t,j,uc]
 			}
 			for(urv in 1:nU_rv){
-				U[t,j,urv+nU_c] ~ dnorm(U_mu[t,j,urv+nU_c], U_tau[t,j,urv+nU_c])
+				U[t,j,urv+nU_c] ~ dnorm(U_mu[t,j,urv], U_tau[t,j,urv])
 			}
 			
 			# Detection covariates
@@ -96,7 +96,7 @@ model{
 				V[t,j,vc] <- V_c[t,j,vc]
 			}
 			for(vrv in 1:nV_rv){
-				V[t,j,vrv+nV_c] ~ dnorm(V_mu[t,j,vrv+nV_c], V_tau[t,j,vrv+nV_c])
+				V[t,j,vrv+nV_c] ~ dnorm(V_mu[t,j,vrv], V_tau[t,j,vrv])
 			}
 			
 		}
@@ -127,34 +127,37 @@ model{
 	gamma_mu_logit ~ dnorm(0, 1/10)
 	gamma_tau_logit ~ dgamma(0.1, 0.1)
 	for(s in 1:nS){
-		# logit(phi[s]) ~ dnorm(phi_mu_logit, phi_tau_logit)
 		phi[s] ~ dnorm(phi_mu_logit, phi_tau_logit)
-		# logit(gamma[s]) ~ dnorm(gamma_mu_logit, gamma_tau_logit)
 		gamma[s] ~ dnorm(gamma_mu_logit, gamma_tau_logit)
 	}
 	
 	# Make square matrices with phi/gamma on diagonal, 0 elsewhere
 	for(s in 1:nS){
 		for(ss in 1:nS){
-			# ones[s, s2] <- ifelse(s==s2, 1, 0) # does JAGS have shorthand for identity?
-			phi_mat[s,ss] <- ifelse(s==ss, ilogit(phi[s]), 0) # does JAGS have shorthand for diagonal square matrix?
-			gamma_mat[s,ss] <- ifelse(s==ss, ilogit(gamma[s]), 0)
+			phi_mat[s,ss] <- ifelse(s==ss, phi[s], 0)
+			gamma_mat[s,ss] <- ifelse(s==ss, gamma[s], 0)
 		}
 	}
 	
 	
 	# Presence and Detectability
-	logit(Psi[1,1:Jmax,1:nS]) <- U[1,,]%*%alpha # U[1,,] is Jmax by nU, alpha is nU by nS; is this a fair way to estimate initial?
+	Psi_logit[1,1:Jmax,1:nS] <- U[1,1:Jmax,1:nU]%*%alpha[1:nU,1:nS] # is this a fair way to estimate initial?
+	
 	for(j in 1:Jmax){
-		Z[1,j,1:nS] ~ dern(Psi[1,j,] * w) # you can't do this in Stan ... but so convenient!
+		for(s in 1:nS){
+			Psi[1,j,s] <- exp(Psi_logit[1,j,s])/(1 + exp(Psi_logit[1,j,s]))
+			Z[1,j,s] ~ dbern(Psi[1,j,s]*w[s]) # you can't do this in Stan ... but so convenient!
+		}
+		
 	}
-	logit(Theta[1,1:Jmax,1:nS]) <- V[1,,]%*%beta
 	for(t in 2:nT){
-		logit(Psi[t,1:Jmax,1:nS]) <- U[t,,]%*%alpha + Z[t-1,,]%*%phi_mat + (1-Z[t-1,,])%*%gamma_mat
-		logit(Theta[t,1:Jmax,1:nS]) <- V[t,,]%*%beta
+		Psi_logit[t,1:Jmax,1:nS] <- U[t,,]%*%alpha + Z[t-1,,]%*%phi_mat + (1-Z[t-1,,])%*%gamma_mat
 		
 		for(j in 1:Jmax){
-			Z[t,j,1:nS] ~ dern(Psi[t,j,] * w)
+			for(s in 1:nS){
+				Psi[t,j,s] <- exp(Psi_logit[t,j,s])/(1 + exp(Psi_logit[t,j,s]))
+				Z[t,j,s] ~ dbern(Psi[t,j,s] * w[s])
+			}
 		}
 		
 	}
@@ -162,8 +165,11 @@ model{
 	
 	# Likelihood
 	for(t in 1:nT){
+		Theta_logit[t,1:Jmax,1:nS] <- V[t,,]%*%beta
+		
 		for(j in 1:Jmax){
 			for(s in 1:nS){
+				Theta[t,j,s] <- exp(Theta_logit[t,j,s])/(1 + exp(Theta_logit[t,j,s]))
 				X[t,j,s] ~ dbinom(Z[t,j,s] * Theta[t,j,s], nK[t,j]) # instead of Z, Psi, or Psi*w? Just Psi seems bad, but what are the implications of using Psi*w instead of Z?
 			}
 		}
