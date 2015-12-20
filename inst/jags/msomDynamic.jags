@@ -141,7 +141,6 @@ model{
 	}
 	
 	
-
 	# Presence and Detectability
 	logit(Psi[1,,]) <- U[1,,]%*%alpha # U[1,,] is Jmax by nU, alpha is nU by nS; is this a fair way to estimate initial?
 	for(j in 1:Jmax){
@@ -151,6 +150,11 @@ model{
 	for(t in 2:nT){
 		logit(Psi[t,,]) <- U[t,,]%*%alpha + Z[t-1,,]%*%phi_mat + (1-Z[t-1,,])%*%gamma_mat
 		logit(Theta[t,,]) <- V[t,,]%*%beta
+		
+		for(j in 1:Jmax){
+			Z[t,j,] ~ dern(Psi[t,j,] * w)
+		}
+		
 	}
 	
 	
