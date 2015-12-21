@@ -24,14 +24,14 @@ plot(density(values(attr(big.out.obs[[1]], "grid.X")), bw=0.01))
 # = Analyze simData with Stan msomStatic =
 # ========================================
 spp2msom_2dt <- function(big.simDat, simCov){
-	test.spp <- data.table(reshape2:::melt.list(big.simDat))
+	test.spp <- data.table(reshape2::melt.list(big.simDat))
 
 	test.spp[,c("year","n.obs.reps"):=list(as.numeric(gsub("year([0-9]{1,2})\\.[0-9]{1,2}","\\1",L1)), as.numeric(gsub("year([0-9]{1,2})\\.([0-9]{1,2})","\\2",L1)))]
 	test.spp[,L1:=NULL]
 	setnames(test.spp, "value", "abund")
 	setkey(test.spp, year,stratum,K)
 
-	test.cov1 <- data.table(reshape2:::melt.list(simCov))
+	test.cov1 <- data.table(reshape2::melt.list(simCov))
 	setnames(test.cov1, c("value","L1"), c("bt","year"))
 	test.cov1[,stratum:=test.spp[,unique(stratum)]]
 	setcolorder(test.cov1, c('year','stratum','bt'))

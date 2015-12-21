@@ -109,7 +109,7 @@ msomData <- function(Data, n0=10, formula=year~stratum~K~spp, cov.vars=c(bt="bte
 	stopifnot(!any(is.na(cov.tjk))) # can't have any NA's with my current simple approach
 
 	# Set up template for expanding covariates
-	template <- unique(data.table(reshape2:::melt(Xc), key=c(cov.by)))[,eval(trawlData::s2c(cov.by))]
+	template <- unique(data.table(reshape2::melt(Xc), key=c(cov.by)))[,eval(trawlData::s2c(cov.by))]
 	
 	# Attempt to coerce classes of columns in template to those in cov.tjk
 	# Won't promote integer to numeric or double, though
