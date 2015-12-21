@@ -70,7 +70,7 @@ msom_params <- function(language, model_type, nT, Jmax, nU, nV, nS, noIndex=FALS
 			"Omega", "w",
 			"alpha_mu", "alpha_tau", 
 			"beta_mu", "beta_tau",
-			"alpha", "beta", "Psi", "Theta", "Z"
+			"alpha", "beta", "logit_psi", "logit_theta", "Z"
 		)
 		if(model_type == "Dynamic"){
 			params <- c(params, "phi_mu_logit", "phi_tau_logit", "gamma_mu_logit", "gamma_tau_logit")
@@ -82,7 +82,7 @@ msom_params <- function(language, model_type, nT, Jmax, nU, nV, nS, noIndex=FALS
 				paste0("alpha_mu",p_ind_u), "alpha_tau", paste0("alpha_tau",p_ind_u),
 				paste0("beta_mu",p_ind_v), "beta_tau", paste0("beta_tau",p_ind_v),
 				paste0("w",p_ind_s), paste0("alpha", p_ind_us), paste0("beta", p_ind_vs), 
-				paste0("Psi",p_ind_tjs), paste0("Theta", p_ind_tjs), paste0("Z", p_ind_tjs)
+				paste0("logit_psi",p_ind_tjs), paste0("logit_theta", p_ind_tjs), paste0("Z", p_ind_tjs)
 			)
 			
 			if(model_type == "Dynamic"){
