@@ -19,14 +19,6 @@ mk_cov_rv_pow(X, cName, across, by, pow = 2)
 \item{by}{RV is computed separately for each of these dimensions}
 
 \item{pow}{Raise to this power. Default is 2.}
-
-\item{A}{The random variables being operated on}
-
-\item{sigma_A}{Standard deviations of A}
-
-\item{b}{The exponent}
-
-\item{a}{the multiplication coefficient}
 }
 \value{
 NULL is retured, but the data.table is modified, with appropriate columns. Original covariate column will be modified.
@@ -36,15 +28,10 @@ Get the mean and SD of a covariate
 }
 \details{
 Adds columns for the covarate, it's power, and both their sd's. Columns for SD's are named by appending "_sd", column for power is named by appending the numeric value of \code{pow}.
-
-Of the form f = a*A^b. Sigma must be provided. Elements of A are treated as potentially separate RV's.
 }
 \section{Functions}{
 \itemize{
 \item \code{mk_cov_rv_pow}: Get the mean and SD of a covariate, and the same for the covariate^pow
-Propagate standard deviation from raising to power
-
-Calculates the standard deviation of a random variable created by multiplying another RV by a constant and raising it to a power
 }}
 \examples{
 X <- data.table(a=rnorm(1000), b=sample(letters, 1000, replace=TRUE), key="b")
