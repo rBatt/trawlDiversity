@@ -7,10 +7,13 @@
 run_msom(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf", "sa",
   "sgulf", "shelf", "wcann", "wctri"), params_out = c("params", "params_main",
   "params_random", "params_latent", "custom"), custom_params = NULL,
-  model_type = c("Dynamic", "Static"), chains = 4,
-  cores = parallel::detectCores()/2, iter, language = c("JAGS", "Stan"),
-  test = FALSE, test_sub = list(stratum = 4, year = 3, spp = 10),
-  seed = 1337)
+  model_type = c("Dynamic", "Static"), n0 = 50, chains = 4,
+  cores = parallel::detectCores()/2, iter, thin = max(1,
+  floor((iter/2)/200)), language = c("JAGS", "Stan"), test = FALSE,
+  test_sub = list(stratum = 4, year = 3, spp = 10), seed = 1337,
+  pre_save = FALSE, save_dir = ".",
+  model_dir = file.path(system.file(package = "trawlDiversity"),
+  tolower(language)))
 }
 \arguments{
 \item{reg}{character, region name}
@@ -21,11 +24,15 @@ run_msom(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf", "sa",
 
 \item{model_type}{type of model. Currently both are multiyear. 'Dynamic' includes terms for persistence and colonization (species-specific), whereas 'Static' simply 'stacks' the years.}
 
+\item{n0}{integer indicating the number of species to use in data augmentation; defaults to 50, is passed to \code{\link{msomData}}}
+
 \item{chains}{integer number of chains, default is 4}
 
 \item{cores}{integer number of cores for parallel processes; default is half of avaialble cores}
 
 \item{iter}{number of iterations; the default depends on \code{language} and on /code{test}; testing in Stan is 50, non-testing is 200. Testing in JAGS is 500, non-testing is 5000.}
+
+\item{thin}{Integer, thinning rate. Default is set to yield 200 draws from the posterior, or if that is not possible, thinning rate is 1 and draws will be \code{iter}/2.}
 
 \item{language}{character indicating the language to be used --- JAGS or Stan}
 
@@ -34,6 +41,15 @@ run_msom(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf", "sa",
 \item{test_sub}{a named list with elements 'stratum', 'year', and 'spp'. Each element should be an integer indicating the number of levels to select for each of those dimensions. Used for subsetting when \code{test} is TRUE.}
 
 \item{seed}{integer random number seed}
+
+\item{pre_save}{Logical; if TRUE (default) saves a workspace image before running the model}
+
+\item{save_dir}{Character string indicating the location of the directory to save the intermediate image; default is current directory}
+
+\item{model_dir}{Character string indicating the location of the model file; default is selected automatically based on \code{language} and \code{model_type}, and looks to models that come with this package}
+}
+\value{
+Returns a named list of length two. The first element, 'out', contains a JAGS or Stan model object. The second element is a named character vector containing potential file names or prefixes to file names. These names contain collapsed information related to the model run settings, time, file paths, etc.
 }
 \description{
 Run a multispecies occupancy model on trawl data. The model is multi-year, and there are two basic versions; first one is a 'static' model for which no temporal process is explicitly modelled (the years are 'stacked'). The second is a 'dynamic' model that includes persistence and colonization parameters as processes that facilitate the state transition between years. Each of these models can be run in either JAGS or Stan. Both models accept covariates for the detection and presence processes, and both sets of covariates can be modelled as random variables, constants (varying, but known precisely), or a mixture of the two.
