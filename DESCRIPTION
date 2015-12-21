@@ -15,5 +15,7 @@ Depends:
 License: GPL-3
 LazyData: true
 RoxygenNote: 5.0.0.9000
-Suggests: trawlData,
-    reshape2
+Suggests: reshape2,
+    R2jags,
+    rstan
+Imports: rbLib
