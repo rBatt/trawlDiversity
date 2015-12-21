@@ -1,0 +1,1 @@
+globalVariables(c("V1","spp","stratum","K","abund","btemp","stemp","depth","datetime","yr","doy","thin","lon", "lat", "keep_strat","spp", "haulid", "taxLvl", "time_lvl", "abund", "wtcpue", "K", "Kmax", "A", "sigmaA", "b", "a"))
