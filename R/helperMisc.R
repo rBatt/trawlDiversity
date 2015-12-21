@@ -13,7 +13,7 @@
 #' @examples
 #' # Typical/ intended use
 #' ifInd_strip_noInd(c("theta","w","w[1]"))
-#'
+#' 
 #' # Odd use
 #' # Note that the last element is valid R syntax
 #' # Yet Z is not removed

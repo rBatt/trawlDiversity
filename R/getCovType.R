@@ -5,7 +5,8 @@
 #' @param staticDataUV the output of msomData, containing at least U or V element
 #' @param staticDataUV_sd the output of msomData, containing at least U or V element, where the covariates have the "_sd" suffix attached to their names, and these covariates correspond to similarly named (sans-suffix) elements of U and V in staticDataUV
 #' @param UV character of length 1, indicating whether to treat
-
+#' @param type type of covariate to find
+#' 
 #' @export
 # ---- Split Covariates into Constants and Random Variables ----
 getCovType <- function(staticDataUV, staticDataUV_sd, UV=c("U","V"), type=c("constant","mu","sd")){
