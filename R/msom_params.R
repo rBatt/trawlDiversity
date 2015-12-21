@@ -19,17 +19,19 @@
 #' @return
 #' A named list with the following elements:  
 #' \tabular{ll}{
-#' n \tab a named vector with the following integer elements:\cr
+#' n \tab a named vector with integer elements (see below)\cr
+#' params \tab the names of all potential parameters\cr
+#' params_main \tab the names of all main-effect parameters\cr
+#' params_random \tab the names of all random-effect parameters\cr
+#' params_latent \tab the names of all latent paramters\cr
+#' }
+#' 
+#' \code{n} contains the following elements
 #' \tabular{ll}{
 #' nP \tab total parameters\cr
 #' n_main \tab total main-effect parameters, including hyperparameters\cr
 #' n_random \tab number of random-effect parameters\cr
 #' n_latent \tab number of random-effect parameters\cr
-#' }
-#' params \tab the names of all potential parameters\cr
-#' params_main \tab the names of all main-effect parameters\cr
-#' params_random \tab the names of all random-effect parameters\cr
-#' params_latent \tab the names of all latent paramters\cr
 #' }
 #' 
 #' @examples
