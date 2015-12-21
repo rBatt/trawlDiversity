@@ -236,7 +236,8 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 	save_path <- file.path(save_dir,save_file)
 
 	if(pre_save){
-		save.image(save_path)
+		# save.image(save_path)
+		save(list=ls(all.names=TRUE), file=save_path)
 	}
 
 
