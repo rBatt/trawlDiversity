@@ -2,11 +2,26 @@
 #' 
 #' Run a multispecies occupancy model on trawl data. The model is multi-year, and there are two basic versions; first one is a 'static' model for which no temporal process is explicitly modelled (the years are 'stacked'). The second is a 'dynamic' model that includes persistence and colonization parameters as processes that facilitate the state transition between years. Each of these models can be run in either JAGS or Stan. Both models accept covariates for the detection and presence processes, and both sets of covariates can be modelled as random variables, constants (varying, but known precisely), or a mixture of the two.
 #' 
-#' @param reg
+#' @param reg character, region name
+#' @param params_out character vector specifying category of parameters to report in output; if custom, points to \code{custom_params} as well
+#' @param custom_params possible characters specifying custom parameters, potentially indexed; see Details 
+#' @param model_type type of model. Currently both are multiyear. 'Dynamic' includes terms for persistence and colonization (species-specific), whereas 'Static' simply 'stacks' the years.
+#' @param chains integer number of chains, default is 4
+#' @param cores integer number of cores for parallel processes; default is half of avaialble cores
+#' @param iter number of iterations; the default depends on \code{language} and on /code{test}; testing in Stan is 50, non-testing is 200. Testing in JAGS is 500, non-testing is 5000.
+#' @param language character indicating the language to be used --- JAGS or Stan
+#' @param test Logical, whether to do this run as a 'test' run. Default is FALSE. If TRUE, fewer iterations are run (unless overridden by non-default), and the data set is subsetted 
+#' @param test_sub a named list with elements 'stratum', 'year', and 'spp'. Each element should be an integer indicating the number of levels to select for each of those dimensions. Used for subsetting when \code{test} is TRUE.
+#' @param seed integer random number seed
 #' 
-
-
-run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf", "sa", "sgulf", "shelf", "wcann", "wctri"), params_out=c("params","params_main","params_random","params_latent","custom"), custom_params=NULL, model_type=c("Dynamic", "Static"), chains=4, cores=parallel::detectCores()/2, iter=50, language=c("JAGS", "Stan"), test=FALSE, test_sub=list(stratum=12, year=15, spp=20), seed=1337){
+#' @details
+#' Both \code{params_out} and \code{custom_params} must find matches in the output of \code{\link{msom_params}}. For all parameters, use 'params'; main-effect parameters specified via 'params_main'; random-effect parameters via 'params_random'. Latent stochastic nodes/ parameters via 'params_latent'. Additional flexibility offered by specifying 'custom', which will add manually specified parameters from \code{custom_params}.
+#' 
+#' 
+#' @import trawlData
+#' 
+#' @export
+run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf", "sa", "sgulf", "shelf", "wcann", "wctri"), params_out=c("params","params_main","params_random","params_latent","custom"), custom_params=NULL, model_type=c("Dynamic", "Static"), chains=4, cores=parallel::detectCores()/2, iter, language=c("JAGS", "Stan"), test=FALSE, test_sub=list(stratum=4, year=3, spp=10), seed=1337){
 	
 	model_type <- match.arg(model_type)
 	language <- match.arg(language)
@@ -19,6 +34,12 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 	requireNamespace("rbLib", quietly=TRUE)
 	if(language=="Stan"){requireNamespace("rstan", quietly=TRUE)}
 	if(language=="JAGS"){requireNamespace("R2jags", quietly=TRUE)}
+		
+	if(test){
+		iter <- ifelse(language=="Stan", 50, 500)
+	}else{
+		iter <- ifelse(language=="Stan", 200, 5E3)
+	}
 
 
 	# ======================
@@ -79,7 +100,7 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 	# ======================
 	# ---- Get Basic Structure of MSOM Data Input ----
 	setkey(regX.a2, year, stratum, K, spp)
-	inputData <- msomData(Data=regX.a2, n0=50, cov.vars=cov.vars_use, u.form=~bt+bt2+depth+depth^2+yr, v.form=~year, valueName="abund", cov.by=c("year","stratum"))
+	inputData <- msomData(Data=regX.a2, n0=10, cov.vars=cov.vars_use, u.form=~bt+bt2+yr, v.form=~year+doy, valueName="abund", cov.by=c("year","stratum"), u_rv=c("bt","bt2"), v_rv=c("doy"))
 
 	inputData$nJ <- apply(inputData$nK, 1, function(x)sum(x>0)) # number of sites in each year
 	inputData$X <- apply(inputData$X, c(1,2,4), function(x)sum(x)) # agg abund across samples
@@ -149,12 +170,14 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 	if(language=="JAGS"){
 		make.inits <- function(){
 			Z <- inputData$X
-			Z[] <- 1
-			list(Z = Z)	
+			Z[] <- pmin(1, inputData$X)
+			Omega <- runif(1, inputData$N/(inputData$nS), 1)
+			w <- c(rep(1, inputData$N), rbinom(inputData$nS-inputData$N, size=1, prob=Omega))
+			list(Z = Z, Omega = Omega, w = w)	
 		}
-		z.inits <- list()
+		inits <- list()
 		for(i in 1:chains){
-			z.inits[[i]] <- make.inits()
+			inits[[i]] <- make.inits()
 		}
 	}
 	
@@ -215,22 +238,40 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 		
 		# mps_keep <- gsub("phi", "Phi", mps_keep)
 		
-		out <- jags(
-			data=inputData,
-			inits=z.inits,
-			parameters.to.save=mps_keep,
-			model.file=model_path,
-			jags.seed=seed,
-			n.chains=chains,
-			n.iter=iter,
-			n.thin=thin
-			# ,working.directory=paste0(getwd(),"/","trawl/Scripts/Analysis/JAGS")
-		)
+		# out <- jags(
+	# 		data=inputData,
+	# 		inits=inits,
+	# 		parameters.to.save=mps_keep,
+	# 		model.file=model_path,
+	# 		jags.seed=seed,
+	# 		n.chains=chains,
+	# 		n.iter=iter,
+	# 		n.thin=thin
+	# 		# ,working.directory=paste0(getwd(),"/","trawl/Scripts/Analysis/JAGS")
+	# 	)
+	
+	for(i in 1:length(inputData)){
+		assign(names(inputData)[i], inputData[[i]])
+	}
+	
+	out <- jags.parallel(
+		data=names(inputData),
+		inits=inits[1],
+		parameters.to.save=mps_keep,
+		model.file=model_path,
+		jags.seed=seed,
+		n.chains=chains,
+		n.iter=iter,
+		n.thin=thin, 
+		export_obj_names=c("inits", "mps_keep", "model_path", "seed", "chains", "iter", "thin")
+		# export_obj_names=c("iter", "thin")
+		# ,working.directory=paste0(getwd(),"/","trawl/Scripts/Analysis/JAGS")
+	)
 		
 		
 		
 	}
 	
-	
+	return(out)
 	
 }
