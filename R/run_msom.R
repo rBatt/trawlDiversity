@@ -227,7 +227,7 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 	# =====================
 	if(language=="Stan"){
 		stan_control <- list(stepsize=0.01, adapt_delta=0.95, max_treedepth=15)
-		out <- stan(
+		out <- rstan::stan(
 			file=model_path,
 			data=inputData,
 			pars = mps_keep,
@@ -238,7 +238,7 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 		
 		# mps_keep <- gsub("phi", "Phi", mps_keep)
 		
-		# out <- jags(
+		# out <- R2jags::jags(
 	# 		data=inputData,
 	# 		inits=inits,
 	# 		parameters.to.save=mps_keep,
@@ -254,7 +254,7 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 		assign(names(inputData)[i], inputData[[i]])
 	}
 	
-	out <- jags.parallel(
+	out <- R2jags::jags.parallel(
 		data=names(inputData),
 		inits=inits[1],
 		parameters.to.save=mps_keep,
