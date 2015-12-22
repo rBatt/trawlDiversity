@@ -13,7 +13,7 @@ sessionInfo()
 rm_out <- run_msom(
 	reg = "ebs", 
 	params_out = c("params"), 
-	test=TRUE, n0=10, iter=200, pre_save=TRUE
+	test=FALSE, n0=50, iter=100, pre_save=TRUE
 )
 
 Sys.time()
