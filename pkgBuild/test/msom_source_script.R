@@ -7,13 +7,16 @@
 # ========
 library("trawlDiversity")
 
+Sys.time()
 sessionInfo()
 
 rm_out <- run_msom(
 	reg = "ebs", 
 	params_out = c("params"), 
-	# custom_params = c("Z", "Psi"), 
 	test=TRUE, n0=10, iter=200, pre_save=TRUE
 )
 
-save.image(renameNow(rm_out[[2]]["save_path"]), compress="xz")
+Sys.time()
+sessionInfo()
+
+save.image(rbLib::renameNow(rm_out[[2]]["save_path"]), compress="xz")

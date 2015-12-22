@@ -6,6 +6,7 @@ update_dependencies <- function(){
 	devtools::use_package("rbLib", type="Imports")
 	
 	devtools::use_package("R2jags", type="Suggests")
+	
 	devtools::use_package("rstan", type="Suggests")
 	
 	devtools::use_package("reshape2", type="Suggests")
