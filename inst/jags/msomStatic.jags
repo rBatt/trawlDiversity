@@ -65,7 +65,7 @@ model{
 	# Omega prior
 	Omega ~ dunif(0,1) # wouldn't a ~beta(0.5, 0.5) be better? There shouldn't be a lot of intermediate probs ...
 	for(s in 1:nS){
-		w[s] ~ dern(Omega)
+		w[s] ~ dbern(Omega)
 	}
 	
 	# Covariate Priors
@@ -78,7 +78,7 @@ model{
 				U[t,j,uc] <- U_c[t,j,uc]
 			}
 			for(urv in 1:nU_rv){
-				U[t,j,urv+nU_c] ~ dnorm(U_mu[t,j,urv+nU_c], U_tau[t,j,urv+nU_c])
+				U[t,j,urv+nU_c] ~ dnorm(U_mu[t,j,urv], U_tau[t,j,urv])
 			}
 			
 			# Detection covariates
@@ -86,7 +86,7 @@ model{
 				V[t,j,vc] <- V_c[t,j,vc]
 			}
 			for(vrv in 1:nV_rv){
-				V[t,j,vrv+nV_c] ~ dnorm(V_mu[t,j,vrv+nV_c], V_tau[t,j,vrv+nV_c])
+				V[t,j,vrv+nV_c] ~ dnorm(V_mu[t,j,vrv], V_tau[t,j,vrv])
 			}
 			
 		}
@@ -110,23 +110,31 @@ model{
 		}
 	}
 	
+	
 	# Presence and Detectability
 	for(t in 1:nT){
-		logit(Psi[t,,]) <- U[t,,]%*%alpha
-		logit(Theta[t,,]) <- V[t,,]%*%beta
+		Psi_logit[t,1:Jmax,1:nS] <- U[t,,]%*%alpha
+		
 		for(j in 1:Jmax){
-			Z[t,j,] ~ dern(Psi[t,j,] * w)
-		}	
+			for(s in 1:nS){
+				Psi[t,j,s] <- exp(Psi_logit[t,j,s])/(1 + exp(Psi_logit[t,j,s]))
+				Z[t,j,s] ~ dbern(Psi[t,j,s] * w[s])
+			}
+		}
+		
 	}
+	
 	
 	# Likelihood
 	for(t in 1:nT){
+		Theta_logit[t,1:Jmax,1:nS] <- V[t,,]%*%beta
+		
 		for(j in 1:Jmax){
 			for(s in 1:nS){
+				Theta[t,j,s] <- exp(Theta_logit[t,j,s])/(1 + exp(Theta_logit[t,j,s]))
 				X[t,j,s] ~ dbinom(Z[t,j,s] * Theta[t,j,s], nK[t,j]) # instead of Z, Psi, or Psi*w? Just Psi seems bad, but what are the implications of using Psi*w instead of Z?
 			}
 		}
 	}
 
 }
-
