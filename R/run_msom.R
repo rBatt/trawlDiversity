@@ -43,11 +43,14 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 	if(language=="JAGS"){requireNamespace("R2jags", quietly=TRUE)}
 	if(language=="JAGS"){library("R2jags")}
 		
-	if(test){
-		iter <- ifelse(language=="Stan", 50, 500)
-	}else{
-		iter <- ifelse(language=="Stan", 200, 5E3)
+	if(missing(iter)){
+		if(test){
+			iter <- ifelse(language=="Stan", 50, 500)
+		}else{
+			iter <- ifelse(language=="Stan", 200, 5E3)
+		}
 	}
+
 	
 	
 	# check files/ paths
