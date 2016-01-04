@@ -3,6 +3,7 @@
 #' Run a multispecies occupancy model on trawl data. The model is multi-year, and there are two basic versions; first one is a 'static' model for which no temporal process is explicitly modelled (the years are 'stacked'). The second is a 'dynamic' model that includes persistence and colonization parameters as processes that facilitate the state transition between years. Each of these models can be run in either JAGS or Stan. Both models accept covariates for the detection and presence processes, and both sets of covariates can be modelled as random variables, constants (varying, but known precisely), or a mixture of the two.
 #' 
 #' @param reg character, region name
+#' @param regX.a1 optional data set formatted according to output from \code{\link{trim_msom}}; if missing, gets a data set using region name and defaults on trimming and aggregating
 #' @param params_out character vector specifying category of parameters to report in output; if custom, points to \code{custom_params} as well
 #' @param custom_params possible characters specifying custom parameters, potentially indexed; see Details 
 #' @param model_type type of model. Currently both are multiyear. 'Dynamic' includes terms for persistence and colonization (species-specific), whereas 'Static' simply 'stacks' the years.
@@ -28,7 +29,7 @@
 #' @import trawlData
 #' 
 #' @export
-run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf", "sa", "sgulf", "shelf", "wcann", "wctri"), params_out=c("params","params_main","params_random","params_latent","custom"), custom_params=NULL, model_type=c("Dynamic", "Static"), n0=50, chains=4, cores=parallel::detectCores()/2, iter, thin=max(1, floor((iter/2)/200)), language=c("JAGS", "Stan"), test=FALSE, test_sub=list(stratum=4, year=3, spp=10), seed=1337, pre_save=FALSE, save_dir=".", model_dir=file.path(system.file(package="trawlDiversity"), tolower(language))){
+run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf", "sa", "sgulf", "shelf", "wcann", "wctri"), regX.a1, params_out=c("params","params_main","params_random","params_latent","custom"), custom_params=NULL, model_type=c("Dynamic", "Static"), n0=50, chains=4, cores=parallel::detectCores()/2, iter, thin=max(1, floor((iter/2)/200)), language=c("JAGS", "Stan"), test=FALSE, test_sub=list(stratum=4, year=3, spp=10), seed=1337, pre_save=FALSE, save_dir=".", model_dir=file.path(system.file(package="trawlDiversity"), tolower(language))){
 	
 	model_type <- match.arg(model_type)
 	language <- match.arg(language)
@@ -65,7 +66,9 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 	# ======================
 	# = Subset Data to Use =
 	# ======================
-	regX.a1 <- trim_msom(reg, gridSize=1, plot=FALSE)
+	if(missing(regX.a1)){
+		regX.a1 <- trim_msom(reg, gridSize=1, plot=FALSE)
+	}
 
 	if(test){
 		set.seed(seed)
@@ -93,7 +96,8 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 	# rename columns for shorthand
 	setnames(regX.a2, c("btemp"), c("bt"))
 	setnames(regX.a2, c("stemp"), c("st"))
-	regX.a2[,yr:=scale(as.integer(year))]
+	# regX.a2[,yr:=scale(as.integer(year))] # fails with 1 year; also, mu and sd not weighted to unique years, so kinda weird
+	regX.a2[,yr:=as.numeric(year)]
 
 	# aggregate and transform (^2) btemp stemp and yr
 	mk_cov_rv_pow(regX.a2, "bt", across="K", by=c("stratum","year"), pow=2)
@@ -120,9 +124,9 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 	# ======================
 	# ---- Get Basic Structure of MSOM Data Input ----
 	setkey(regX.a2, year, stratum, K, spp)
-	inputData <- msomData(Data=regX.a2, n0=n0, cov.vars=cov.vars_use, u.form=~bt+bt2+yr, v.form=~year+doy, valueName="abund", cov.by=c("year","stratum"), u_rv=c("bt","bt2"), v_rv=c("doy"))
+	inputData <- msomData(Data=regX.a2, n0=n0, cov.vars=cov.vars_use, u.form=~bt+bt2, v.form=~1, valueName="abund", cov.by=c("year","stratum"), u_rv=c("bt","bt2"))
 
-	inputData$nJ <- apply(inputData$nK, 1, function(x)sum(x>0)) # number of sites in each year
+	inputData$nJ <- as.array(apply(inputData$nK, 1, function(x)sum(x>0))) # number of sites in each year
 	inputData$X <- apply(inputData$X, c(1,2,4), function(x)sum(x)) # agg abund across samples
 
 	
@@ -204,11 +208,12 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 	# Remove Unused list elements
 	inputData$U <- NULL
 	inputData$V <- NULL
-	inputData$nJ <- NULL
-	inputData$isUnobs <- NULL
-	inputData$Kmax <- NULL
+
 	if(language=="JAGS"){
+		inputData$nJ <- NULL
 		inputData$N <- NULL
+		inputData$isUnobs <- NULL # Stan models could be modified to make unncessary for them, too
+		inputData$Kmax <- NULL # Stan models could be modified to make unncessary for them, too
 	}
 	
 	
