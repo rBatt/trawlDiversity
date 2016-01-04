@@ -231,10 +231,10 @@ msomData <- function(Data, n0=10, formula=year~stratum~K~spp, cov.vars=c(bt="bte
 	}
 
 	# ---- Add Sizes of Constant and RV U/V Arrays ----
-	out$nU_rv <- dim(out$U_mu)[3]
-	out$nV_rv <- dim(out$V_mu)[3]
-	out$nU_c <- dim(out$U_c)[3]
-	out$nV_c <- dim(out$V_c)[3]
+	out$nU_rv <- dim(out$U_mu)[length(dim(out$U_mu))]
+	out$nV_rv <- dim(out$V_mu)[length(dim(out$V_mu))]
+	out$nU_c <- dim(out$U_c)[length(dim(out$U_c))]
+	out$nV_c <- dim(out$V_c)[length(dim(out$V_c))]
 
 	stopifnot(out$nV == out$nV_c + out$nV_rv)
 	stopifnot(out$nU == out$nU_c + out$nU_rv)
