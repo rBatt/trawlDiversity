@@ -98,6 +98,7 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 	setnames(regX.a2, c("stemp"), c("st"))
 	# regX.a2[,yr:=scale(as.integer(year))] # fails with 1 year; also, mu and sd not weighted to unique years, so kinda weird
 	regX.a2[,yr:=as.numeric(year)]
+	regX.a2[,year:=as.character(year)]
 
 	# aggregate and transform (^2) btemp stemp and yr
 	mk_cov_rv_pow(regX.a2, "bt", across="K", by=c("stratum","year"), pow=2)
@@ -124,7 +125,7 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 	# ======================
 	# ---- Get Basic Structure of MSOM Data Input ----
 	setkey(regX.a2, year, stratum, K, spp)
-	inputData <- msomData(Data=regX.a2, n0=n0, cov.vars=cov.vars_use, u.form=~bt+bt2, v.form=~1, valueName="abund", cov.by=c("year","stratum"), u_rv=c("bt","bt2"))
+	inputData <- msomData(Data=regX.a2, n0=n0, cov.vars=cov.vars_use, u.form=~bt+bt2, v.form=~year+doy, valueName="abund", cov.by=c("year","stratum"), u_rv=c("bt","bt2"), v_rv=c("doy"))
 
 	inputData$nJ <- as.array(apply(inputData$nK, 1, function(x)sum(x>0))) # number of sites in each year
 	inputData$X <- apply(inputData$X, c(1,2,4), function(x)sum(x)) # agg abund across samples
