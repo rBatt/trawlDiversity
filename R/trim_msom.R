@@ -1,22 +1,26 @@
 #' Trim trawl data for msom
 #' 
-#' Performs the \code{trawlTrim} function the clean region data, then trims down to species (not genera) that have been observed at least 10 times. Does aggregating within a haul/ spp. Adds an abundance column, which is actually just 0 if wtcpue == 0, and 1 if wtcpue > 0.
+#' Performs the \code{trawlTrim} function the clean region data, then trims down to species (not genera) that have been observed at least 10 times. Does aggregating within a haul/ spp using \code{trawlAgg}. Adds an abundance column, which is actually just 0 if wtcpue == 0, and 1 if wtcpue > 0.
 #' 
 #' @param reg name of region to be passed to \code{\link{trawlTrim}}
-#' @param gridSize grid size to be passed to \code{\link{ll2strat}}
+#' @param gridSize numeric grid size to be passed to \code{\link{ll2strat}}
+#' @param grid_stratum logical, default TRUE; whether or not the strata should be defined on a grid, or used original stratum definition
 #' @param plot Logical, default FALSE; for \code{check_strat}, should the stratum tolerance be plotted?
 #' 
 #' @return
 #' A data.table 
 #' 
 #' @export
-trim_msom <- function(reg, gridSize=1, plot=FALSE){
+trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, plot=FALSE){
 	
 	# use default trimming
 	X.t <- trawlTrim(reg)
 	
-	# define stratum on 1º grid
-	X.t[,stratum:=ll2strat(lon, lat, gridSize=gridSize)]
+	
+	if(grid_stratum){
+		# define stratum on gridSizeº grid
+		X.t[,stratum:=ll2strat(lon, lat, gridSize=gridSize)]
+	}
 	
 	
 	# drop strata that weren't sampled every year
