@@ -21,7 +21,7 @@ rm_out <- run_msom(
 	params_out = c("params"), 
 	language="Stan",
 	model_type = "Static",
-	test=FALSE, n0=50, iter=50, pre_save=F
+	test=FALSE, n0=50, iter=200, pre_save=TRUE
 )
 
 Sys.time()
