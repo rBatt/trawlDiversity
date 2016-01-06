@@ -2,6 +2,9 @@
 # run on amphiprion: 
 # nohup R CMD BATCH -cwd --no-save trawlDiversity/pkgBuild/test/msom_source_script.R &
 
+# nohup R CMD BATCH -cwd --no-save trawlDiversity/pkgBuild/test/msom_source_script.R msom_source_script_1degree_simpler.Rout &
+
+
 # ========
 # = Load =
 # ========
@@ -11,17 +14,17 @@ library("rstan")
 Sys.time()
 sessionInfo()
 
-data_in_all <- trim_msom("ebs", gridSize=5, grid_stratum=FALSE, plot=FALSE)
+data_in_all <- trim_msom("ebs", gridSize=1, grid_stratum=TRUE, plot=FALSE)
 
 # data_in_year <- data_in_all[year<=2000]
 
 rm_out <- run_msom(
 	reg = "ebs", 
 	regX.a1 = data_in_all,
-	params_out = c("params"), 
+	params_out = c("params_main"), 
 	language="Stan",
 	model_type = "Static",
-	test=FALSE, n0=50, iter=200, pre_save=TRUE
+	test=FALSE, n0=50, iter=50, pre_save=TRUE
 )
 
 Sys.time()
