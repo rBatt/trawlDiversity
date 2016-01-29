@@ -303,6 +303,6 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 		
 	}
 	
-	return(list(out=out, info=c(run_info=run_info, model_file=model_file, model_path=model_path, tag=tag, save_file=save_file, save_path=save_path)))
+	return(list(out=out, inputData=inputData, info=c(run_info=run_info, model_file=model_file, model_path=model_path, tag=tag, save_file=save_file, save_path=save_path)))
 	
 }
