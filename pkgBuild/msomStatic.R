@@ -55,13 +55,15 @@ rstan::traceplot(stan_out, "lp__", window=c(1,50), inc_warmup=T)
 # = Parameter Summary =
 # =====================
 # what is the distribution of omega?
-par(mfrow=c(2,1), mar=c(2.5,2.5,0.1,0.1), mgp=c(1,0.1,0), tcl=-0.1, ps=9)
 png("~/Desktop/omega_full.png", width=3.5, height=3.5, units="in", res=150)
+
+par(mfrow=c(2,1), mar=c(2.5,2.5,0.1,0.1), mgp=c(1,0.1,0), tcl=-0.1, ps=9)
 Omega <- rstan::extract(stan_out, "Omega")[[1]]
 plot(density(Omega, from=0, to=1))
 omega_prior_q <- seq(0,1,length.out=length(Omega))
 omega_prior <- dbeta(omega_prior_q, 2, 2)
 lines(omega_prior_q, omega_prior, col="blue")
+
 dev.off()
 
 sims <- rstan::extract(stan_out)
@@ -84,6 +86,10 @@ par(mfrow=c(2,1), mar=c(2.5,2.5,0.1,0.1), mgp=c(1,0.1,0), tcl=-0.1, ps=9)
 # ---- Species Response Curves via Psi and bt ----
 alpha <- apply(sims$alpha, 2:3, mean)
 U <- staticData$U[1,,][order(staticData$U[1,,][,2]),]
+if(any(c("depth","depth2")%in%colnames(U))){
+	U[,"depth"] <- mean(U[,"depth"])
+	U[,"depth2"] <- mean(U[,"depth2"])
+}
 psi_resp <- plogis(U%*%alpha)
 
 plot(U[,2], psi_resp[,1], ylim=range(psi_resp), type='l', col="gray", xlab="bottom temperature")
@@ -97,7 +103,12 @@ plot(density(staticData$U[,,"bt"]), xaxt="n",yaxt="n", ylab="",xlab="", main="",
 
 # ---- Detectability Response Curve via Theta and doy ----
 beta <- apply(sims$beta, 2:3, mean)
-V <- apply(staticData$V, 3, function(x)seq(min(x), max(x), length.out=100))
+V <- staticData$V[1,,][order(staticData$V[1,,][,2]),]
+if(any(c("yr","yr2")%in%colnames(U))){
+	V[,"yr"] <- mean(V[,"yr"])
+	V[,"yr2"] <- mean(V[,"yr2"])
+}
+# V <- apply(staticData$V, 3, function(x)seq(min(x), max(x), length.out=100))
 theta_resp <- plogis(V%*%beta)
 
 plot(V[,2], theta_resp[,1], ylim=range(theta_resp), type='l', col="gray", xlab="day of year (scaled)")
