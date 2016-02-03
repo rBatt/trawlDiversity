@@ -19,6 +19,7 @@
 #' @param pre_save Logical; if TRUE (default) saves a workspace image before running the model
 #' @param save_dir Character string indicating the location of the directory to save the intermediate image; default is current directory
 #' @param model_dir Character string indicating the location of the model file; default is selected automatically based on \code{language} and \code{model_type}, and looks to models that come with this package
+#' @param ... arguments passed to stan
 #' 
 #' @details
 #' Both \code{params_out} and \code{custom_params} must find matches in the output of \code{\link{msom_params}}. For all parameters, use 'params'; main-effect parameters specified via 'params_main'; random-effect parameters via 'params_random'. Latent stochastic nodes/ parameters via 'params_latent'. Additional flexibility offered by specifying 'custom', which will add manually specified parameters from \code{custom_params}.
@@ -29,7 +30,7 @@
 #' @import trawlData
 #' 
 #' @export
-run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf", "sa", "sgulf", "shelf", "wcann", "wctri"), regX.a1, params_out=c("params","params_main","params_random","params_latent","custom"), custom_params=NULL, model_type=c("Dynamic", "Static"), n0=50, chains=4, cores=parallel::detectCores()/2, iter, thin=max(1, floor((iter/2)/200)), language=c("JAGS", "Stan"), test=FALSE, test_sub=list(stratum=4, year=3, spp=10), seed=1337, pre_save=FALSE, save_dir=".", model_dir=file.path(system.file(package="trawlDiversity"), tolower(language))){
+run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf", "sa", "sgulf", "shelf", "wcann", "wctri"), regX.a1, params_out=c("params","params_main","params_random","params_latent","custom"), custom_params=NULL, model_type=c("Dynamic", "Static"), n0=50, chains=4, cores=parallel::detectCores()/2, iter, thin=max(1, floor((iter/2)/200)), language=c("JAGS", "Stan"), test=FALSE, test_sub=list(stratum=4, year=3, spp=10), seed=1337, pre_save=FALSE, save_dir=".", model_dir=file.path(system.file(package="trawlDiversity"), tolower(language)), ...){
 	
 	model_type <- match.arg(model_type)
 	language <- match.arg(language)
@@ -87,7 +88,7 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 	# ==================
 	# = Set Covariates =
 	# ==================
-	cov.vars_use <- c(bt="bt",bt2="bt2",yr="yr", doy="doy", doy2="doy2", depth="depth", depth2="depth2")
+	cov.vars_use <- c(bt="bt",bt2="bt2",yr="yr", yr2="yr2", doy="doy", doy2="doy2", depth="depth", depth2="depth2")
 
 
 	# ======================================
@@ -100,9 +101,12 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 	regX.a2[,yr:=as.numeric(year)]
 	regX.a2[,year:=as.character(year)]
 
-	# aggregate and transform (^2) btemp stemp and yr
+	# aggregate and transform (^2) btemp stemp
 	mk_cov_rv_pow(regX.a2, "bt", across="K", by=c("stratum","year"), pow=2)
 	mk_cov_rv_pow(regX.a2, "st", across="K", by=c("stratum","year"), pow=2)
+	
+	# make smallest yr 0, then aggregate
+	regX.a2[,yr:=(yr-min(yr, na.rm=TRUE))]
 	mk_cov_rv_pow(regX.a2, "yr", across="K", by=c("stratum","year"), pow=2)
 
 	# scale and aggregate doy
@@ -126,7 +130,7 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 	# ---- Get Basic Structure of MSOM Data Input ----
 	setkey(regX.a2, year, stratum, K, spp)
 	# inputData <- msomData(Data=regX.a2, n0=n0, cov.vars=cov.vars_use, u.form=~bt+bt2, v.form=~year+doy, valueName="abund", cov.by=c("year","stratum"), u_rv=c("bt","bt2"), v_rv=c("doy"))
-	inputData <- msomData(Data=regX.a2, n0=n0, cov.vars=cov.vars_use, u.form=~bt+bt2, v.form=~1, valueName="abund", cov.by=c("year","stratum"), u_rv=c("bt","bt2"))
+	inputData <- msomData(Data=regX.a2, n0=n0, cov.vars=cov.vars_use, u.form=~bt+bt2+depth+depth2, v.form=~1, valueName="abund", cov.by=c("year","stratum"))
 
 	inputData$nJ <- as.array(apply(inputData$nK, 1, function(x)sum(x>0))) # number of sites in each year
 	inputData$X <- apply(inputData$X, c(1,2,4), function(x)sum(x)) # agg abund across samples
@@ -208,8 +212,26 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 	}
 	
 	# Remove Unused list elements
-	inputData$U <- NULL
-	inputData$V <- NULL
+	if(inputData$nU_rv == 0 & inputData$nV_rv == 0){
+		inputData$U_c <- NULL
+		inputData$U_mu <- NULL
+		inputData$U_sd <- NULL
+		inputData$V_c <- NULL
+		inputData$V_mu <- NULL
+		inputData$V_sd <- NULL
+		
+		inputData$nU_rv <- NULL
+		inputData$nV_rv <- NULL
+		inputData$nU_c <- NULL
+		inputData$nV_rv <- NULL
+		
+		model_type <- paste0(model_type, "_norv")
+		
+	}else{
+		inputData$U <- NULL
+		inputData$V <- NULL
+	}
+
 
 	if(language=="JAGS"){
 		inputData$nJ <- NULL
@@ -223,6 +245,8 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 	model_file <- paste0("msom", model_type, ".", tolower(language))
 	# model_path <- file.path(system.file(package="trawlDiversity"), "inst", tolower(language), model_file)
 	model_path <- file.path(model_dir, model_file)
+	# model_path = "~/Documents/School&Work/pinskyPost/trawl/trawlDiversity/inst/stan/msomStatic_norv.stan"
+	# model_path = "~/Documents/School&Work/pinskyPost/trawl/trawlDiversity/inst/jags/msomStatic_norv.jags"
 
 	tag <- paste0("start", format.Date(Sys.time(),"%Y-%m-%d_%H-%M-%S"))
 
@@ -256,13 +280,14 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 	# = Fit Model in Stan =
 	# =====================
 	if(language=="Stan"){
-		stan_control <- list(stepsize=0.01, adapt_delta=0.95, max_treedepth=15)
+		stan_control <- list(stepsize=0.1, adapt_delta=0.9, max_treedepth=10)
 		out <- rstan::stan(
 			file=model_path,
 			data=inputData,
 			pars = mps_keep,
-			control=stan_control,
-			chains=chains, iter=iter, seed=seed, cores=cores, verbose=F, refresh=1
+			control=stan_control, 
+			# sample_file = "~/Desktop/test.csv",
+			chains=chains, iter=iter, seed=seed, cores=cores, verbose=F, refresh=10, ...
 		)
 	}else if(language=="JAGS"){
 		
@@ -304,5 +329,10 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 	}
 	
 	return(list(out=out, inputData=inputData, info=c(run_info=run_info, model_file=model_file, model_path=model_path, tag=tag, save_file=save_file, save_path=save_path)))
+	
+	# setwd("~/Documents/School&Work/pinskyPost/trawl")
+	# remove.packages('trawlDiversity')
+	# library(devtools)
+	# install('trawlDiversity', upgrade_dependencies=FALSE)
 	
 }
