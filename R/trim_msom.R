@@ -29,12 +29,12 @@ trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, plot=FALSE){
 	X.t[,keep_strat:=NULL]
 	
 	# get the names of the species that were observed at least 10 times
-	lots_spp <- X.t[,rowSums(table(spp,haulid))>=10]
+	lots_spp <- X.t[,apply(table(spp, stratum,year)>1, 1, sum)]>=10
 	names_lots_spp <- names(lots_spp[lots_spp])
 	
 	# drop taxa that aren't species or weren't observed at least 10 times
 	X.t <- X.t[(spp%in%names_lots_spp) & (taxLvl=="species" | taxLvl=="subspecies")]
-	X.t[,lu(spp)]
+	# X.t[,lu(spp)]
 
 	# aggregate to make sure a haul
 	# doesn't have duplicates of individuals
