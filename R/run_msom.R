@@ -70,6 +70,7 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 	if(missing(regX.a1)){
 		regX.a1 <- trim_msom(reg, gridSize=1, plot=FALSE)
 	}
+	
 
 	if(test){
 		set.seed(seed)
@@ -82,7 +83,7 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 		regX.a1 <- regX.a1[eval(logic)][pick(spp, test_sub$spp, w=FALSE)]
 	}
 	
-	regX.a2 <- regX.a1[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, stemp=stemp, depth=depth, doy=yday(datetime))]
+	regX.a2 <- regX.a1[,list(year=year, spp=spp, stratum=stratum, K=K, abund=abund, btemp=btemp, depth=depth, doy=yday(datetime))]
 
 
 	# ==================
@@ -96,14 +97,14 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 	# ======================================
 	# rename columns for shorthand
 	setnames(regX.a2, c("btemp"), c("bt"))
-	setnames(regX.a2, c("stemp"), c("st"))
+	# setnames(regX.a2, c("stemp"), c("st"))
 	# regX.a2[,yr:=scale(as.integer(year))] # fails with 1 year; also, mu and sd not weighted to unique years, so kinda weird
 	regX.a2[,yr:=as.numeric(year)]
 	regX.a2[,year:=as.character(year)]
 
 	# aggregate and transform (^2) btemp stemp
 	mk_cov_rv_pow(regX.a2, "bt", across="K", by=c("stratum","year"), pow=2)
-	mk_cov_rv_pow(regX.a2, "st", across="K", by=c("stratum","year"), pow=2)
+	# mk_cov_rv_pow(regX.a2, "st", across="K", by=c("stratum","year"), pow=2)
 	
 	# make smallest yr 0, then aggregate
 	regX.a2[,yr:=(yr-min(yr, na.rm=TRUE))]
