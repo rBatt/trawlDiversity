@@ -18,6 +18,7 @@ Sys.time()
 sessionInfo()
 
 n0_pad <- 100
+# n0_pad <- 50
 regs <- c("ebs", "ai", "goa", "wctri", "wcann", "gmex", "sa", "neus", "shelf", "newf")
 rm_out <- vector("list", length(regs))
 
@@ -34,6 +35,7 @@ for(r in 1:length(regs)){
 	# max_n_spp <- n_spp[,max(n_spp)]
 	S <- data_in_all[,lu(spp)]
 	annual_n0 <- (S + n0_pad) - n_spp[,n_spp]
+	# annual_n0 <- (max_n_spp + n0_pad) - n_spp[,n_spp]
 
 	
 	rm_out[[r]] <- vector("list", length(u_yrs))
@@ -42,7 +44,7 @@ for(r in 1:length(regs)){
 		t_data <- data_in_all[year==u_yrs[i]]
 	
 		cat(paste0("\n\n\n", toupper(t_data[,unique(reg)]), " Year = ",u_yrs[i], " (", i, " of ", length(u_yrs), ")\n"))
-		Sys.time()
+		print(Sys.time())
 	
 		rm_out[[r]][[i]] <- run_msom(
 			reg = t_reg,
@@ -74,4 +76,4 @@ for(r in 1:length(regs)){
 Sys.time()
 sessionInfo()
 
-save.image(rbLib::renameNow(rm_out[[1]][[3]]["save_path"]), compress="xz")
+# save.image(rbLib::renameNow(rm_out[[1]][[3]]["save_path"]), compress="xz")
