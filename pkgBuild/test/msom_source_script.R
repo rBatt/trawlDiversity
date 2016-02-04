@@ -17,7 +17,7 @@ library("R2jags")
 Sys.time()
 sessionInfo()
 
-n0_pad <- 50
+n0_pad <- 100
 regs <- c("ebs", "ai", "goa", "wctri", "wcann", "gmex", "sa", "neus", "shelf", "newf")
 rm_out <- vector("list", length(regs))
 
@@ -31,8 +31,9 @@ for(r in 1:length(regs)){
 	setkey(data_in_all, year, stratum, haulid, spp)
 	u_yrs <- data_in_all[,unique(year)]
 	n_spp <- data_in_all[,list(n_spp=lu(spp)), by="year"]
-	max_n_spp <- n_spp[,max(n_spp)]
-	annual_n0 <- (max_n_spp + n0_pad) - n_spp[,n_spp]
+	# max_n_spp <- n_spp[,max(n_spp)]
+	S <- data_in_all[,lu(spp)]
+	annual_n0 <- (S + n0_pad) - n_spp[,n_spp]
 
 	
 	rm_out[[r]] <- vector("list", length(u_yrs))
