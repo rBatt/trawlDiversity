@@ -48,7 +48,7 @@ hist_treedepth <- function(fit) {
 hist_treedepth(stan_out)
 
 # lp
-rstan::traceplot(stan_out, "lp__", window=c(1,50), inc_warmup=T)
+rstan::traceplot(stan_out, "lp__", inc_warmup=T)
 
 
 # =====================
