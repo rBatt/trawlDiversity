@@ -24,7 +24,14 @@ trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, plot=FALSE){
 	
 	
 	# drop strata that weren't sampled every year
-	check_strat(X.t, reg, gridSize=gridSize, strat_tol=0, append_keep_strat=TRUE, plot=plot)
+	if(reg == "gmex"){
+		X.t <- X.t[(year)!=2015,]
+	}
+	if(reg == "gmex"){
+		check_strat(X.t, reg, gridSize=gridSize, strat_tol=10, append_keep_strat=TRUE, plot=plot)
+	}else{
+		check_strat(X.t, reg, gridSize=gridSize, strat_tol=0, append_keep_strat=TRUE, plot=plot)
+	}
 	X.t <- X.t[(keep_strat)]
 	X.t[,keep_strat:=NULL]
 	
