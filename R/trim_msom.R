@@ -51,6 +51,21 @@ trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tol
 	# doesn't have duplicates of individuals
 	# this aggregation uses the biological sum
 	
+	if(reg== 'neus'){
+		X.t <- trawlAgg(
+			X = X.t,
+			bioFun = una,
+			envFun = meanna,
+			bio_lvl = "ref",
+			space_lvl = "haulid",
+			time_lvl = "haulid",
+			bioCols= c("wtcpue"),
+			envCols = c("stemp","btemp","depth","lon","lat"),
+			metaCols = c("reg","datetime","season","year","lon","lat","stratum","common","spp","species"),
+			meta.action = "unique1"
+		)
+	}
+	
 	X.agg1 <- trawlAgg(
 		X = X.t,
 		bioFun = sumna,
