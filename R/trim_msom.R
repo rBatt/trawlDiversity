@@ -15,6 +15,14 @@
 #' @export
 trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tolFraction=1/3, plot=FALSE){
 	
+	# reg = 'ebs'
+	# gridSize = 0.5
+	# grid_stratum = TRUE
+	# depthStratum = 100
+	# tolFraction = 0.25
+	# plot=TRUE
+	
+	
 	# use default trimming
 	X.t <- trawlTrim(reg)
 	
@@ -32,20 +40,33 @@ trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tol
 	if(reg == "gmex" | reg == "neus"){
 		X.t <- X.t[(year)!=2015,]
 	}
+	if(reg == "newf"){
+		X.t <- X.t[(year)>=1995,]
+	}
+	if(reg == "sa"){
+		X.t <- X.t[(year)>=1990]
+	}
+	if(reg == "shelf"){
+		X.t <- X.t[(year)!=2011,]
+	}
 	
-	strat_tol <- X.t[,ceiling(lu(year)*tolFraction)]
+	strat_tol <- X.t[,floor(lu(year)*tolFraction)]
 	check_strat(X.t, reg, gridSize=gridSize, strat_tol=strat_tol, append_keep_strat=TRUE, plot=plot)
 	
 	X.t <- X.t[(keep_strat)]
 	X.t[,keep_strat:=NULL]
 	
-	# get the names of the species that were observed at least 10 times
-	lots_spp <- X.t[,apply(table(spp, stratum,year)>1, 1, sum)]>=10
+	# get the names of the species that were observed at least 5 times
+	lots_spp <- X.t[,apply(table(spp, stratum,year)>1, 1, sum)]>=5
 	names_lots_spp <- names(lots_spp[lots_spp])
 	
 	# drop taxa that aren't species or weren't observed at least 10 times
 	X.t <- X.t[(spp%in%names_lots_spp) & (taxLvl=="species" | taxLvl=="subspecies")]
-	# X.t[,lu(spp)]
+	
+	X.t[,hist(rowSums(table(stratum, year)>0))]
+	X.t[,plot(colSums(table(stratum, year)>0), xlab="year", ylab='nstrat', type='o')]
+	X.t[, lu(stratum)]
+	X.t[, lu(spp)]
 
 	# aggregate to make sure a haul
 	# doesn't have duplicates of individuals
