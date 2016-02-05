@@ -2,16 +2,18 @@
 #' 
 #' Performs the \code{trawlTrim} function the clean region data, then trims down to species (not genera) that have been observed at least 10 times. Does aggregating within a haul/ spp using \code{trawlAgg}. Adds an abundance column, which is actually just 0 if wtcpue == 0, and 1 if wtcpue > 0.
 #' 
-#' @param reg name of region to be passed to \code{\link{trawlTrim}}
+#' @param reg Character name of region or data.table to be passed to \code{\link{trawlTrim}}.
 #' @param gridSize numeric grid size to be passed to \code{\link{ll2strat}}
 #' @param grid_stratum logical, default TRUE; whether or not the strata should be defined on a grid, or used original stratum definition
+#' @param depthStratum The depth range to use to define stratum; the default does not use depth at all. If using, a reasonable value might be 100.
+#' @param tolFraction The fraction of years that a stratum can not be sampled yet still be included in output. Default is 1/3, indicating that a stratum will be included in output so long as it is sampled for at least 2/3 of years. Actual number of years tolerated is rounded up. This value determines the strat_tol argument in \code{\link{check_strat}}
 #' @param plot Logical, default FALSE; for \code{check_strat}, should the stratum tolerance be plotted?
 #' 
 #' @return
 #' A data.table 
 #' 
 #' @export
-trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, plot=FALSE){
+trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tolFraction=1/3, plot=FALSE){
 	
 	# use default trimming
 	X.t <- trawlTrim(reg)
@@ -20,18 +22,20 @@ trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, plot=FALSE){
 	if(grid_stratum){
 		# define stratum on gridSizeº grid
 		X.t[,stratum:=ll2strat(lon, lat, gridSize=gridSize)]
+		if(!is.null(depthStratum)){
+			X.t[,stratum:=paste(stratum, roundGrid(depth, depthStratum))]
+		}
 	}
 	
 	
 	# drop strata that weren't sampled every year
-	if(reg == "gmex"){
+	if(reg == "gmex" | reg == "neus"){
 		X.t <- X.t[(year)!=2015,]
 	}
-	if(reg == "gmex"){
-		check_strat(X.t, reg, gridSize=gridSize, strat_tol=10, append_keep_strat=TRUE, plot=plot)
-	}else{
-		check_strat(X.t, reg, gridSize=gridSize, strat_tol=0, append_keep_strat=TRUE, plot=plot)
-	}
+	
+	strat_tol <- X.t[,ceiling(lu(year)*tolFraction)]
+	check_strat(X.t, reg, gridSize=gridSize, strat_tol=strat_tol, append_keep_strat=TRUE, plot=plot)
+	
 	X.t <- X.t[(keep_strat)]
 	X.t[,keep_strat:=NULL]
 	
@@ -46,6 +50,7 @@ trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, plot=FALSE){
 	# aggregate to make sure a haul
 	# doesn't have duplicates of individuals
 	# this aggregation uses the biological sum
+	
 	X.agg1 <- trawlAgg(
 		X = X.t,
 		bioFun = sumna,
