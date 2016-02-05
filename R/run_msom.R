@@ -19,7 +19,8 @@
 #' @param pre_save Logical; if TRUE (default) saves a workspace image before running the model
 #' @param save_dir Character string indicating the location of the directory to save the intermediate image; default is current directory
 #' @param model_dir Character string indicating the location of the model file; default is selected automatically based on \code{language} and \code{model_type}, and looks to models that come with this package
-#' @param ... arguments passed to stan
+#' @param compiled_model Only used when language="Stan"; a Stan model compiled using \code{\link{stan_model}}. Useful for preventing repeated model recompilation and/or reapeated loading of DLLs, which can cause an error if done enough. When provided, \code{\link{sampling}} is called instead of \code
+#' @param ... arguments passed to \code{rstan::sampling}
 #' 
 #' @details
 #' Both \code{params_out} and \code{custom_params} must find matches in the output of \code{\link{msom_params}}. For all parameters, use 'params'; main-effect parameters specified via 'params_main'; random-effect parameters via 'params_random'. Latent stochastic nodes/ parameters via 'params_latent'. Additional flexibility offered by specifying 'custom', which will add manually specified parameters from \code{custom_params}.
@@ -30,7 +31,7 @@
 #' @import trawlData
 #' 
 #' @export
-run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf", "sa", "sgulf", "shelf", "wcann", "wctri"), regX.a1, params_out=c("params","params_main","params_random","params_latent","custom"), custom_params=NULL, model_type=c("Dynamic", "Static"), n0=50, chains=4, cores=parallel::detectCores()/2, iter, thin=max(1, floor((iter/2)/200)), language=c("JAGS", "Stan"), test=FALSE, test_sub=list(stratum=4, year=3, spp=10), seed=1337, pre_save=FALSE, save_dir=".", model_dir=file.path(system.file(package="trawlDiversity"), tolower(language)), ...){
+run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf", "sa", "sgulf", "shelf", "wcann", "wctri"), regX.a1, params_out=c("params","params_main","params_random","params_latent","custom"), custom_params=NULL, model_type=c("Dynamic", "Static"), n0=50, chains=4, cores=parallel::detectCores()/2, iter, thin=max(1, floor((iter/2)/200)), language=c("JAGS", "Stan"), test=FALSE, test_sub=list(stratum=4, year=3, spp=10), seed=1337, pre_save=FALSE, save_dir=".", model_dir=file.path(system.file(package="trawlDiversity"), tolower(language)), compiled_model=NULL, ...){
 	
 	model_type <- match.arg(model_type)
 	language <- match.arg(language)
@@ -59,7 +60,7 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 	if(!file.exists(save_dir)){
 		stop("save directory (", save_dir, ") does not exist")
 	}
-	if(!file.exists(model_dir)){
+	if(!file.exists(model_dir) & ((is.null(compiled_model) & language=="Stan") | language=="JAGS")){
 		stop("model directory (", model_dir, ") does not exist")
 	}
 
@@ -244,7 +245,6 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 	
 	
 	model_file <- paste0("msom", model_type, ".", tolower(language))
-	# model_path <- file.path(system.file(package="trawlDiversity"), "inst", tolower(language), model_file)
 	model_path <- file.path(model_dir, model_file)
 	# model_path = "~/Documents/School&Work/pinskyPost/trawl/trawlDiversity/inst/stan/msomStatic_norv.stan"
 	# model_path = "~/Documents/School&Work/pinskyPost/trawl/trawlDiversity/inst/jags/msomStatic_norv.jags"
@@ -281,14 +281,16 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 	# = Fit Model in Stan =
 	# =====================
 	if(language=="Stan"){
-		stan_control <- list(stepsize=0.1, adapt_delta=0.9, max_treedepth=10)
-		out <- rstan::stan(
-			file=model_path,
+		if(is.null(compiled_model)){
+			compiled_model <- rstan::stan_model(model_path)
+		}
+		stan_control <- list(stepsize=0.1, adapt_delta=0.95, max_treedepth=10)
+		out <- rstan::sampling(
+			object=compiled_model,
 			data=inputData,
 			pars = mps_keep,
 			control=stan_control, 
-			# sample_file = "~/Desktop/test.csv",
-			chains=chains, iter=iter, seed=seed, cores=cores, verbose=F, refresh=10, ...
+			chains=chains, iter=iter, seed=seed, cores=cores, verbose=F, refresh=20, ...
 		)
 	}else if(language=="JAGS"){
 		
