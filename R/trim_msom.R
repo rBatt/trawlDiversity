@@ -14,12 +14,12 @@
 #' 
 #' @export
 trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tolFraction=1/3, plot=FALSE){
-	
-	# reg = 'ebs'
+		#
+	# reg = 'neus'
 	# gridSize = 0.5
 	# grid_stratum = TRUE
 	# depthStratum = 100
-	# tolFraction = 0.25
+	# tolFraction = 0.15
 	# plot=TRUE
 	
 	
@@ -37,17 +37,29 @@ trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tol
 	
 	
 	# drop strata that weren't sampled every year
+	if(reg == "ai"){
+		X.t <- X.t[(year)>1900,]
+	}
+	# if(reg == "goa"){
+	# 	X.t <- X.t[(year)!=2001,]
+	# }
 	if(reg == "gmex" | reg == "neus"){
 		X.t <- X.t[(year)!=2015,]
 	}
+	if(reg == "gmex"){
+		X.t <- X.t[(year)>1983 & (year)<2001]
+	}
+	if(reg == "neus"){
+		X.t <- X.t[(year)>1981 & (year)<2014]
+	}
 	if(reg == "newf"){
-		X.t <- X.t[(year)>=1995,]
+		X.t <- X.t[(year)>1995,]
 	}
 	if(reg == "sa"){
 		X.t <- X.t[(year)>=1990]
 	}
 	if(reg == "shelf"){
-		X.t <- X.t[(year)!=2011,]
+		X.t <- X.t[(year)!=2011 & (year)>1950,]
 	}
 	
 	strat_tol <- X.t[,floor(lu(year)*tolFraction)]
@@ -57,7 +69,7 @@ trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tol
 	X.t[,keep_strat:=NULL]
 	
 	# get the names of the species that were observed at least 5 times
-	lots_spp <- X.t[,apply(table(spp, stratum,year)>1, 1, sum)]>=5
+	lots_spp <- X.t[,apply(table(spp, stratum,year)>1, 1, sum)]>=10
 	names_lots_spp <- names(lots_spp[lots_spp])
 	
 	# drop taxa that aren't species or weren't observed at least 10 times
