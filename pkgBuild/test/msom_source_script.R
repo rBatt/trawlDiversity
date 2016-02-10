@@ -2,7 +2,7 @@
 # run on amphiprion: 
 # nohup R CMD BATCH -cwd --no-save trawlDiversity/pkgBuild/test/msom_source_script.R &
 
-# nohup R CMD BATCH -cwd --no-save trawlDiversity/pkgBuild/test/msom_source_script.R msom_source_script_AllRegs_annual_backwards.Rout &
+# nohup R CMD BATCH -cwd --no-save trawlDiversity/pkgBuild/test/msom_source_script.R msom_source_script_AllRegs_annual_r1-2.Rout &
 
 
 # ========
@@ -26,8 +26,8 @@ model_location <- file.path(stan_folder, "msomStatic_norv.stan")
 compiled_stan_model <- stan_model(model_location)
 
 # for(r in length(regs):1){
-# for(r in 1:2){ # ebs and ai
-for(r in 3:4){ # goa and wctri
+for(r in 1:2){ # ebs and ai
+# for(r in 3:4){ # goa and wctri
 # for(r in 5:6){ # wcann and gmex
 # for(r in 7:8){ # sa and neus
 # for(r in 9:10){ # shelf and newf
