@@ -6,7 +6,8 @@ library("rbLib")
 library("rstan")
 
 set.seed(1337)
-sim_out <- sim_occ(ns=12, grid.w=5, grid.h=7, grid.t=3, h.slope=0.5, w.sd=0.5, n0s=5, detect.mus=c(0,0.5,1), n.ss=9, alpha_mu=c(0.75, 0.25, -5), alpha_sd=c(0.5, 0.015, 0.01), format.msom="jags")
+# sim_out <- sim_occ(ns=12, grid.w=5, grid.h=7, grid.t=3, h.slope=0.5, w.sd=0.5, n0s=5, detect.mus=c(0,0.5,1), n.ss=9, alpha_mu=c(0.75, 0.25, -5), alpha_sd=c(0.5, 0.015, 0.01), format.msom="jags")
+sim_out <- sim_occ(ns=12, grid.w=33, grid.h=7, grid.t=35, h.slope=0.5, w.sd=0.5, n0s=10, detect.mus=c(0,0.5,1), n.ss=4, alpha_mu=c(0.75, 0.25, -5), alpha_sd=c(0.5, 0.015, 0.01), format.msom="jags")
 big.out.obs <- sim_out[["big.out.obs"]]
 dims <- attr(big.out.obs[[1]], "dims")
 grid.w <- dims["grid.w"]
@@ -24,14 +25,14 @@ plot(density(values(attr(big.out.obs[[1]], "grid.X")), bw=0.01))
 # = Analyze simData with Stan msomStatic =
 # ========================================
 spp2msom_2dt <- function(big.simDat, simCov){
-	test.spp <- data.table(reshape2::melt.list(big.simDat))
+	test.spp <- data.table(reshape2:::melt.list(big.simDat))
 
 	test.spp[,c("year","n.obs.reps"):=list(as.numeric(gsub("year([0-9]{1,2})\\.[0-9]{1,2}","\\1",L1)), as.numeric(gsub("year([0-9]{1,2})\\.([0-9]{1,2})","\\2",L1)))]
 	test.spp[,L1:=NULL]
 	setnames(test.spp, "value", "abund")
 	setkey(test.spp, year,stratum,K)
 
-	test.cov1 <- data.table(reshape2::melt.list(simCov))
+	test.cov1 <- data.table(reshape2:::melt.list(simCov))
 	setnames(test.cov1, c("value","L1"), c("bt","year"))
 	test.cov1[,stratum:=test.spp[,unique(stratum)]]
 	setcolorder(test.cov1, c('year','stratum','bt'))
@@ -93,15 +94,15 @@ staticData$X <- apply(staticData$X, c(1,2,4), function(x)sum(x))
 
 # ---- Check Data Format and Simpler Reg Results ----
 # png("~/Desktop/issue103_diagnosis.png", width=4, height=7, res=150, units="in")
-par(mfrow=c(4,1), ps=10, mar=c(3,3,0.1,0.1), mgp=c(1.5,0.1,0), tcl=-0.1)
-sim_dt[,plot(stratum, bt, xlab="stratum (from sim_dt, not inferred)", ylab="btemp (from sim_dt)")] # useful in simulated examples
-sim_dt[,plot(bt, abund, ylab="presence/ absence from sim_dt", xlab="btemp from sim_dt")]
-plot(staticData$U[1,,"bt"], ylab="btemp from U", xlab="stratum (as inferred from column order in U)\nShould be same as first plot, if not, there will be mismatch")
-
-plot(staticData$U[,,"bt"], pmin(staticData$X[,,1],1), pch=21, ylab="presence/ absence from X", xlab="btemp from U\nIf not same as 2nd plot, X is scrambled relative to U")
-for(i in 2:ns){
-	points(staticData$U[,,"bt"], pmin(staticData$X[,,i],1), pch=21)
-}
+# par(mfrow=c(4,1), ps=10, mar=c(3,3,0.1,0.1), mgp=c(1.5,0.1,0), tcl=-0.1)
+# sim_dt[,plot(stratum, bt, xlab="stratum (from sim_dt, not inferred)", ylab="btemp (from sim_dt)")] # useful in simulated examples
+# sim_dt[,plot(bt, abund, ylab="presence/ absence from sim_dt", xlab="btemp from sim_dt")]
+# plot(staticData$U[1,,"bt"], ylab="btemp from U", xlab="stratum (as inferred from column order in U)\nShould be same as first plot, if not, there will be mismatch")
+#
+# plot(staticData$U[,,"bt"], pmin(staticData$X[,,1],1), pch=21, ylab="presence/ absence from X", xlab="btemp from U\nIf not same as 2nd plot, X is scrambled relative to U")
+# for(i in 2:ns){
+# 	points(staticData$U[,,"bt"], pmin(staticData$X[,,i],1), pch=21)
+# }
 # dev.off()
 
 
@@ -120,14 +121,23 @@ for(i in 2:ns){
 # =====================
 # = Fit Model in Stan =
 # =====================
+setwd("~/Documents/School&Work/pinskyPost")
 model_file <- "trawl/trawlDiversity/inst/stan/msomStatic.stan"
+# model_file <- "trawl/trawlDiversity/inst/stan/msomStatic_norv.stan"
 
+# debug(getMethod(sampling, "stanmodel"))
+# debug(.local)
+# then, on line 64 of edit(.local), sum(sapply(sampler$param_dims(), sum)) # gives number params
+# edit(getMethod(sampling, "stanmodel"))
+# tmp <- tempfile()
+# Rprof(tmp, interval = 0.1)
 sim_msom <- rstan::stan(
 	file=model_file, 
 	data=staticData, 
 	control=list(stepsize=0.01, adapt_delta=0.95, max_treedepth=15),
-	chains=4, iter=30, seed=1337, cores=4, verbose=F
+	chains=2, iter=10, seed=1337, cores=1, verbose=F, save_warmup=FALSE
 )
+# Rprof(NULL)
 
 # ==================================
 # = Printing the Fitted Parameters =
