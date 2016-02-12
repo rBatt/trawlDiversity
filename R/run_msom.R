@@ -225,7 +225,12 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 		inputData$nU_rv <- NULL
 		inputData$nV_rv <- NULL
 		inputData$nU_c <- NULL
-		inputData$nV_rv <- NULL
+		inputData$nV_c <- NULL
+		
+		if(language=="JAGS"){
+			inputData$U_tau <- NULL
+			inputData$V_tau <- NULL
+		}
 		
 		model_type <- paste0(model_type, "_norv")
 		
