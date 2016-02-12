@@ -136,7 +136,6 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 
 	inputData$nJ <- as.array(apply(inputData$nK, 1, function(x)sum(x>0))) # number of sites in each year
 	inputData$X <- apply(inputData$X, c(1,2,4), function(x)sum(x)) # agg abund across samples
-
 	
 	
 	# ==========================================================
@@ -234,9 +233,17 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 		
 		model_type <- paste0(model_type, "_norv")
 		
+		if(inputData$nT == 1 & language=="JAGS"){
+			drop_year_dim <- TRUE
+			model_type <- paste0(model_type, "_1yr")
+		}else{
+			drop_year_dim <- FALSE
+		}
+		
 	}else{
 		inputData$U <- NULL
 		inputData$V <- NULL
+		drop_year_dim <- FALSE
 	}
 
 
@@ -245,6 +252,15 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 		inputData$N <- NULL
 		inputData$isUnobs <- NULL # Stan models could be modified to make unncessary for them, too
 		inputData$Kmax <- NULL # Stan models could be modified to make unncessary for them, too
+	}
+	
+	if(drop_year_dim){
+		inputData$X <- inputData$X[1,,]
+		inputData$U <- inputData$U[1,,]
+		inputData$V <- inputData$V[1,,]
+		inputData$nK <- inputData$nK[1,]
+		
+		inputData$nT <- NULL
 	}
 	
 	
