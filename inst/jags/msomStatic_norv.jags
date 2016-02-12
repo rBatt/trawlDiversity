@@ -1,0 +1,139 @@
+# ======================================
+# = Input Data Formats and Definitions =
+# ======================================
+# ---- Dimensions ----
+# nT integer scalar, the number of eyars
+# Jmax integer scalar, the number of sites in any year, ever
+# nS integer scalar, the number of species, including the 'zero species'
+
+# nK integer matrix[nT, Jmax], the number of hauls (replicates, K) in each site-year
+
+# nU integer scalar, the number of presence covariates (both in U_c and U_rv)
+# nV the detection equivalent of nU
+
+# ---- Covariates ----
+# U real array[nT, Jmax, nU], the values of the presence covariates
+# V the detection equivalent of U
+
+# ---- Observed State ----
+# X integer {X | X \in \N, 0 <= X <= nK} array[nT, Jmax, nS], the number of hauls containing a given species in a site-year
+
+
+# =================================================
+# = Output Parameters of Interest and Definitions =
+# =================================================
+# ---- Membership ----
+# Omega, real scalar, overall probability of community membership
+# w, integer binary {0, 1} vector[nS], 1 if a species belongs, 0 if it does not
+
+# ---- Presence and Detection Coefficients ----
+# alpha real matrix[nU, nS], coefficients relating covariates to presence probability (phi) on logit scale
+# alpha_mu real vector[nU], for each covariate, the among-species means in alpha
+# alpha_tau real vector[nU], for each covariate, the among-species 1/sd^2 in alpha
+# beta real matrix[nV, nS], coefficients relating covariates to detection probability (Theta) on logit scale
+# beta_mu real vector[nV], among-species mean of each covariate's coefficient (alpha)
+# beta_tau real vector[nV], among-species 1/sd^2 of each covariate's coefficient (alpha)
+
+# ---- Presence and Detection (coefficient-covariate products) ----
+# Psi real {Psi | Psi \in \R, 0 <= Psi <= 1} array[nT, Jmax, nS], species presence prob for each site-year
+# Theta real {Theta | Theta \in \R, 0 <= Theta <= 1} array[nT, Jmax, nS] species detection prob for each site-year
+
+# ---- Latent State ----
+# Z integer binary {0, 1} array[nT, Jmax, nS], 1 if a species is present, 0 if it is not. Note that X is the number of hauls containing a species in a site-year, whereas Z indicates whether *any* hauls contained a species in a site-year.
+
+# ====================
+# = Equation Summary =
+# ====================
+# X(t) = Z(t) * Theta(t) # observation
+# Z(t) = Psi(t) * w # true
+# Psi(t) = U(t) * alpha # presence
+# Theta(t) = V(t) * beta # detection
+
+# where X(t) are the observed site level abundances of each species in year t, 
+# Z is the binary indicator of true presence/ absence,
+# w is the binary indicator of community membership,
+# the probabilities of presence and detection are Psi and Theta, and
+# the presence and detection covaraites are U and V (w/ corresponding coefficients alpha and beta).
+
+model{
+
+	# Omega prior
+	Omega ~ dunif(0,1) # wouldn't a ~beta(0.5, 0.5) be better? There shouldn't be a lot of intermediate probs ...
+	for(s in 1:nS){
+		w[s] ~ dbern(Omega)
+	}
+	
+	# Covariate Priors
+	# This section needs to be rewritten for 1) neither U nor V have rv's, 2/3) just U or V have rv's
+	# for(t in 1:nT){
+	# 	for(j in 1:Jmax){
+	#
+	# 		# Presence covariates
+	# 		for(uc in 1:nU_c){
+	# 			U[t,j,uc] <- U_c[t,j,uc]
+	# 		}
+	# 		for(urv in 1:nU_rv){
+	# 			U[t,j,urv+nU_c] ~ dnorm(U_mu[t,j,urv], U_tau[t,j,urv])
+	# 		}
+	#
+	# 		# Detection covariates
+	# 		for(vc in 1:nV_c){
+	# 			V[t,j,vc] <- V_c[t,j,vc]
+	# 		}
+	# 		for(vrv in 1:nV_rv){
+	# 			V[t,j,vrv+nV_c] ~ dnorm(V_mu[t,j,vrv], V_tau[t,j,vrv])
+	# 		}
+	#
+	# 	}
+	# }
+	
+	# Alpha priors
+	for(u in 1:nU){
+			alpha_mu[u] ~ dnorm(0, 1/1E3)
+			alpha_tau[u] ~ dgamma(0.1, 0.1)
+			for(s in 1:nS){
+				alpha[u, s] ~ dnorm(alpha_mu[u], alpha_tau[u])
+			}
+	}
+	
+	# Beta priors
+	for(v in 1:nV){
+		beta_mu[v] ~ dnorm(0, 1/1E3)
+		beta_tau[v] ~ dgamma(0.1, 0.1)
+		for(s in 1:nS){
+			beta[v, s] ~ dnorm(beta_mu[v], beta_tau[v])
+		}
+	}
+	
+	
+	# Presence and Detectability
+	for(t in 1:nT){
+		# Psi_logit[t,1:Jmax,1:nS] <- U[t,,]%*%alpha
+		
+		for(j in 1:Jmax){
+			for(s in 1:nS){
+				Psi_logit[t,j,s] <- sum(U[t,j,]*alpha[,s])
+				
+				Psi[t,j,s] <- exp(Psi_logit[t,j,s])/(1 + exp(Psi_logit[t,j,s]))
+				Z[t,j,s] ~ dbern(Psi[t,j,s] * w[s])
+			}
+		}
+		
+	}
+	
+	
+	# Likelihood
+	for(t in 1:nT){
+		# Theta_logit[t,1:Jmax,1:nS] <- V[t,,]%*%beta
+		
+		for(j in 1:Jmax){
+			for(s in 1:nS){
+				Theta_logit[t,j,s] <- sum(V[t,j,]*beta[,s])
+				
+				Theta[t,j,s] <- exp(Theta_logit[t,j,s])/(1 + exp(Theta_logit[t,j,s]))
+				X[t,j,s] ~ dbinom(Z[t,j,s] * Theta[t,j,s], nK[t,j]) # instead of Z, Psi, or Psi*w? Just Psi seems bad, but what are the implications of using Psi*w instead of Z?
+			}
+		}
+	}
+
+}
