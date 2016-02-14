@@ -101,7 +101,7 @@ model{
 	# Beta priors
 	for(v in 1:nV){
 		beta_mu0[v] ~ dunif(0,1)
-		beta_mu[v] ~ log(beta_mu0[v]) - log(1 - beta_mu0[v])
+		beta_mu[v] <- log(beta_mu0[v]) - log(1 - beta_mu0[v])
 		beta_tau[v] ~ dgamma(0.1, 0.1)
 		for(s in 1:nS){
 			beta[v, s] ~ dnorm(beta_mu[v], beta_tau[v])
