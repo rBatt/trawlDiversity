@@ -233,7 +233,7 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 		
 		model_type <- paste0(model_type, "_norv")
 		
-		if(inputData$nT == 1 & language=="JAGS"){
+		if(inputData$nT == 1){
 			drop_year_dim <- TRUE
 			model_type <- paste0(model_type, "_1yr")
 		}else{
@@ -247,20 +247,29 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 	}
 
 
+	
+	if(drop_year_dim){
+		inputData$X <- as.matrix(inputData$X[1,,])
+		inputData$U <- as.matrix(inputData$U[1,,])
+		inputData$V <- as.matrix(inputData$V[1,,])
+		inputData$isUnobs <- as.matrix(inputData$isUnobs[1,,])
+		inputData$nK <- inputData$nK[1,]
+		
+		if(language=="JAGS"){
+			for(i in 1:chains){
+				inits[[i]]$Z <- as.matrix(inits[[i]]$Z[1,,])
+			}
+		}
+
+		inputData$nT <- NULL
+		inputData$nJ <- NULL
+	}
+	
 	if(language=="JAGS"){
 		inputData$nJ <- NULL
 		inputData$N <- NULL
 		inputData$isUnobs <- NULL # Stan models could be modified to make unncessary for them, too
 		inputData$Kmax <- NULL # Stan models could be modified to make unncessary for them, too
-	}
-	
-	if(drop_year_dim){
-		inputData$X <- inputData$X[1,,]
-		inputData$U <- inputData$U[1,,]
-		inputData$V <- inputData$V[1,,]
-		inputData$nK <- inputData$nK[1,]
-		
-		inputData$nT <- NULL
 	}
 	
 	
@@ -305,7 +314,7 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 		if(is.null(compiled_model)){
 			compiled_model <- rstan::stan_model(model_path)
 		}
-		stan_control <- list(stepsize=0.1, adapt_delta=0.95, max_treedepth=10)
+		stan_control <- list(stepsize=2, adapt_delta=0.8, max_treedepth=10)
 		out <- rstan::sampling(
 			object=compiled_model,
 			data=inputData,
