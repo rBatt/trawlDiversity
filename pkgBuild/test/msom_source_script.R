@@ -22,11 +22,11 @@ regs <- c("ebs", "ai", "goa", "wctri", "wcann", "gmex", "sa", "neus", "shelf", "
 
 
 stan_folder <- file.path(system.file(package="trawlDiversity"), tolower("Stan"))
-model_location <- file.path(stan_folder, "msomStatic_norv.stan")
+model_location <- file.path(stan_folder, "msomStatic_norv_1yr.stan")
 compiled_stan_model <- stan_model(model_location)
 
 # for(r in length(regs):1){
-for(r in 2:1){ # ebs and ai
+for(r in 1:2){ # ebs and ai
 # for(r in 3:4){ # goa and wctri
 # for(r in 5:6){ # wcann and gmex
 # for(r in 7:8){ # sa and neus
@@ -62,11 +62,11 @@ for(r in 2:1){ # ebs and ai
 			reg = t_reg,
 			regX.a1 = t_data,
 			params_out = c("params"),
-			language="Stan",
+			language="JAGS", 
 			model_type = "Static", 
 			compiled_model = compiled_stan_model,
 			cores = 4, chains = 4,
-			test=FALSE, n0=annual_n0[i], iter=100, pre_save=FALSE, save_warmup=FALSE
+			test=FALSE, n0=annual_n0[i], iter=5000, pre_save=FALSE, save_warmup=FALSE
 		), error=function(cond){message(paste("**Run failed for:", msg_progress));NA})
 		
 		cat("\n\n")
