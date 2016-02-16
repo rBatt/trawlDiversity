@@ -22,11 +22,15 @@ process_msomStatic <- function(rm_out, reg){
 	# load("./trawlDiversity/pkgBuild/results/msomStatic_norv_neus_stan_start2016-02-05_13-26-12_r8-8.RData")
 	
 	# load("./trawlDiversity/pkgBuild/results/msomStatic_norv_ai_stan_start2016-02-09_04-44-20_r1-2.RData")
-	load("./trawlDiversity/pkgBuild/results/msomStatic_norv_shelf_stan_start2016-02-09_00-14-00_r10-9.RData")
+	# load("./trawlDiversity/pkgBuild/results/msomStatic_norv_shelf_stan_start2016-02-09_00-14-00_r10-9.RData")
+	
+	# load("./trawlDiversity/pkgBuild/results/msomStatic_norv_ai_stan_start2016-02-11_19-09-15_r2.RData")
+	load("./trawlDiversity/pkgBuild/results/msomStatic_norv_goa_stan_start2016-02-11_15-06-49_r3.RData")
+	# load("./trawlDiversity/pkgBuild/results/msomStatic_norv_gmex_stan_start2016-02-12_05-34-10_r6.RData")
 	
 	orig_rm_out <- rm_out
-	rm_out <- orig_rm_out[[9]]
-	reg <- "SHELF"
+	rm_out <- orig_rm_out[[3]]
+	reg <- "GOA"
 	
 	inputData <- lapply(rm_out, function(x)x$inputData)
 	out <- lapply(rm_out, function(x)x$out)
@@ -157,15 +161,68 @@ process_msomStatic <- function(rm_out, reg){
 	reg_pres <- lapply(reg_pres_dist, function(x)colMeans(x))
 	reg_rich <- sapply(reg_pres, sum)
 	
-	psi_dist_upObs <- mapply(update_pr_avail_withObs, psi_dist, X_obs, SIMPLIFY=FALSE)
-	reg_pres_dist_upObs <- lapply(psi_dist_upObs, function(x)apply(x, c(1,3), function(x)(1-prod(1-x))))
-	reg_pres_upObs <- lapply(reg_pres_dist_upObs, function(x)colMeans(x))
-	reg_rich_upObs <- sapply(reg_pres_upObs, sum)
+	# psi_dist_upObs <- mapply(update_pr_avail_withObs, psi_dist, X_obs, SIMPLIFY=FALSE)
+	# reg_pres_dist_upObs <- lapply(psi_dist_upObs, function(x)apply(x, c(1,3), function(x)(1-prod(1-x))))
+	# reg_pres_upObs <- lapply(reg_pres_dist_upObs, function(x)colMeans(x))
+	# reg_rich_upObs <- sapply(reg_pres_upObs, sum)
 	
 	
 	# ---- Covariates ----
-	bt <- lapply(inputData, function(x)x$U[1,,"bt"])
-	bt_ann <- sapply(bt, mean)
+	bt0 <- lapply(inputData, function(x)x$U[1,,"bt"])
+	bt_ann <- sapply(bt0, mean)
+	
+	yr <- 1:length(bt0)
+	bt2dt <- function(x,y)data.table(stratum=names(x), bt=x, yr=y)
+	bt <- rbindlist(mapply(bt2dt, bt0, yr, SIMPLIFY=FALSE))
+	
+	strat2lld <- function(x){
+		s <- strsplit(x, split=" ")
+		lon <- sapply(s, function(x)x[1])
+		lat <- sapply(s, function(x)x[2])
+		depth_interval <- sapply(s, function(x)x[3])
+		data.table(lon=as.numeric(lon), lat=as.numeric(lat), depth_interval=as.numeric(depth_interval))
+	} 
+	bt[,c("lon","lat","depth_interval"):=strat2lld(stratum)]
+	
+	zCol <- function(nCols, Z){
+		cols <- colorRampPalette(c("#000099", "#00FEFF", "#45FE4F", "#FCFF00", "#FF9400", "#FF3100"))(nCols)
+		colVec_ind <- cut(Z, breaks=nCols)
+		colVec <- cols[colVec_ind]
+	}
+	bt[,bt_col:=zCol(256, bt)]
+	
+
+	
+	
+	mytrace <- function(x, pars){
+		sims <- lapply(x@sim$samples, function(x)x[pars])
+		for(i in 1:length(sims)){
+			sims[[i]]$chain <- rep(i, length(sims[[i]][[1]]))
+		}
+		sims <- rbindlist(sims)
+		cn <- colnames(sims)
+		for(h in 1:(ncol(sims)-1)){
+			ylim <- sims[,range(eval(s2c(cn[h]))[[1]])]
+			for(i in 1:sims[,lu(chain)]){
+				
+				if(i == 1){
+					sims[chain==i, plot(eval(s2c(cn[h]))[[1]], ylim=ylim, type="l", col=i, xlab="iter",ylab=cn[h])]
+				}else{
+					sims[chain==i, lines(eval(s2c(cn[h]))[[1]], col=i)]
+				}
+			}
+		}
+	}
+	
+	pars_trace <- c("Omega","alpha_mu[1]", "alpha_mu[2]", "alpha_mu[3]", "alpha_mu[4]", "beta_mu[1]")
+	
+	
+	
+	
+
+
+	
+
 	
 	
 	# ---- Figures ----
@@ -186,6 +243,30 @@ process_msomStatic <- function(rm_out, reg){
 	mtext(reg, side=3, line=0, outer=TRUE, font=2)
 	dev.off()
 	
+	fig3_name <- paste0("btempMap_", reg, ".png")
+	png(file.path("trawlDiversity/pkgBuild/figures",fig3_name), width=8, height=3, units="in", res=200)
+	par(mfrow=auto.mfrow(bt[,lu(yr)]), oma=c(0.1,0.1, 1,0.1), mar=c(1,1,0.1,0.1), mgp=c(0.75,0.1,0), tcl=-0.15, cex=1, ps=8)
+	bt[,j={
+		plot(lon, lat, type="n")
+		map(add=TRUE)
+		points(lon, lat, col=bt_col, pch=20)
+		mtext(unique(yr), side=3, adj=0.1, line=-0.75, font=2)
+	}, by="yr"]
+	mtext(paste(reg, "Bottom Temperature"), outer=TRUE, side=3, line=0.25, font=2)
+	dev.off()
+	
+	fig4_name <- paste0("traceplot_", reg, ".png")
+	png(file.path("trawlDiversity/pkgBuild/figures",fig4_name), width=12, height=6, units="in", res=200)
+	par(mfrow=c(length(pars_trace), length(out)), oma=c(1,1, 1,0.1), mar=c(0.5,0.5,0.1,0.1), mgp=c(0.5,0.1,0), tcl=-0.1, cex=1, ps=6)
+	for(h in 1:length(pars_trace)){
+		for(i in 1:length(out)){
+			mytrace(out[[i]], pars=pars_trace[h])
+			if(i == 1){
+				mtext(pars_trace[h], side=2, line=0.75)
+			}
+		}
+	}
+	dev.off()
 	
 }
 	
