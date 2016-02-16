@@ -17,5 +17,7 @@ LazyData: true
 RoxygenNote: 5.0.0.9000
 Suggests: reshape2,
     R2jags,
-    rstan
+    rstan,
+    vegan,
+    zoo
 Imports: rbLib
