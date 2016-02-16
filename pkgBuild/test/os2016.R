@@ -23,6 +23,11 @@ for(r in 1:length(regs)){
 }
 
 
+data_all <- rbindlist(data_in_regs, fill=TRUE)
+data_all <- data_all[reg!="wcann"]
+data_all[reg=="wctri", reg:="wc"]
+
+
 # =======================================
 # = Get Bottom Temperature and Richness =
 # =======================================
@@ -236,6 +241,69 @@ rich_bt[!is.na(strat_mean_9yr_sd),j={
 }, by=c("reg")]
 mtext("Richness Anomaly vs Temporal SD (9 yrs) Temperature", side=3, line=1, outer=F)
 
+
+
+# ==================
+# = Poster Figures =
+# ==================
+
+# ---- Map with Richness and Temperature Time Series ----
+# Map
+ll_all <- data_all[!duplicated(stratum),list(lon=mean(lon), lat=mean(lat), reg=reg), by=c("reg","stratum")]
+
+nr = 60
+nc = 150
+l_mat <- matrix(NA, nrow=nr, nc=nc)
+l_mat[c(1,nr,1,nr),c(1,1,nc,nc)] <- 1 # where map goes
+
+l_mat[c(20,35,20,35), c(5,5,20,20)] <- 2 # where ai rich goes
+l_mat[c(36,51,36,51), c(5,5,20,20)] <- 3 # where ai temp goes
+
+l_mat[c(20,35,20,35), c(22,22,37,37)] <- 4 # where ai rich goes
+l_mat[c(36,51,36,51), c(22,22,37,37)] <- 5 # where ai temp goes
+
+l_mat[c(10,25,10,25), c(39,39,54,54)] <- 6 # where goa rich goes
+l_mat[c(26,41,26,41), c(39,39,54,54)] <- 7 # where goa temp goes
+
+l_mat[c(20,35,20,35), c(55,55,70,70)] <- 8 # where wc rich goes
+l_mat[c(36,51,36,51), c(55,55,70,70)] <- 9 # where wc temp goes
+
+l_mat[c(24, 39, 24, 39), c(78,78,93,93)] <- 10 # where gmex rich goes
+l_mat[c(40, 55, 40, 55), c(78,78,93,93)] <- 11 # where gmex temp goes
+
+l_mat[c(20, 35, 20, 35), c(97, 97, 112, 112)] <- 12 # where sa rich goes
+l_mat[c(36, 52, 36, 52), c(97, 97, 112, 112)] <- 13 # where sa temp goes
+
+l_mat[c(3, 18, 3, 18), c(75, 75, 90, 90)] <- 14 # where neus rich goes
+l_mat[c(3, 18, 3, 18), c(92, 92, 107, 107)] <- 15 # where neus temp goes
+
+l_mat[c(2, 17, 2, 17), c(119, 119, 134, 134)] <- 16 # where shelf rich goes
+l_mat[c(18, 33, 18, 33), c(119, 119, 134, 134)] <- 17 # where shelf temp goes
+
+l_mat[c(43, 58, 43, 58), c(118,118,133,133)] <- 18 # where newf temp goes
+l_mat[c(43, 58, 43, 58), c(134,134,149,149)] <- 19 # where newf temp goes
+
+l_mat[is.na(l_mat)] <- 0
+
+
+
+layout(l_mat)
+par(mar=c(0.5,1.5,0.1,0.1), cex=1, ps=8, mgp=c(0.75,0.1,0), tcl=-0.1, bg="white")
+ll_all[,plot(lon, lat, pch=19, col=pretty_col[reg])]
+map(add=TRUE, lwd=0.25)
+
+pr <- names(pretty_reg)
+for(r in 1:9){
+	rich_bt[reg==pr[r],plot(year, richness, type="l", col=pretty_col[una(reg)], xlab="", ylab="Richness", xaxt="n", bty="l", lwd=3)]
+	axis(side=1, labels=FALSE)
+	rich_bt[reg==pr[r],
+		j={
+			plot(year, strat_mean, type="l", col=pretty_col[una(reg)], xlab="", ylab="Temperature", lwd=0.5, bty="l", bg="white")
+			lines(year, strat_mean_6yr_mean, col=pretty_col[una(reg)], lwd=1)
+			lines(year, strat_mean_9yr_mean, col=pretty_col[una(reg)], lwd=1.5)
+		}
+	]
+}
 
 
 
