@@ -3,10 +3,11 @@
 #' Calculate richness using a species accumulation curve
 #' 
 #' @param regs Character vector of region names
+#' @param data_regs Option list of data.tables; list should be named according to \code{regs
 #' 
 #' @export
 
-run_sac <- function(regs){
+run_sac <- function(regs, data_regs){
 
 	requireNamespace("reshape2", quietly = TRUE)
 	requireNamespace("vegan", quietly = TRUE)
@@ -23,16 +24,21 @@ run_sac <- function(regs){
 
 	sac_out <- vector("list", length(regs))
 
-	for(r in 1:10){
+	for(r in 1:length(regs)){
 	
 		t_reg <- regs[r]
 	
-		data_in_all0 <- trim_msom(t_reg, gridSize=0.5, depthStratum=100, tolFraction=0.15, grid_stratum=TRUE, plot=FALSE)
+		if(missing(data_regs)){
+			data_in_all0 <- trim_msom(t_reg, gridSize=0.5, depthStratum=100, tolFraction=0.15, grid_stratum=TRUE, plot=FALSE)
 	
-		nSite_min <- data_in_all0[,lu(stratum), by="year"][,min(V1)]
+			nSite_min <- data_in_all0[,lu(stratum), by="year"][,min(V1)]
 
-		data_in_all <- data_in_all0
-		setkey(data_in_all, year, stratum, haulid, spp)
+			data_in_all <- data_in_all0
+			setkey(data_in_all, year, stratum, haulid, spp)
+		}else{
+			data_in_all <- data_regs[[regs[r]]]
+		}
+		
 		u_yrs <- data_in_all[,unique(year)]
 		n_spp <- data_in_all[,list(n_spp=lu(spp)), by="year"]
 		

@@ -1,13 +1,33 @@
 library("trawlDiversity")
+library("rbLib")
 
 regs <- c("ebs", "ai", "goa", "wctri", "wcann", "gmex", "sa", "neus", "shelf", "newf")
+
+
+# ====================================
+# = Get Trimmed Data for Each Region =
+# ====================================
+data_in_regs <- list()
+for(r in 1:length(regs)){
+
+	t_reg <- regs[r]
+
+	data_in_all0 <- trim_msom(t_reg, gridSize=0.5, depthStratum=100, tolFraction=0.15, grid_stratum=TRUE, plot=FALSE)
+
+	nSite_min <- data_in_all0[,lu(stratum), by="year"][,min(V1)]
+
+	data_in_all <- data_in_all0
+	setkey(data_in_all, year, stratum, haulid, spp)
+	
+	data_in_regs[[regs[r]]] <- data_in_all
+}
 
 
 # =======================================
 # = Get Bottom Temperature and Richness =
 # =======================================
-bt_all <- bt_metrics(regs)
-rich <- run_sac(regs)
+bt_all <- bt_metrics(regs, data_regs=data_in_regs)
+rich <- run_sac(regs, data_regs=data_in_regs)
 rich_bt <- merge(bt_all, rich, by=c("reg","year"), all=TRUE)
 
 rich_bt <- rich_bt[reg!="wcann"]
