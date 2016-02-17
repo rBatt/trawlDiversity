@@ -4,10 +4,12 @@
 \alias{bt_metrics}
 \title{Bottom Temperature Metrics}
 \usage{
-bt_metrics(regs)
+bt_metrics(regs, data_regs)
 }
 \arguments{
 \item{regs}{Character vector of region names}
+
+\item{data_regs}{Option list of data.tables; list should be named according to \code{regs}}
 }
 \description{
 Computer bottom temperature and its mean and standard deviation in space and time
