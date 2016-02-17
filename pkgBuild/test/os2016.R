@@ -1,7 +1,15 @@
+
+
 library("trawlDiversity")
 library("rbLib")
+library("maps")
 
 regs <- c("ebs", "ai", "goa", "wctri", "wcann", "gmex", "sa", "neus", "shelf", "newf")
+pretty_reg <- c("ebs"="E. Bering Sea", "ai"="Aleutian Islands", "goa"="Gulf of Alaska", "wc"="West Coast US", "gmex"="Gulf of Mexico", "sa"="Southeast US", "neus"="Northeast US", "shelf"="Scotian Shelf", "newf"="Newfoundland")
+pr <- names(pretty_reg)
+
+pretty_col <- c('#e41a1c','#377eb8','#4daf4a','#984ea3','#ff7f00','navy','#a65628','salmon','#999999')
+names(pretty_col) <- pr
 
 
 # ====================================
@@ -9,17 +17,10 @@ regs <- c("ebs", "ai", "goa", "wctri", "wcann", "gmex", "sa", "neus", "shelf", "
 # ====================================
 data_in_regs <- list()
 for(r in 1:length(regs)){
-
 	t_reg <- regs[r]
-
-	data_in_all0 <- trim_msom(t_reg, gridSize=0.5, depthStratum=100, tolFraction=0.15, grid_stratum=TRUE, plot=FALSE)
-
-	nSite_min <- data_in_all0[,lu(stratum), by="year"][,min(V1)]
-
-	data_in_all <- data_in_all0
-	setkey(data_in_all, year, stratum, haulid, spp)
-	
-	data_in_regs[[regs[r]]] <- data_in_all
+	t_trimmed <- trim_msom(t_reg, gridSize=0.5, depthStratum=100, tolFraction=0.15, grid_stratum=TRUE, plot=FALSE)
+	setkey(t_trimmed, year, stratum, haulid, spp)
+	data_in_regs[[regs[r]]] <- t_trimmed
 }
 
 
@@ -31,8 +32,8 @@ data_all[reg=="wctri", reg:="wc"]
 # =======================================
 # = Get Bottom Temperature and Richness =
 # =======================================
-bt_all <- bt_metrics(regs, data_regs=data_in_regs)
-rich <- run_sac(regs, data_regs=data_in_regs)
+bt_all <- bt_metrics(pr, data_regs=data_all)
+rich <- run_sac(pr, data_regs=data_all)
 rich_bt <- merge(bt_all, rich, by=c("reg","year"), all=TRUE)
 
 rich_bt <- rich_bt[reg!="wcann"]
@@ -42,22 +43,19 @@ rich_bt[reg=="wctri", reg:="wc"]
 # =================================================
 # = Temporal Patterns in Richness and Temperature =
 # =================================================
-pretty_reg <- c("ebs"="E. Bering Sea", "ai"="Aleutian Islands", "goa"="Gulf of Alaska", "wc"="West Coast US", "gmex"="Gulf of Mexico", "sa"="Southeast US", "neus"="Northeast US", "shelf"="Scotian Shelf", "newf"="Newfoundland")
-rn <- names(pretty_reg)
-pretty_col <- c('#e41a1c','#377eb8','#4daf4a','#984ea3','#ff7f00','navy','#a65628','salmon','#999999')
-names(pretty_col) <- rn
+
 
 
 # ---- Time Series of Richness: Separate Panels ----
 dev.new()
-par(mfrow=auto.mfrow(length(rn)), oma=c(0,0,1,0))
+par(mfrow=auto.mfrow(length(pr)), oma=c(0,0,1,0))
 rich_bt[,plot(year, richness, type="o", col=pretty_col[una(reg)], main=pretty_reg[una(reg)]), by=c("reg")]
 mtext("Richness", side=3, line=-0.5, outer=TRUE)
 
 
 # ---- Time Series of Mean Temperature: Separate Panels ----
 dev.new()
-par(mfrow=auto.mfrow(length(rn)), oma=c(0,0,1,0))
+par(mfrow=auto.mfrow(length(pr)), oma=c(0,0,1,0))
 rich_bt[,
 	j={
 		plot(year, strat_mean, type="o", col=pretty_col[una(reg)], lwd=0.5, main=pretty_reg[una(reg)])
@@ -68,22 +66,22 @@ rich_bt[,
 mtext("Mean Bottom Temperature", side=3, line=-0.5, outer=TRUE)
 
 
-# ---- Time Series of Temperature Standard Deviation: Separate Panels ----
+# ---- Time Series of Temperature Spatial Standard Deviation: Separate Panels ----
 dev.new()
-par(mfrow=auto.mfrow(length(rn)), oma=c(0,0,1,0))
+par(mfrow=auto.mfrow(length(pr)), oma=c(0,0,1,0))
 rich_bt[,plot(year, strat_sd, type="o", col=pretty_col[una(reg)], main=pretty_reg[una(reg)]), by=c("reg")]
 mtext("SD of Bottom Temperature", side=3, line=-0.5, outer=TRUE)
 
 
 
-# ---- Time Series of Temperature Rolling Window Standard Deviation: Separate Panels ----
-dev.new()
-par(mfrow=auto.mfrow(length(rn)), oma=c(0,0,1,0))
-rich_bt[,plot(year, strat_mean_6yr_sd, type="o", col=pretty_col[una(reg)], main=pretty_reg[una(reg)]), by=c("reg")]
-mtext("Temporal SD (6 yrs) of Bottom Temperature", side=3, line=-0.5, outer=TRUE)
+# ---- Time Series of Temperature Temporal Standard Deviation: Separate Panels ----
+# dev.new()
+# par(mfrow=auto.mfrow(length(pr)), oma=c(0,0,1,0))
+# rich_bt[,plot(year, strat_mean_6yr_sd, type="o", col=pretty_col[una(reg)], main=pretty_reg[una(reg)]), by=c("reg")]
+# mtext("Temporal SD (6 yrs) of Bottom Temperature", side=3, line=-0.5, outer=TRUE)
 
 dev.new()
-par(mfrow=auto.mfrow(length(rn)), oma=c(0,0,1,0))
+par(mfrow=auto.mfrow(length(pr)), oma=c(0,0,1,0))
 rich_bt[,plot(year, strat_mean_9yr_sd, type="o", col=pretty_col[una(reg)], main=pretty_reg[una(reg)]), by=c("reg")]
 mtext("Temporal SD (9 yrs) of Bottom Temperature", side=3, line=-0.5, outer=TRUE)
 
@@ -96,44 +94,44 @@ mtext("Temporal SD (9 yrs) of Bottom Temperature", side=3, line=-0.5, outer=TRUE
 
 # ---- Richness vs Mean Bottom Temp: Separate Panels ----
 dev.new()
-par(mfrow=auto.mfrow(length(rn)), oma=c(0,0,1,0))
+par(mfrow=auto.mfrow(length(pr)), oma=c(0,0,1,0))
 rich_bt[,plot(strat_mean, richness, type="p", col=pretty_col[una(reg)], main=pretty_reg[una(reg)]), by=c("reg")]
 mtext("Richness vs Mean Temperature", side=3, line=-0.5, outer=TRUE)
 
 
 # ---- Detrended Richness vs Detrended Mean Bottom Temp: Separate Panels ----
 dev.new()
-par(mfrow=auto.mfrow(length(rn)), oma=c(0,0,1,0))
+par(mfrow=auto.mfrow(length(pr)), oma=c(0,0,1,0))
 rich_bt[,
 	j={
 		ttemp <- residuals(lm(strat_mean~year, na.action=na.exclude))
 		trich <- residuals(lm(richness~year, na.action=na.exclude))
 		plot(ttemp, trich, type="o", col=pretty_col[una(reg)], lwd=1, main=pretty_reg[una(reg)])
-		
+
 	}, by=c("reg")
 ]
 mtext("Richness vs Mean Temperature (Detrended)", side=3, line=-0.5, outer=TRUE)
 
 
 # ---- Richness vs Mean Bottom Temp: All Together ----
-dev.new()
-par(oma=c(0,0,0,0))
-rich_bt[,plot(strat_mean, richness, type="p", col=pretty_col[reg])]
-rich_bt[,lines(strat_mean, predict(lm(richness~strat_mean)), col=pretty_col[una(reg)]), by=c("reg")]
-mtext("Richness vs Mean Temperature", side=3, line=1, outer=F)
+# dev.new()
+# par(oma=c(0,0,0,0))
+# rich_bt[,plot(strat_mean, richness, type="p", col=pretty_col[reg])]
+# rich_bt[,lines(strat_mean, predict(lm(richness~strat_mean)), col=pretty_col[una(reg)]), by=c("reg")]
+# mtext("Richness vs Mean Temperature", side=3, line=1, outer=F)
 
 
 # ---- Detrended Richness vs Detrended Mean Bottom Temp: All Together ----
-dev.new()
-par(oma=c(0,0,0,0))
-rich_bt[,c("det_strat_mean","det_rich") := list(
-			residuals(lm(strat_mean~year, na.action=na.exclude)),
-			residuals(lm(richness~year, na.action=na.exclude))
-		), by=c("reg")
-]
-rich_bt[,plot(det_strat_mean, det_rich, type="p", col=pretty_col[reg])]
-rich_bt[,lines(det_strat_mean, predict(lm(det_rich~det_strat_mean)), col=pretty_col[una(reg)]), by=c("reg")]
-mtext("Richness vs Mean Temperature (Detrended)", side=3, line=1, outer=F)
+# dev.new()
+# par(oma=c(0,0,0,0))
+# rich_bt[,c("det_strat_mean","det_rich") := list(
+# 			residuals(lm(strat_mean~year, na.action=na.exclude)),
+# 			residuals(lm(richness~year, na.action=na.exclude))
+# 		), by=c("reg")
+# ]
+# rich_bt[,plot(det_strat_mean, det_rich, type="p", col=pretty_col[reg])]
+# rich_bt[,lines(det_strat_mean, predict(lm(det_rich~det_strat_mean)), col=pretty_col[una(reg)]), by=c("reg")]
+# mtext("Richness vs Mean Temperature (Detrended)", side=3, line=1, outer=F)
 
 
 # ---- Regional Slopes from Richness vs Mean Bottom Temp ----
@@ -164,68 +162,68 @@ mtext("Richness Slope vs Temperature Slope", side=3, line=1, outer=F)
 # =============================================
 # ---- Richness vs Spatial SD Bottom Temp: Separate Panels ----
 dev.new()
-par(mfrow=auto.mfrow(length(rn)), oma=c(0,0,1,0))
+par(mfrow=auto.mfrow(length(pr)), oma=c(0,0,1,0))
 rich_bt[!is.na(strat_sd),plot(strat_sd, richness, type="p", col=pretty_col[una(reg)], main=pretty_reg[una(reg)]), by=c("reg")]
-mtext("Richness vs Temporal SD Temperature", side=3, line=-0.5, outer=TRUE)
+mtext("Richness vs Spatial SD Temperature", side=3, line=-0.5, outer=TRUE)
 
 # ---- Richness vs Temporal SD Bottom Temp: Separate Panels ----
-dev.new()
-par(mfrow=auto.mfrow(length(rn)), oma=c(0,0,1,0))
-rich_bt[!is.na(strat_mean_6yr_sd),plot(strat_mean_6yr_sd, richness, type="p", col=pretty_col[una(reg)], main=pretty_reg[una(reg)]), by=c("reg")]
-mtext("Richness vs Temporal SD (6 yrs) Temperature", side=3, line=-0.5, outer=TRUE)
+# dev.new()
+# par(mfrow=auto.mfrow(length(pr)), oma=c(0,0,1,0))
+# rich_bt[!is.na(strat_mean_6yr_sd),plot(strat_mean_6yr_sd, richness, type="p", col=pretty_col[una(reg)], main=pretty_reg[una(reg)]), by=c("reg")]
+# mtext("Richness vs Temporal SD (6 yrs) Temperature", side=3, line=-0.5, outer=TRUE)
 
 dev.new()
-par(mfrow=auto.mfrow(length(rn)), oma=c(0,0,1,0))
+par(mfrow=auto.mfrow(length(pr)), oma=c(0,0,1,0))
 rich_bt[!is.na(strat_mean_9yr_sd),plot(strat_mean_9yr_sd, richness, type="p", col=pretty_col[una(reg)], main=pretty_reg[una(reg)]), by=c("reg")]
 mtext("Richness vs Temporal SD (9 yrs) Temperature", side=3, line=-0.5, outer=TRUE)
 
 
 # ---- Richness vs Temporal SD (6 yrs) Bottom Temp: All Together ----
-dev.new()
-par(oma=c(0,0,0,0))
-rich_bt[!is.na(strat_mean_6yr_sd),plot(strat_mean_6yr_sd, richness, type="p", col=pretty_col[reg])]
-rich_bt[!is.na(strat_mean_6yr_sd),j={
-	v <- strat_mean_6yr_sd
-	v2 <- strat_mean_6yr_sd^2
-	mod <- lm(richness~v+v2)
-	vals <- seq(min(strat_mean_6yr_sd), max(strat_mean_6yr_sd), by=0.01)
-	pred <- predict.lm(mod, newdata=data.frame(v=vals, v2=vals^2))
-	lwd <- ifelse(nrow(.SD)>=10, 2, 0.5)
-	lines(vals, pred, col=pretty_col[reg], lwd=lwd)
-}, by=c("reg")]
-mtext("Richness vs Temporal SD (6 yrs) Temperature", side=3, line=1, outer=F)
+# dev.new()
+# par(oma=c(0,0,0,0))
+# rich_bt[!is.na(strat_mean_6yr_sd),plot(strat_mean_6yr_sd, richness, type="p", col=pretty_col[reg])]
+# rich_bt[!is.na(strat_mean_6yr_sd),j={
+# 	v <- strat_mean_6yr_sd
+# 	v2 <- strat_mean_6yr_sd^2
+# 	mod <- lm(richness~v+v2)
+# 	vals <- seq(min(strat_mean_6yr_sd), max(strat_mean_6yr_sd), by=0.01)
+# 	pred <- predict.lm(mod, newdata=data.frame(v=vals, v2=vals^2))
+# 	lwd <- ifelse(nrow(.SD)>=10, 2, 0.5)
+# 	lines(vals, pred, col=pretty_col[reg], lwd=lwd)
+# }, by=c("reg")]
+# mtext("Richness vs Temporal SD (6 yrs) Temperature", side=3, line=1, outer=F)
 
 
 # ---- Richness Anomaly vs Temporal SD (6 yrs) Bottom Temp: All Together ----
-dev.new()
-par(oma=c(0,0,0,0))
-rich_bt[,richness_anomaly:=richness-mean(richness, na.rm=TRUE), by=c("reg")]
-rich_bt[!is.na(strat_mean_6yr_sd),plot(strat_mean_6yr_sd, richness_anomaly, type="p", col=pretty_col[reg])]
-rich_bt[!is.na(strat_mean_6yr_sd),j={
-	v <- strat_mean_6yr_sd
-	v2 <- strat_mean_6yr_sd^2
-	mod <- lm(richness_anomaly~v+v2)
-	vals <- seq(min(strat_mean_6yr_sd), max(strat_mean_6yr_sd), by=0.01)
-	pred <- predict.lm(mod, newdata=data.frame(v=vals, v2=vals^2))
-	lwd <- ifelse(nrow(.SD)>=10, 2, 0.5)
-	lines(vals, pred, col=pretty_col[reg], lwd=lwd)
-}, by=c("reg")]
-mtext("Richness Anomaly vs Temporal SD (6 yrs) Temperature", side=3, line=1, outer=F)
+# dev.new()
+# par(oma=c(0,0,0,0))
+# rich_bt[,richness_anomaly:=richness-mean(richness, na.rm=TRUE), by=c("reg")]
+# rich_bt[!is.na(strat_mean_6yr_sd),plot(strat_mean_6yr_sd, richness_anomaly, type="p", col=pretty_col[reg])]
+# rich_bt[!is.na(strat_mean_6yr_sd),j={
+# 	v <- strat_mean_6yr_sd
+# 	v2 <- strat_mean_6yr_sd^2
+# 	mod <- lm(richness_anomaly~v+v2)
+# 	vals <- seq(min(strat_mean_6yr_sd), max(strat_mean_6yr_sd), by=0.01)
+# 	pred <- predict.lm(mod, newdata=data.frame(v=vals, v2=vals^2))
+# 	lwd <- ifelse(nrow(.SD)>=10, 2, 0.5)
+# 	lines(vals, pred, col=pretty_col[reg], lwd=lwd)
+# }, by=c("reg")]
+# mtext("Richness Anomaly vs Temporal SD (6 yrs) Temperature", side=3, line=1, outer=F)
 
 # ---- Richness vs Temporal SD (9 yrs) Bottom Temp: All Together ----
-dev.new()
-par(oma=c(0,0,0,0))
-rich_bt[!is.na(strat_mean_9yr_sd),plot(strat_mean_9yr_sd, richness, type="p", col=pretty_col[reg])]
-rich_bt[!is.na(strat_mean_9yr_sd),j={
-	v <- strat_mean_9yr_sd
-	v2 <- strat_mean_9yr_sd^2
-	mod <- lm(richness~v+v2)
-	vals <- seq(min(strat_mean_9yr_sd), max(strat_mean_9yr_sd), by=0.01)
-	pred <- predict.lm(mod, newdata=data.frame(v=vals, v2=vals^2))
-	lwd <- ifelse(nrow(.SD)>=10, 2, 0.5)
-	lines(vals, pred, col=pretty_col[reg], lwd=lwd)
-}, by=c("reg")]
-mtext("Richness vs Temporal SD (9 yrs) Temperature", side=3, line=1, outer=F)
+# dev.new()
+# par(oma=c(0,0,0,0))
+# rich_bt[!is.na(strat_mean_9yr_sd),plot(strat_mean_9yr_sd, richness, type="p", col=pretty_col[reg])]
+# rich_bt[!is.na(strat_mean_9yr_sd),j={
+# 	v <- strat_mean_9yr_sd
+# 	v2 <- strat_mean_9yr_sd^2
+# 	mod <- lm(richness~v+v2)
+# 	vals <- seq(min(strat_mean_9yr_sd), max(strat_mean_9yr_sd), by=0.01)
+# 	pred <- predict.lm(mod, newdata=data.frame(v=vals, v2=vals^2))
+# 	lwd <- ifelse(nrow(.SD)>=10, 2, 0.5)
+# 	lines(vals, pred, col=pretty_col[reg], lwd=lwd)
+# }, by=c("reg")]
+# mtext("Richness vs Temporal SD (9 yrs) Temperature", side=3, line=1, outer=F)
 
 
 # ---- Richness Anomaly vs Temporal SD (9 yrs) Bottom Temp: All Together ----
@@ -257,89 +255,25 @@ mtext("Richness Anomaly vs Temporal SD (9 yrs) Temperature", side=3, line=1, out
 # Map
 ll_all <- data_all[!duplicated(stratum),list(lon=mean(lon), lat=mean(lat), reg=reg), by=c("reg","stratum")]
 
-# nr = 60
-# nc = 150
-# l_mat <- matrix(NA, nrow=nr, nc=nc)
-# l_mat[c(1,nr,1,nr),c(1,1,nc,nc)] <- 1 # where map goes
-#
-# l_mat[c(20,35,20,35), c(5,5,20,20)] <- 2 # where ai rich goes
-# l_mat[c(36,51,36,51), c(5,5,20,20)] <- 3 # where ai temp goes
-#
-# l_mat[c(20,35,20,35), c(22,22,37,37)] <- 4 # where ai rich goes
-# l_mat[c(36,51,36,51), c(22,22,37,37)] <- 5 # where ai temp goes
-#
-# l_mat[c(10,25,10,25), c(39,39,54,54)] <- 6 # where goa rich goes
-# l_mat[c(26,41,26,41), c(39,39,54,54)] <- 7 # where goa temp goes
-#
-# l_mat[c(20,35,20,35), c(55,55,70,70)] <- 8 # where wc rich goes
-# l_mat[c(36,51,36,51), c(55,55,70,70)] <- 9 # where wc temp goes
-#
-# l_mat[c(24, 39, 24, 39), c(78,78,93,93)] <- 10 # where gmex rich goes
-# l_mat[c(40, 55, 40, 55), c(78,78,93,93)] <- 11 # where gmex temp goes
-#
-# l_mat[c(20, 35, 20, 35), c(97, 97, 112, 112)] <- 12 # where sa rich goes
-# l_mat[c(36, 52, 36, 52), c(97, 97, 112, 112)] <- 13 # where sa temp goes
-#
-# l_mat[c(3, 18, 3, 18), c(75, 75, 90, 90)] <- 14 # where neus rich goes
-# l_mat[c(3, 18, 3, 18), c(92, 92, 107, 107)] <- 15 # where neus temp goes
-#
-# l_mat[c(2, 17, 2, 17), c(119, 119, 134, 134)] <- 16 # where shelf rich goes
-# l_mat[c(18, 33, 18, 33), c(119, 119, 134, 134)] <- 17 # where shelf temp goes
-#
-# l_mat[c(43, 58, 43, 58), c(118,118,133,133)] <- 18 # where newf temp goes
-# l_mat[c(43, 58, 43, 58), c(134,134,149,149)] <- 19 # where newf temp goes
-#
-# l_mat[is.na(l_mat)] <- 0
-#
-#
-#
-# layout(l_mat)
-# par(mar=c(0.5,1.5,0.1,0.1), cex=1, ps=8, mgp=c(0.75,0.1,0), tcl=-0.1, bg="white")
-# ll_all[,plot(lon, lat, pch=19, col=pretty_col[reg])]
-# map(add=TRUE, lwd=0.25)
-#
-# pr <- names(pretty_reg)
-# for(r in 1:9){
-# 	rich_bt[reg==pr[r],plot(year, richness, type="l", col=pretty_col[una(reg)], xlab="", ylab="Richness", xaxt="n", bty="l", lwd=3)]
-# 	axis(side=1, labels=FALSE)
-# 	rich_bt[reg==pr[r],
-# 		j={
-# 			plot(year, strat_mean, type="l", col=pretty_col[una(reg)], xlab="", ylab="Temperature", lwd=0.5, bty="l", bg="white")
-# 			lines(year, strat_mean_6yr_mean, col=pretty_col[una(reg)], lwd=1)
-# 			lines(year, strat_mean_9yr_mean, col=pretty_col[una(reg)], lwd=1.5)
-# 		}
-# 	]
-# }
-
-
 nr = 60
 nc = 150
 l_mat <- matrix(NA, nrow=nr, nc=nc)
 l_mat[c(1,nr,1,nr),c(1,1,nc,nc)] <- 1 # where map goes
 
-# l_mat[c(20,35,20,35), c(5,5,20,20)] <- 2 # where ebs rich goes
 l_mat[c(4, 19, 4, 19), c(5,5,20,20)] <- 2 # where ebs rich goes
-
 l_mat[c(32,47,32,47), c(11,11,26,26)] <- 3 # where ai rich goes
-
 l_mat[c(25,40,25,40), c(32,32,47,47)] <- 4 # where goa rich goes
-
 l_mat[c(38,53,38,53), c(53,53,68,68)] <- 5 # where wc rich goes
-
 l_mat[c(34, 49, 34, 49), c(80,80,95,95)] <- 6 # where gmex rich goes
-
 l_mat[c(30, 45, 30, 45), c(98, 98, 113, 113)] <- 7 # where sa rich goes
-
 l_mat[c(40, 55, 40, 55), c(123, 123, 138, 138)] <- 8 # where neus rich goes
-
 l_mat[c(12, 27, 12, 27), c(110, 110, 125, 125)] <- 9 # where shelf rich goes
-
 l_mat[c(3, 18, 3, 18), c(132,132,147,147)] <- 10 # where newf temp goes
-
 l_mat[is.na(l_mat)] <- 0
 
 
 dev.new()
+# pdf("~/Desktop/map_insetRichnessTrend.pdf", width=12, height=4)
 layout(l_mat)
 par(mar=c(1.1,1.5,0.5,0.5), cex=1, ps=8, mgp=c(0.75,0.1,0), tcl=-0.1, bg="white")
 ylim <- range(ll_all[,lat]) + c(0, 6)
@@ -347,12 +281,10 @@ xlim <- range(ll_all[,lon]) + c(-1, 0)
 ll_all[,plot(lon, lat, pch=19, col=pretty_col[reg], ylim=ylim, xlim=xlim)]
 map(add=TRUE, lwd=0.25)
 
-pr <- names(pretty_reg)
+
 for(r in 1:9){
 	rich_bt[reg==pr[r],plot(year, richness, type="n", xlab="", ylab="", xaxt="n", yaxt="n", bty="n")]
-	pu <- par("usr")
-	# pu <- pu + pu*c(-0.001, 0.001, -0.2, 0.1)
-	
+	pu <- par("usr")	
 	prop <- par("plt")
 	
 	dx <- diff(pu[1:2])/diff(prop[1:2])
@@ -363,16 +295,14 @@ for(r in 1:9){
 	y0 <- pu[3] - prop[3]*dy
 	y1 <- pu[4] + (1 - prop[4])*dy
 	
-	# rect(pu[1],pu[3],pu[2],pu[4],col = "blue", border=NA, xpd=TRUE)
 	rect(x0,y0,x1,y1,col = "white", border=NA, xpd=TRUE)
-	# rich_bt[reg==pr[r],plot(year, richness, type="n", col=pretty_col[una(reg)], xlab="", ylab="Richness", xaxt="s", bty="l", lwd=3)]
 	box(bty="l")
 	rich_bt[reg==pr[r],lines(year, richness, type="l", col=pretty_col[una(reg)], lwd=3)]
 	axis(side=1, labels=TRUE)
 	axis(side=2, labels=TRUE)
 	mtext("Richness", side=2, line=0.75)
 }
-
+# dev.off()
 
 
 
@@ -384,6 +314,7 @@ for(r in 1:9){
 # = BS Checker =
 # ==============
 # ---- Time of Year Changing? ----
+dev.new()
 par(mfrow=auto.mfrow(data_all[,lu(reg)]))
 data_all[, j={
 	mu <- .SD[,list("Day of year"=mean(yday(datetime))),by="year"]
@@ -395,6 +326,33 @@ data_all[, j={
 	lines(mi, type="l", lwd=1)
 }, by="reg"]
 
+dev.new(width=5, height=5)
+# pdf("~/Desktop/trawl_sampling_timing.pdf",width=4, height=4)
+par(mfrow=auto.mfrow(data_all[,lu(reg)]), mar=c(1.75,1.75,0.5,0.5), oma=c(0.1,0.1,1.5,0), mgp=c(0.75,0.1,0),tcl=-0.1, cex=1, ps=8)
+zCol <- function(nCols, Z){
+	cols <- colorRampPalette(c("#000099", "#00FEFF", "#45FE4F", "#FCFF00", "#FF9400", "#FF3100"))(nCols)
+	colVec_ind <- cut(Z, breaks=nCols)
+	colVec <- cols[colVec_ind]
+}
+data_all[!duplicated(datetime), j={
+	yd <- yday(datetime)
+	mi <- min(yd)
+	ma <- max(yd)
+	d <- .SD[,density(yday(datetime), from=mi, to=ma)[c("x","y")],by="year"]
+	ylim <- range(d[,y])
+
+	uyrs <- d[,sort(una(year))]
+	yr_cols <- adjustcolor(zCol(length(uyrs), uyrs), 0.75)
+	d[year==uyrs[1], plot(x,y, ylim=ylim, xlab="Day of year", ylab="density", type="l", main=una(reg), col=yr_cols[1])]
+	for(y in 2:length(uyrs)){
+		tcol <- yr_cols[y]
+		d[year==uyrs[y], lines(x, y, col=tcol)]
+	}
+
+}, by="reg"]
+mtext("Distriubtion of Sampling Timing among Years (early years blue, late red)", side=3, outer=TRUE, line=0.5)
+# dev.off()
+
 
 # ---- Number of strata per year ----
 dev.new()
@@ -404,55 +362,4 @@ data_all[, j={
 }, by="reg"]
 
 
-# ---- Number of new species ----
-added_spp <- data_all[, j={
-	old <- .SD[year==una(year)[1],una(spp)]
-	new <- list()
-	uyr <- .SD[,una(year)]
-	for(y in 2:lu(year)){
-		td <- .SD[(year)==uyr[y]]
-		t_spp <- td[,una(spp)]
-		spp_added <- c(NA, setdiff(t_spp, old))
-		old <- una(c(old,t_spp))
-		new[[y]] <- data.table(year=td[,una(year)], spp=spp_added)
-		
-	}
-	
-	rbindlist(new)
-	
-}, by="reg"]
 
-n_added_spp <- added_spp[,list(n_new_spp=lu(spp)-1), by=c("reg","year")]
-
-dev.new()
-par(mfrow=auto.mfrow(data_all[,lu(reg)]))
-n_added_spp[,j={
-	plot(year, n_new_spp, type="o", main=una(reg))
-},by=c("reg")]
-
-
-t_data_all <- copy(data_all)
-setkey(t_data_all, reg, spp, stratum, haulid)
-t_added_spp <- copy(added_spp[!is.na(spp)])
-setkey(t_added_spp, reg, spp)
-t_added_spp[,year_added:=year]
-t_added_spp[,year:=NULL]
-
-data_all_added <- merge(t_data_all, t_added_spp, by=c("reg","spp"))
-spp_added_freq <- data_all_added[,j={
-	yrs <- sort(una(year))
-	uya <- una(year_added)
-	.SD[,list(
-		year_added=una(year_added), 
-		total_years = lu(yrs)+1,
-		years_elapsed=sum(yrs <= una(year_added))+1,
-		years_remaining=sum(yrs > una(year_added)),
-		years_seen_after=lu(year)-1
-	), by="spp"]
-	
-}, by=c("reg")]
-
-show_up_spp <- spp_added_freq[years_elapsed>2 & ((years_remaining - years_seen_after)<=1) & years_remaining >=5]
-show_up_spp[,table(reg)]
-
-# save(show_up_spp, file="~/Documents/School&Work/pinskyPost/trawl/trawlDiversity/data/show_up_spp.RData")
