@@ -162,6 +162,12 @@ mtext("Richness Slope vs Temperature Slope", side=3, line=1, outer=F)
 # =============================================
 # = Compare Richness and Temperature Variance =
 # =============================================
+# ---- Richness vs Spatial SD Bottom Temp: Separate Panels ----
+dev.new()
+par(mfrow=auto.mfrow(length(rn)), oma=c(0,0,1,0))
+rich_bt[!is.na(strat_sd),plot(strat_sd, richness, type="p", col=pretty_col[una(reg)], main=pretty_reg[una(reg)]), by=c("reg")]
+mtext("Richness vs Temporal SD Temperature", side=3, line=-0.5, outer=TRUE)
+
 # ---- Richness vs Temporal SD Bottom Temp: Separate Panels ----
 dev.new()
 par(mfrow=auto.mfrow(length(rn)), oma=c(0,0,1,0))
@@ -251,58 +257,120 @@ mtext("Richness Anomaly vs Temporal SD (9 yrs) Temperature", side=3, line=1, out
 # Map
 ll_all <- data_all[!duplicated(stratum),list(lon=mean(lon), lat=mean(lat), reg=reg), by=c("reg","stratum")]
 
+# nr = 60
+# nc = 150
+# l_mat <- matrix(NA, nrow=nr, nc=nc)
+# l_mat[c(1,nr,1,nr),c(1,1,nc,nc)] <- 1 # where map goes
+#
+# l_mat[c(20,35,20,35), c(5,5,20,20)] <- 2 # where ai rich goes
+# l_mat[c(36,51,36,51), c(5,5,20,20)] <- 3 # where ai temp goes
+#
+# l_mat[c(20,35,20,35), c(22,22,37,37)] <- 4 # where ai rich goes
+# l_mat[c(36,51,36,51), c(22,22,37,37)] <- 5 # where ai temp goes
+#
+# l_mat[c(10,25,10,25), c(39,39,54,54)] <- 6 # where goa rich goes
+# l_mat[c(26,41,26,41), c(39,39,54,54)] <- 7 # where goa temp goes
+#
+# l_mat[c(20,35,20,35), c(55,55,70,70)] <- 8 # where wc rich goes
+# l_mat[c(36,51,36,51), c(55,55,70,70)] <- 9 # where wc temp goes
+#
+# l_mat[c(24, 39, 24, 39), c(78,78,93,93)] <- 10 # where gmex rich goes
+# l_mat[c(40, 55, 40, 55), c(78,78,93,93)] <- 11 # where gmex temp goes
+#
+# l_mat[c(20, 35, 20, 35), c(97, 97, 112, 112)] <- 12 # where sa rich goes
+# l_mat[c(36, 52, 36, 52), c(97, 97, 112, 112)] <- 13 # where sa temp goes
+#
+# l_mat[c(3, 18, 3, 18), c(75, 75, 90, 90)] <- 14 # where neus rich goes
+# l_mat[c(3, 18, 3, 18), c(92, 92, 107, 107)] <- 15 # where neus temp goes
+#
+# l_mat[c(2, 17, 2, 17), c(119, 119, 134, 134)] <- 16 # where shelf rich goes
+# l_mat[c(18, 33, 18, 33), c(119, 119, 134, 134)] <- 17 # where shelf temp goes
+#
+# l_mat[c(43, 58, 43, 58), c(118,118,133,133)] <- 18 # where newf temp goes
+# l_mat[c(43, 58, 43, 58), c(134,134,149,149)] <- 19 # where newf temp goes
+#
+# l_mat[is.na(l_mat)] <- 0
+#
+#
+#
+# layout(l_mat)
+# par(mar=c(0.5,1.5,0.1,0.1), cex=1, ps=8, mgp=c(0.75,0.1,0), tcl=-0.1, bg="white")
+# ll_all[,plot(lon, lat, pch=19, col=pretty_col[reg])]
+# map(add=TRUE, lwd=0.25)
+#
+# pr <- names(pretty_reg)
+# for(r in 1:9){
+# 	rich_bt[reg==pr[r],plot(year, richness, type="l", col=pretty_col[una(reg)], xlab="", ylab="Richness", xaxt="n", bty="l", lwd=3)]
+# 	axis(side=1, labels=FALSE)
+# 	rich_bt[reg==pr[r],
+# 		j={
+# 			plot(year, strat_mean, type="l", col=pretty_col[una(reg)], xlab="", ylab="Temperature", lwd=0.5, bty="l", bg="white")
+# 			lines(year, strat_mean_6yr_mean, col=pretty_col[una(reg)], lwd=1)
+# 			lines(year, strat_mean_9yr_mean, col=pretty_col[una(reg)], lwd=1.5)
+# 		}
+# 	]
+# }
+
+
 nr = 60
 nc = 150
 l_mat <- matrix(NA, nrow=nr, nc=nc)
 l_mat[c(1,nr,1,nr),c(1,1,nc,nc)] <- 1 # where map goes
 
-l_mat[c(20,35,20,35), c(5,5,20,20)] <- 2 # where ai rich goes
-l_mat[c(36,51,36,51), c(5,5,20,20)] <- 3 # where ai temp goes
+# l_mat[c(20,35,20,35), c(5,5,20,20)] <- 2 # where ebs rich goes
+l_mat[c(4, 19, 4, 19), c(5,5,20,20)] <- 2 # where ebs rich goes
 
-l_mat[c(20,35,20,35), c(22,22,37,37)] <- 4 # where ai rich goes
-l_mat[c(36,51,36,51), c(22,22,37,37)] <- 5 # where ai temp goes
+l_mat[c(32,47,32,47), c(11,11,26,26)] <- 3 # where ai rich goes
 
-l_mat[c(10,25,10,25), c(39,39,54,54)] <- 6 # where goa rich goes
-l_mat[c(26,41,26,41), c(39,39,54,54)] <- 7 # where goa temp goes
+l_mat[c(25,40,25,40), c(32,32,47,47)] <- 4 # where goa rich goes
 
-l_mat[c(20,35,20,35), c(55,55,70,70)] <- 8 # where wc rich goes
-l_mat[c(36,51,36,51), c(55,55,70,70)] <- 9 # where wc temp goes
+l_mat[c(38,53,38,53), c(53,53,68,68)] <- 5 # where wc rich goes
 
-l_mat[c(24, 39, 24, 39), c(78,78,93,93)] <- 10 # where gmex rich goes
-l_mat[c(40, 55, 40, 55), c(78,78,93,93)] <- 11 # where gmex temp goes
+l_mat[c(34, 49, 34, 49), c(80,80,95,95)] <- 6 # where gmex rich goes
 
-l_mat[c(20, 35, 20, 35), c(97, 97, 112, 112)] <- 12 # where sa rich goes
-l_mat[c(36, 52, 36, 52), c(97, 97, 112, 112)] <- 13 # where sa temp goes
+l_mat[c(30, 45, 30, 45), c(98, 98, 113, 113)] <- 7 # where sa rich goes
 
-l_mat[c(3, 18, 3, 18), c(75, 75, 90, 90)] <- 14 # where neus rich goes
-l_mat[c(3, 18, 3, 18), c(92, 92, 107, 107)] <- 15 # where neus temp goes
+l_mat[c(40, 55, 40, 55), c(123, 123, 138, 138)] <- 8 # where neus rich goes
 
-l_mat[c(2, 17, 2, 17), c(119, 119, 134, 134)] <- 16 # where shelf rich goes
-l_mat[c(18, 33, 18, 33), c(119, 119, 134, 134)] <- 17 # where shelf temp goes
+l_mat[c(12, 27, 12, 27), c(110, 110, 125, 125)] <- 9 # where shelf rich goes
 
-l_mat[c(43, 58, 43, 58), c(118,118,133,133)] <- 18 # where newf temp goes
-l_mat[c(43, 58, 43, 58), c(134,134,149,149)] <- 19 # where newf temp goes
+l_mat[c(3, 18, 3, 18), c(132,132,147,147)] <- 10 # where newf temp goes
 
 l_mat[is.na(l_mat)] <- 0
 
 
-
+dev.new()
 layout(l_mat)
-par(mar=c(0.5,1.5,0.1,0.1), cex=1, ps=8, mgp=c(0.75,0.1,0), tcl=-0.1, bg="white")
-ll_all[,plot(lon, lat, pch=19, col=pretty_col[reg])]
+par(mar=c(1.1,1.5,0.5,0.5), cex=1, ps=8, mgp=c(0.75,0.1,0), tcl=-0.1, bg="white")
+ylim <- range(ll_all[,lat]) + c(0, 6)
+xlim <- range(ll_all[,lon]) + c(-1, 0)
+ll_all[,plot(lon, lat, pch=19, col=pretty_col[reg], ylim=ylim, xlim=xlim)]
 map(add=TRUE, lwd=0.25)
 
 pr <- names(pretty_reg)
 for(r in 1:9){
-	rich_bt[reg==pr[r],plot(year, richness, type="l", col=pretty_col[una(reg)], xlab="", ylab="Richness", xaxt="n", bty="l", lwd=3)]
-	axis(side=1, labels=FALSE)
-	rich_bt[reg==pr[r],
-		j={
-			plot(year, strat_mean, type="l", col=pretty_col[una(reg)], xlab="", ylab="Temperature", lwd=0.5, bty="l", bg="white")
-			lines(year, strat_mean_6yr_mean, col=pretty_col[una(reg)], lwd=1)
-			lines(year, strat_mean_9yr_mean, col=pretty_col[una(reg)], lwd=1.5)
-		}
-	]
+	rich_bt[reg==pr[r],plot(year, richness, type="n", xlab="", ylab="", xaxt="n", yaxt="n", bty="n")]
+	pu <- par("usr")
+	# pu <- pu + pu*c(-0.001, 0.001, -0.2, 0.1)
+	
+	prop <- par("plt")
+	
+	dx <- diff(pu[1:2])/diff(prop[1:2])
+	x0 <- pu[1] - prop[1]*dx
+	x1 <- pu[2] + (1 - prop[2])*dx
+	
+	dy <- diff(pu[3:4])/diff(prop[3:4])
+	y0 <- pu[3] - prop[3]*dy
+	y1 <- pu[4] + (1 - prop[4])*dy
+	
+	# rect(pu[1],pu[3],pu[2],pu[4],col = "blue", border=NA, xpd=TRUE)
+	rect(x0,y0,x1,y1,col = "white", border=NA, xpd=TRUE)
+	# rich_bt[reg==pr[r],plot(year, richness, type="n", col=pretty_col[una(reg)], xlab="", ylab="Richness", xaxt="s", bty="l", lwd=3)]
+	box(bty="l")
+	rich_bt[reg==pr[r],lines(year, richness, type="l", col=pretty_col[una(reg)], lwd=3)]
+	axis(side=1, labels=TRUE)
+	axis(side=2, labels=TRUE)
+	mtext("Richness", side=2, line=0.75)
 }
 
 
@@ -310,3 +378,81 @@ for(r in 1:9){
 
 
 
+
+
+# ==============
+# = BS Checker =
+# ==============
+# ---- Time of Year Changing? ----
+par(mfrow=auto.mfrow(data_all[,lu(reg)]))
+data_all[, j={
+	mu <- .SD[,list("Day of year"=mean(yday(datetime))),by="year"]
+	ma <- .SD[,list("Day of year"=quantile(yday(datetime),0.95)),by="year"]
+	mi <- .SD[,list("Day of year"=quantile(yday(datetime),0.05)),by="year"]
+	ylim <- range(c(mu[[2]],ma[[2]],mi[[2]]))
+	plot(mu, type="l", main=una(reg), ylim=ylim, lwd=2)
+	lines(ma, type="l", lwd=1)
+	lines(mi, type="l", lwd=1)
+}, by="reg"]
+
+
+# ---- Number of strata per year ----
+dev.new()
+par(mfrow=auto.mfrow(data_all[,lu(reg)]))
+data_all[, j={
+	plot(.SD[,list("N Strata"=lu(stratum)), by="year"], type="l", main=una(reg), lwd=2)
+}, by="reg"]
+
+
+# ---- Number of new species ----
+added_spp <- data_all[, j={
+	old <- .SD[year==una(year)[1],una(spp)]
+	new <- list()
+	uyr <- .SD[,una(year)]
+	for(y in 2:lu(year)){
+		td <- .SD[(year)==uyr[y]]
+		t_spp <- td[,una(spp)]
+		spp_added <- c(NA, setdiff(t_spp, old))
+		old <- una(c(old,t_spp))
+		new[[y]] <- data.table(year=td[,una(year)], spp=spp_added)
+		
+	}
+	
+	rbindlist(new)
+	
+}, by="reg"]
+
+n_added_spp <- added_spp[,list(n_new_spp=lu(spp)-1), by=c("reg","year")]
+
+dev.new()
+par(mfrow=auto.mfrow(data_all[,lu(reg)]))
+n_added_spp[,j={
+	plot(year, n_new_spp, type="o", main=una(reg))
+},by=c("reg")]
+
+
+t_data_all <- copy(data_all)
+setkey(t_data_all, reg, spp, stratum, haulid)
+t_added_spp <- copy(added_spp[!is.na(spp)])
+setkey(t_added_spp, reg, spp)
+t_added_spp[,year_added:=year]
+t_added_spp[,year:=NULL]
+
+data_all_added <- merge(t_data_all, t_added_spp, by=c("reg","spp"))
+spp_added_freq <- data_all_added[,j={
+	yrs <- sort(una(year))
+	uya <- una(year_added)
+	.SD[,list(
+		year_added=una(year_added), 
+		total_years = lu(yrs)+1,
+		years_elapsed=sum(yrs <= una(year_added))+1,
+		years_remaining=sum(yrs > una(year_added)),
+		years_seen_after=lu(year)-1
+	), by="spp"]
+	
+}, by=c("reg")]
+
+show_up_spp <- spp_added_freq[years_elapsed>2 & ((years_remaining - years_seen_after)<=1) & years_remaining >=5]
+show_up_spp[,table(reg)]
+
+# save(show_up_spp, file="~/Documents/School&Work/pinskyPost/trawl/trawlDiversity/data/show_up_spp.RData")
