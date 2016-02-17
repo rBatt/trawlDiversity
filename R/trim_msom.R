@@ -62,6 +62,18 @@ trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tol
 		X.t <- X.t[(year)!=2011 & (year)>1950,]
 	}
 	
+	# ---- Cut out methodologically suspicious species ----
+	if(reg == "sa"){
+		bad_spp_sa <- "Stomolophus meleagris"
+		X.t <- X.t[!spp%in%bad_spp_sa,]
+	}
+	
+	o_reg <- reg
+	bad_spp <- show_up_spp[(reg)==o_reg,una(spp)]
+	X.t <- X.t[!spp%in%bad_spp,]
+	
+	
+	# ---- Deal with consistent strata ----
 	strat_tol <- X.t[,floor(lu(year)*tolFraction)]
 	check_strat(X.t, reg, gridSize=gridSize, strat_tol=strat_tol, append_keep_strat=TRUE, plot=plot)
 	
