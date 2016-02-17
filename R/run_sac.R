@@ -3,7 +3,7 @@
 #' Calculate richness using a species accumulation curve
 #' 
 #' @param regs Character vector of region names
-#' @param data_regs Option list of data.tables; list should be named according to \code{regs
+#' @param data_regs Option list of data.tables; list should be named according to \code{regs}
 #' 
 #' @export
 

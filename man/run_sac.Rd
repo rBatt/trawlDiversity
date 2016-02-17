@@ -4,10 +4,12 @@
 \alias{run_sac}
 \title{Run Species Accumulation Curve Estimate of Richness}
 \usage{
-run_sac(regs)
+run_sac(regs, data_regs)
 }
 \arguments{
 \item{regs}{Character vector of region names}
+
+\item{data_regs}{Option list of data.tables; list should be named according to \code{regs}}
 }
 \description{
 Calculate richness using a species accumulation curve
