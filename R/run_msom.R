@@ -314,13 +314,13 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 		if(is.null(compiled_model)){
 			compiled_model <- rstan::stan_model(model_path)
 		}
-		stan_control <- list(stepsize=2, adapt_delta=0.8, max_treedepth=10)
+		stan_control <- list(stepsize=0.01, adapt_delta=0.99, max_treedepth=15)
 		out <- rstan::sampling(
 			object=compiled_model,
 			data=inputData,
 			pars = mps_keep,
 			control=stan_control, 
-			chains=chains, iter=iter, seed=seed, cores=cores, verbose=F, refresh=20, ...
+			chains=chains, iter=iter, seed=seed, cores=cores, verbose=F, refresh=100, ...
 		)
 	}else if(language=="JAGS"){
 		
