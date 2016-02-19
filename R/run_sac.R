@@ -29,23 +29,21 @@ run_sac <- function(regs, data_regs){
 		t_reg <- regs[r]
 	
 		if(missing(data_regs)){
-			data_in_all0 <- trim_msom(t_reg, gridSize=0.5, depthStratum=100, tolFraction=0.15, grid_stratum=TRUE, plot=FALSE)
-	
-			nSite_min <- data_in_all0[,lu(stratum), by="year"][,min(V1)]
-
-			data_in_all <- data_in_all0
-			setkey(data_in_all, year, stratum, haulid, spp)
+			d0 <- trim_msom(t_reg, gridSize=0.5, depthStratum=100, tolFraction=0.15, grid_stratum=TRUE, plot=FALSE)
+			d <- d0
 		}else{
-			data_in_all <- data_regs[[regs[r]]]
+			d <- data_regs[(reg) == regs[r]]
 		}
+		setkey(d, year, stratum, haulid, spp)
 		
-		u_yrs <- data_in_all[,unique(year)]
-		n_spp <- data_in_all[,list(n_spp=lu(spp)), by="year"]
+		nSite_min <- d[,lu(stratum), by="year"][,min(V1)]
+		u_yrs <- d[,unique(year)]
+		n_spp <- d[,list(n_spp=lu(spp)), by="year"]
 		
 		sac_out[[r]] <- vector("list", length(u_yrs))
 	
 		for(i in 1:length(u_yrs)){
-			t_data <- data_in_all[year==u_yrs[i]]
+			t_data <- d[year==u_yrs[i]]
 	
 			sac_out[[r]][[i]] <- sac_fun(t_data, nSite_rich=nSite_min)
 			sac_out[[r]][[i]]$u_yr <- u_yrs[i]
