@@ -23,18 +23,15 @@ bt_metrics <- function(regs, data_regs){
 		t_reg <- regs[r]
 	
 		if(missing(data_regs)){
-			data_in_all0 <- trim_msom(t_reg, gridSize=0.5, depthStratum=100, tolFraction=0.15, grid_stratum=TRUE, plot=FALSE)
-	
-			nSite_min <- data_in_all0[,lu(stratum), by="year"][,min(V1)]
-
-			data_in_all <- data_in_all0
-			setkey(data_in_all, year, stratum, haulid, spp)
+			d0 <- trim_msom(t_reg, gridSize=0.5, depthStratum=100, tolFraction=0.15, grid_stratum=TRUE, plot=FALSE)
+			d <- d0
 		}else{
-			data_in_all <- data_regs[[regs[r]]]
+			d <- data_regs[(reg) == regs[r]]
 		}
+		setkey(d, year, stratum, haulid, spp)
 		
 	
-		haul_bt <- data_in_all[,list(haul_bt=mean(btemp, na.rm=TRUE)), by=c("reg","year","stratum","haulid")]
+		haul_bt <- d[,list(haul_bt=mean(btemp, na.rm=TRUE)), by=c("reg","year","stratum","haulid")]
 		strat_bt <- haul_bt[,list(strat_bt=mean(haul_bt, na.rm=TRUE)), by=c("reg","year","stratum")]
 		reg_bt <- strat_bt[,list(strat_mean=mean(strat_bt, na.rm=TRUE), strat_sd=sd(strat_bt, na.rm=TRUE)), by=c("reg","year")]
 	
