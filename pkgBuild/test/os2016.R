@@ -106,8 +106,8 @@ rich_bt[,
 mtext("Richness vs Mean Temperature (Detrended)", side=3, line=-0.5, outer=TRUE)
 
 # ---- Regional Slopes from Richness vs Mean Bottom Temp ----
-# dev.new(width=7, height=7)
-png("~/Documents/School&Work/Presentations/OS2016/Figures/richness_temp_slopes.png", width=9, height=9, units="in", res=800)
+dev.new(width=7, height=7)
+# png("~/Documents/School&Work/Presentations/OS2016/Figures/richness_temp_slopes.png", width=9, height=9, units="in", res=800)
 par(mar=c(3.5,3.75,0.5,0.5), oma=c(0.2,0.2,0.2,0.2), ps=18, cex=1, mgp=c(2.5,0.65,0), tcl=-0.25)
 reg_slope_bt_rich <- rich_bt[,list(
 			bt_slope=coef(lm(strat_mean~year, na.action=na.exclude))[2],
@@ -123,7 +123,7 @@ abline(v=0, lty="dashed")
 abline(h=0, lty="dashed")
 reg_slope_bt_rich[,arrows(x0=bt_slope-bt_slope_se, x1=bt_slope+bt_slope_se, y0=rich_slope, code=3, angle=90, length=0.1, col=pretty_col[reg])]
 reg_slope_bt_rich[,arrows(x0=bt_slope, y0=rich_slope-rich_slope_se, y1=rich_slope+rich_slope_se, code=3, angle=90, length=0.1, col=pretty_col[reg])] 
-dev.off()
+# dev.off()
 
 
 
@@ -194,8 +194,8 @@ l_mat[c(3, 18, 3, 18), c(132,132,147,147)] <- 10 # where newf temp goes
 l_mat[is.na(l_mat)] <- 0
 
 
-# dev.new(width=29, height=10)
-png("~/Documents/School&Work/Presentations/OS2016/Figures/map_insetRichnessTrend.png", width=29, height=10, units="in", res=800)
+dev.new(width=29, height=10)
+# png("~/Documents/School&Work/Presentations/OS2016/Figures/map_insetRichnessTrend.png", width=29, height=10, units="in", res=800)
 layout(l_mat)
 par(mar=c(1.75,2,0.5,0.5), cex=1, ps=18, mgp=c(1,0.65,0), tcl=-0.25, bg="white", bty="o", lwd=2)
 ylim <- range(ll_all[,lat]) + c(0, 8)
@@ -225,15 +225,15 @@ for(r in 1:9){
 	axis(side=2, labels=TRUE)
 	# mtext("Richness", side=2, line=1)
 }
-dev.off()
+# dev.off()
 
 
 
 
 
 # ---- Time series of temperature: spatial mean, spatial sd, temporal sd ----
-# dev.new(width=23, height=5)
-png("~/Documents/School&Work/Presentations/OS2016/Figures/bottom_temperature_time_series.png", width=23, height=5, units="in", res=800)
+dev.new(width=23, height=5)
+# png("~/Documents/School&Work/Presentations/OS2016/Figures/bottom_temperature_time_series.png", width=23, height=5, units="in", res=800)
 par(mfrow=c(3,9), mar=c(1.5,2.5,0.25,0.5), oma=c(1.0,1.5,1.5,0.1), ps=18, cex=1, mgp=c(1,0.65,0), tcl=-0.25)
 
 rich_bt[, # temperature spatial mean
@@ -267,11 +267,12 @@ rich_bt[, # temperature spatial sd
 		if(reg=="ebs"){mtext("Temporal SD", side=2, line=2.5, outer=FALSE)}
 	}, by=c("reg")
 ]
-dev.off()
+# dev.off()
 
 
 # ---- Time series of just mean BT ----
-png("~/Documents/School&Work/Presentations/OS2016/Figures/single_bottom_temperature_time_series.png", width=29, height=3, units="in", res=800)
+# png("~/Documents/School&Work/Presentations/OS2016/Figures/single_bottom_temperature_time_series.png", width=29, height=3, units="in", res=800)
+dev.new(width=28, height=3)
 par(mfrow=c(1,9), mar=c(1.0,2.5,0.25,0.5), oma=c(1.0,1.5,1.5,0.1), ps=18, cex=1, mgp=c(1,0.65,0), tcl=-0.25)
 
 rich_bt[, # temperature spatial mean
@@ -286,11 +287,11 @@ rich_bt[, # temperature spatial mean
 		if(reg=="ebs"){mtext("Temperature", side=2, line=2.5, outer=FALSE)}
 	}, by=c("reg")
 ]
-dev.off()
+# dev.off()
 
 # ---- Standardized Richness vs Spatial Stdev. of Temperature ----
-# dev.new(width=7, height=7)
-png("~/Documents/School&Work/Presentations/OS2016/Figures/stdrz_rich_vs_spatial_stdev_temp.png", width=9, height=9, units="in", res=800)
+dev.new(width=7, height=7)
+# png("~/Documents/School&Work/Presentations/OS2016/Figures/stdrz_rich_vs_spatial_stdev_temp.png", width=9, height=9, units="in", res=800)
 par(mar=c(3.5,3.75,0.5,0.5), oma=c(0.2,0.2,0.2,0.2), ps=18, cex=1, mgp=c(2.5,0.65,0), tcl=-0.25)
 rich_bt[,richness_standard:=richness_anomaly/sd(richness, na.rm=TRUE), by=c("reg")]
 rich_bt[!is.na(strat_sd),plot(strat_sd, richness_standard, type="p", col=pretty_col[reg], pch=20, cex=1.25, xlab="Spatial Stdev. of Temperature", ylab="Standardized Richness")]
@@ -307,12 +308,12 @@ rich_bt[!is.na(strat_sd),j={
 	# lwd=4
 	lines(vals, pred, col=pretty_col[reg], lwd=lwd)
 }, by=c("reg")]
-dev.off()
+# dev.off()
 
 
 # ---- Standardized Richness vs Temporal Stdev. of Temperature ----
-# dev.new(width=7, height=7)
-png("~/Documents/School&Work/Presentations/OS2016/Figures/stdrz_rich_vs_temporal_stdev_temp.png", width=9, height=9, units="in", res=800)
+dev.new(width=7, height=7)
+# png("~/Documents/School&Work/Presentations/OS2016/Figures/stdrz_rich_vs_temporal_stdev_temp.png", width=9, height=9, units="in", res=800)
 par(mar=c(3.5,3.75,0.5,0.5), oma=c(0.2,0.2,0.2,0.2), ps=18, cex=1, mgp=c(2.5,0.65,0), tcl=-0.25)
 rich_bt[,richness_standard:=richness_anomaly/sd(richness, na.rm=TRUE), by=c("reg")]
 rich_bt[!is.na(strat_mean_6yr_sd),plot(strat_mean_6yr_sd, richness_standard, type="p", col=pretty_col[reg], pch=20, cex=1.25, xlab="Temporal Stdev. of Temperature", ylab="Standardized Richness")]
@@ -328,31 +329,31 @@ rich_bt[!is.na(strat_mean_6yr_sd),j={
 	# lwd=4
 	lines(vals, pred, col=pretty_col[reg], lwd=lwd)
 }, by=c("reg")]
-dev.off()
+# dev.off()
 
 
 
 # ---- Hypothesis Figures ----
-png("~/Documents/School&Work/Presentations/OS2016/Figures/hypothesis_niche_inheritence.png", width=5, height=5, units="in", res=600)
-par(mar=c(3.5,3.75,0.5,0.5), oma=c(0.2,0.2,0.2,0.2), ps=18, cex=1, mgp=c(1.5,0.65,0), tcl=-0.25)
-set.seed(1)
-fx <- rnorm(100)
-fy <- fx + rnorm(100, sd=0.15)
-plot(fx, fy, type="n", pch=20, cex=1, xlab="Temperature or its Spatial Stdev.", ylab="Richness", xaxt="n", yaxt="n")
-segments(x0=-2, y0=-2, x1=2, y1=2, lwd=3, lty="dashed")
-dev.off()
-
-png("~/Documents/School&Work/Presentations/OS2016/Figures/hypothesis_storage_effect.png", width=5, height=5, units="in", res=600)
-par(mar=c(3.5,3.75,0.5,0.5), oma=c(0.2,0.2,0.2,0.2), ps=18, cex=1, mgp=c(1.5,0.65,0), tcl=-0.25)
-set.seed(1)
-fx <- sort(rnorm(100))
-shift_fx <- min(fx)
-fx <- fx - shift_fx
-fx2 <- -(fx + shift_fx)^2
-fy <- fx + fx2 + rnorm(100, sd=0.15)
-plot(fx, fy, type="n", pch=20, cex=1, xlab="Temporal Stdev. of Temperature", ylab="Richness", xaxt="n", yaxt="n")
-lines(fx, predict(lm(fy~fx+fx2)), lwd=3, lty="dashed")
-dev.off()
+# png("~/Documents/School&Work/Presentations/OS2016/Figures/hypothesis_niche_inheritence.png", width=5, height=5, units="in", res=600)
+# par(mar=c(3.5,3.75,0.5,0.5), oma=c(0.2,0.2,0.2,0.2), ps=18, cex=1, mgp=c(1.5,0.65,0), tcl=-0.25)
+# set.seed(1)
+# fx <- rnorm(100)
+# fy <- fx + rnorm(100, sd=0.15)
+# plot(fx, fy, type="n", pch=20, cex=1, xlab="Temperature or its Spatial Stdev.", ylab="Richness", xaxt="n", yaxt="n")
+# segments(x0=-2, y0=-2, x1=2, y1=2, lwd=3, lty="dashed")
+# dev.off()
+#
+# png("~/Documents/School&Work/Presentations/OS2016/Figures/hypothesis_storage_effect.png", width=5, height=5, units="in", res=600)
+# par(mar=c(3.5,3.75,0.5,0.5), oma=c(0.2,0.2,0.2,0.2), ps=18, cex=1, mgp=c(1.5,0.65,0), tcl=-0.25)
+# set.seed(1)
+# fx <- sort(rnorm(100))
+# shift_fx <- min(fx)
+# fx <- fx - shift_fx
+# fx2 <- -(fx + shift_fx)^2
+# fy <- fx + fx2 + rnorm(100, sd=0.15)
+# plot(fx, fy, type="n", pch=20, cex=1, xlab="Temporal Stdev. of Temperature", ylab="Richness", xaxt="n", yaxt="n")
+# lines(fx, predict(lm(fy~fx+fx2)), lwd=3, lty="dashed")
+# dev.off()
 
 
 # ==============
