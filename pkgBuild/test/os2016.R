@@ -28,6 +28,8 @@ data_all <- rbindlist(data_in_regs, fill=TRUE)
 data_all <- data_all[reg!="wcann"]
 data_all[reg=="wctri", reg:="wc"]
 
+data_all <- data_all[abund>0 & !is.na(abund)]
+
 
 # =======================================
 # = Get Bottom Temperature and Richness =
