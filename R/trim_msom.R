@@ -40,9 +40,6 @@ trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tol
 	if(reg == "ai"){
 		X.t <- X.t[(year)>1900,]
 	}
-	# if(reg == "goa"){
-	# 	X.t <- X.t[(year)!=2001,]
-	# }
 	if(reg == "gmex" | reg == "neus"){
 		X.t <- X.t[(year)!=2015,]
 	}
@@ -62,6 +59,24 @@ trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tol
 		X.t <- X.t[(year)!=2011 & (year)>1950,]
 	}
 	
+	# ---- constratin/ standardize time of year (day of year) sampling occurred ----
+	yd <- X.t[,yday(datetime)]
+	X.t <- switch(reg,
+		ebs = X.t[yd <= 220],
+		# ai = X.t[yd >= 170 & yd <= 225], # sampling periods really overlap between 175 and 225
+		# goa = X.t[yd <= 210],
+		# wc = X.t[yd >= 170 & yd <= 240],
+		# wctri = X.t[yd >= 170 & yd <= 240],
+		gmex = X.t,
+		sa = X.t[yd >= 150 & yd <= 250],
+		neus = X.t,
+		shelf = X.t[yd >=  180 & yd <= 215],
+		newf = X.t[ yd >= 250 | yd <= 28],
+
+		X.t # just returns X.t if reg isn't matched (e.g., if reg was wcann or sgulf)
+
+	)
+
 	# ---- Cut out methodologically suspicious species ----
 	if(reg == "sa"){
 		bad_spp_sa <- "Stomolophus meleagris"
