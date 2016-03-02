@@ -2,7 +2,7 @@
 # run on amphiprion: 
 # nohup R CMD BATCH -cwd --no-save trawlDiversity/pkgBuild/test/msom_source_script.R &
 
-# nohup R CMD BATCH -cwd --no-save trawlDiversity/pkgBuild/test/msom_source_script.R msom_source_script_AllRegs_annual_jags_10kIter_r5-6.Rout &
+# nohup R CMD BATCH -cwd --no-save trawlDiversity/pkgBuild/test/msom_source_script.R msom_source_script_AllRegs_annual_jags_10kIter_r7-8.Rout &
 
 
 # ========
@@ -28,8 +28,8 @@ compiled_stan_model <- stan_model(model_location)
 # for(r in length(regs):1){
 # for(r in 1:2){ # ebs and ai
 # for(r in 3:4){ # goa and wctri
-for(r in 5:6){ # wcann and gmex
-# for(r in 7:8){ # sa and neus
+# for(r in 5:6){ # wcann and gmex
+for(r in 7:8){ # sa and neus
 # for(r in 9:10){ # shelf and newf
 	
 	rm_out <- vector("list", length(regs)) # yes, this reset the contents of the list. Saving all regions together is too big
