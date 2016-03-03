@@ -85,10 +85,20 @@ process_msomStatic <- function(rm_out, reg){
 	
 	
 	mytrace <- function(x, pars){
-		sims <- lapply(x@sim$samples, function(x)x[pars])
-		for(i in 1:length(sims)){
-			sims[[i]]$chain <- rep(i, length(sims[[i]][[1]]))
+		if(lang=="JAGS"){
+			# sims <- x$BUGSoutput$sims.list[pars]
+			sims0 <- lapply(apply(x$BUGSoutput$sims.array[,,pars], 2, list), function(x)x[[1]])
+			sims <- vector("list", length(sims0))
+			for(i in 1:length(sims)){
+				sims[[i]] <- as.data.table(cbind(sims0[[i]], chain=rep(i, nrow(sims0[[i]]))))
+			} 
+		}else if(lang == "Stan"){
+			sims <- lapply(x@sim$samples, function(x)x[pars])
+			for(i in 1:length(sims)){
+				sims[[i]]$chain <- rep(i, length(sims[[i]][[1]]))
+			}
 		}
+		
 		sims <- rbindlist(sims)
 		cn <- colnames(sims)
 		for(h in 1:(ncol(sims)-1)){
@@ -104,7 +114,12 @@ process_msomStatic <- function(rm_out, reg){
 		}
 	}
 	
-	pars_trace <- c("Omega","alpha_mu[1]", "alpha_mu[2]", "alpha_mu[3]", "alpha_mu[4]", "beta_mu[1]")
+	
+	if(lang == "Stan"){
+		pars_trace <- c("Omega","alpha_mu[1]", "alpha_mu[2]", "alpha_mu[3]", "alpha_mu[4]", "beta_mu[1]")
+	}else{
+		pars_trace <- c("Omega","alpha_mu[1]", "alpha_mu[2]", "alpha_mu[3]", "alpha_mu[4]", "beta_mu")
+	}
 	
 	
 	
