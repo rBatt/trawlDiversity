@@ -150,7 +150,9 @@ trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tol
 	# ========================
 	# = Give Abundance Value =
 	# ========================
-	X.agg1[,abund:=as.integer(wtcpue>0)]
+	# X.agg1[,abund:=as.integer(wtcpue>0)]
+	# X.agg1[,abund:=as.integer(!is.na(wtcpue))]
+	X.agg1[,abund:=1]
 	
 	
 	# ============
