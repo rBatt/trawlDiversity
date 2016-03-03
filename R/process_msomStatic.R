@@ -48,7 +48,7 @@ process_msomStatic <- function(rm_out, reg){
 	Omega_iter <- lapply(out, get_iters, pars="Omega", lang="JAGS")
 	Omega_mean <- sapply(Omega_iter, function(x)x[,mean(Omega)])
 	naive_rich <- sapply(inputData, function(x)x$N)
-	rich_pureModel <- Omega_mean * naive_rich
+	rich_pureModel <- Omega_mean * sapply(inputData, function(x)x$nS)
 	
 	reg_pres_dist <- lapply(psi_dist, function(x)apply(x, c(1,3), function(x)(1-prod(1-x))))
 	reg_pres <- lapply(reg_pres_dist, function(x)colMeans(x))
