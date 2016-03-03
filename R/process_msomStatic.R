@@ -10,30 +10,21 @@
 #' @export
 process_msomStatic <- function(rm_out, reg){
 	
-	library(rstan)
-	library(trawlDiversity)
-	library(rbLib)
+	library("rstan")
+	library("trawlDiversity")
+	library("rbLib")
+	library("R2jags")
 	
 	
-	# load("./trawlDiversity/pkgBuild/results/msomStatic_norv_ebs_stan_start2016-02-03_14-57-36_r1-1.RData")
-	# load("./trawlDiversity/pkgBuild/results/msomStatic_norv_wctri_stan_start2016-02-03_21-59-14_r1-4.RData")
-	# load("./trawlDiversity/pkgBuild/results/msomStatic_norv_wcann_stan_start2016-02-04_01-34-58_r5-5.RData")
-	# load("./trawlDiversity/pkgBuild/results/msomStatic_norv_sa_stan_start2016-02-04_07-40-01_r6-7.RData")
-	# load("./trawlDiversity/pkgBuild/results/msomStatic_norv_neus_stan_start2016-02-05_13-26-12_r8-8.RData")
+	load("trawlDiversity/pkgBuild/results/msomStatic_norv_1yr_shelf_jags_start2016-03-02_23-14-33_r9.RData")
 	
-	# load("./trawlDiversity/pkgBuild/results/msomStatic_norv_ai_stan_start2016-02-09_04-44-20_r1-2.RData")
-	# load("./trawlDiversity/pkgBuild/results/msomStatic_norv_shelf_stan_start2016-02-09_00-14-00_r10-9.RData")
+	reg_results_ind <- which(sapply(rm_out, function(x)!is.null(x)))
+	stopifnot(length(reg_results_ind) == 1)
+	reg_out <- rm_out[[reg_results_ind]]
+	reg <- "shelf"
 	
-	# load("./trawlDiversity/pkgBuild/results/msomStatic_norv_ai_stan_start2016-02-11_19-09-15_r2.RData")
-	load("./trawlDiversity/pkgBuild/results/msomStatic_norv_goa_stan_start2016-02-11_15-06-49_r3.RData")
-	# load("./trawlDiversity/pkgBuild/results/msomStatic_norv_gmex_stan_start2016-02-12_05-34-10_r6.RData")
-	
-	orig_rm_out <- rm_out
-	rm_out <- orig_rm_out[[3]]
-	reg <- "GOA"
-	
-	inputData <- lapply(rm_out, function(x)x$inputData)
-	out <- lapply(rm_out, function(x)x$out)
+	inputData <- lapply(reg_out, function(x)x$inputData)
+	out <- lapply(reg_out, function(x)x$out)
 	
 	# ---- Species Detection Probs ----
 	# first dimension is iterations
