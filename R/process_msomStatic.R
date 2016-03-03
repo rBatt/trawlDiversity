@@ -17,11 +17,13 @@ process_msomStatic <- function(rm_out, reg){
 	
 	
 	load("trawlDiversity/pkgBuild/results/msomStatic_norv_1yr_shelf_jags_start2016-03-02_23-14-33_r9.RData")
+	reg <- "shelf"
+	lang <- "JAGS"
+	
 	
 	reg_results_ind <- which(sapply(rm_out, function(x)!is.null(x)))
 	stopifnot(length(reg_results_ind) == 1)
 	reg_out <- rm_out[[reg_results_ind]]
-	reg <- "shelf"
 	
 	inputData <- lapply(reg_out, function(x)x$inputData)
 	out <- lapply(reg_out, function(x)x$out)
@@ -84,31 +86,21 @@ process_msomStatic <- function(rm_out, reg){
 
 	
 	
-	mytrace <- function(x, pars){
-		if(lang=="JAGS"){
-			# sims <- x$BUGSoutput$sims.list[pars]
-			sims0 <- lapply(apply(x$BUGSoutput$sims.array[,,pars], 2, list), function(x)x[[1]])
-			sims <- vector("list", length(sims0))
-			for(i in 1:length(sims)){
-				sims[[i]] <- as.data.table(cbind(sims0[[i]], chain=rep(i, nrow(sims0[[i]]))))
-			} 
-		}else if(lang == "Stan"){
-			sims <- lapply(x@sim$samples, function(x)x[pars])
-			for(i in 1:length(sims)){
-				sims[[i]]$chain <- rep(i, length(sims[[i]][[1]]))
-			}
-		}
+	mytrace <- function(x, pars, lang, ...){
 		
-		sims <- rbindlist(sims)
+		sims <- get_iters(x, pars, lang=lang)
+		
 		cn <- colnames(sims)
 		for(h in 1:(ncol(sims)-1)){
 			ylim <- sims[,range(eval(s2c(cn[h]))[[1]])]
-			for(i in 1:sims[,lu(chain)]){
+			n_chains <- sims[,lu(chain)]
+			cols <- adjustcolor(1:n_chains, 0.5)
+			for(i in 1:n_chains){
 				
 				if(i == 1){
-					sims[chain==i, plot(eval(s2c(cn[h]))[[1]], ylim=ylim, type="l", col=i, xlab="iter",ylab=cn[h])]
+					sims[chain==i, plot(eval(s2c(cn[h]))[[1]], ylim=ylim, type="l", col=cols[i], xlab="",ylab=cn[h], ...)]
 				}else{
-					sims[chain==i, lines(eval(s2c(cn[h]))[[1]], col=i)]
+					sims[chain==i, lines(eval(s2c(cn[h]))[[1]], col=cols[i])]
 				}
 			}
 		}
@@ -161,17 +153,18 @@ process_msomStatic <- function(rm_out, reg){
 	dev.off()
 	
 	fig4_name <- paste0("traceplot_", reg, ".png")
-	png(file.path("trawlDiversity/pkgBuild/figures",fig4_name), width=12, height=6, units="in", res=200)
-	par(mfrow=c(length(pars_trace), length(out)), oma=c(1,1, 1,0.1), mar=c(0.5,0.5,0.1,0.1), mgp=c(0.5,0.1,0), tcl=-0.1, cex=1, ps=6)
+	# png(file.path("trawlDiversity/pkgBuild/figures",fig4_name), width=12, height=6, units="in", res=200)
+	dev.new(width=12, height=6)
+	par(mfrow=c(length(pars_trace), length(out)), oma=c(1,1, 1,0.1), mar=c(0.5,0.5,0.1,0.1), mgp=c(0.25,0.1,0), tcl=-0.1, cex=1, ps=6)
 	for(h in 1:length(pars_trace)){
 		for(i in 1:length(out)){
-			mytrace(out[[i]], pars=pars_trace[h])
+			mytrace(out[[i]], pars=pars_trace[h], lang=lang, xaxt='n')
 			if(i == 1){
 				mtext(pars_trace[h], side=2, line=0.75)
 			}
 		}
 	}
-	dev.off()
+	# dev.off()
 	
 }
 	
