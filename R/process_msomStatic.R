@@ -45,7 +45,8 @@ process_msomStatic <- function(rm_out, reg){
 	
 	
 	# ---- Richness in the Region ----
-	Omega_mean <- sapply(out, function(x)mean(extract(x, pars="Omega")[[1]]))
+	Omega_iter <- lapply(out, get_iters, pars="Omega", lang="JAGS")
+	Omega_mean <- sapply(Omega_iter, function(x)x[,mean(Omega)])
 	naive_rich <- sapply(inputData, function(x)x$N)
 	rich_pureModel <- Omega_mean * naive_rich
 	
