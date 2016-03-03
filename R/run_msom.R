@@ -197,6 +197,26 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 	}
 	
 	
+	# ---- Set run info before removing inputData elements ----
+	file_prefix <- paste0(
+		"nT",inputData$nT,"_",
+		"Jmax",inputData$Jmax, "_",
+		"Kmax",inputData$Kmax, "_",
+		"N",inputData$N, "_",
+		"nS",inputData$nS
+	)
+
+	file_options <- paste0(
+		"chains",chains,"_",
+		"iter",iter,"_",
+		"cores",cores, 
+		"_",language
+	)
+
+	run_info <- paste(file_prefix, file_options, sep="_")
+	
+	
+	# ---- Remove inputData elements to make compatible w/ JAGS ----
 	# Ensure valid initial values for JAGS
 	if(language=="JAGS"){
 		make.inits <- function(){
@@ -246,7 +266,6 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 		drop_year_dim <- FALSE
 	}
 
-
 	
 	if(drop_year_dim){
 		inputData$X <- as.matrix(inputData$X[1,,])
@@ -265,6 +284,7 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 		inputData$nJ <- NULL
 	}
 	
+	iD_N <- inputData$N # grab this here so that it can be added back in before return (useful value)
 	if(language=="JAGS"){
 		inputData$nJ <- NULL
 		inputData$N <- NULL
@@ -273,30 +293,13 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 	}
 	
 	
-	
+ # ---- Model names for save and model read, etc ----
 	model_file <- paste0("msom", model_type, ".", tolower(language))
 	model_path <- file.path(model_dir, model_file)
 	# model_path = "~/Documents/School&Work/pinskyPost/trawl/trawlDiversity/inst/stan/msomStatic_norv.stan"
 	# model_path = "~/Documents/School&Work/pinskyPost/trawl/trawlDiversity/inst/jags/msomStatic_norv.jags"
 
 	tag <- paste0("start", format.Date(Sys.time(),"%Y-%m-%d_%H-%M-%S"))
-
-	file_prefix <- paste0(
-		"nT",inputData$nT,"_",
-		"Jmax",inputData$Jmax, "_",
-		"Kmax",inputData$Kmax, "_",
-		"N",inputData$N, "_",
-		"nS",inputData$nS
-	)
-
-	file_options <- paste0(
-		"chains",chains,"_",
-		"iter",iter,"_",
-		"cores",cores, 
-		"_",language
-	)
-
-	run_info <- paste(file_prefix, file_options, sep="_")
 
 	save_file <- paste0("msom", model_type, "_", reg, "_", tolower(language), "_", tag, ".RData")
 	save_path <- file.path(save_dir,save_file)
@@ -361,8 +364,15 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 		
 	}
 	
+	# ---- Add N back in to inputData (was removed in the case of JAGS) ----
+	inputData$N <- iD_N
+	
+	
+	# ---- Return ----
 	return(list(out=out, inputData=inputData, info=c(run_info=run_info, model_file=model_file, model_path=model_path, tag=tag, save_file=save_file, save_path=save_path)))
 	
+	
+	# ---- Helpful Reinstall Code (not actually part of function) ----
 	# setwd("~/Documents/School&Work/pinskyPost/trawl")
 	# remove.packages('trawlDiversity')
 	# library(devtools)
