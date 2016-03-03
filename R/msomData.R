@@ -163,9 +163,13 @@ msomData <- function(Data, n0=10, formula=year~stratum~K~spp, cov.vars=c(bt="bte
 		fillA <- do.call(`[`, c(list(x), rep(TRUE, length(dim(x))-1), 1))
 		fillA[!is.na(fillA)] <- 0
 		X0 <- replicate(n0, fillA)
+		
+		dim_names <- dimnames(x)
+		spp_names <- c(dim_names$spp, paste0("Unknown_", 1:n0))
+		dim_names$spp <- spp_names
 	
 		outDim <- c(head(dim(x),-1), tail(dim(x),1)+n0)
-		outA <- array(c(x, X0), dim=outDim)
+		outA <- array(c(x, X0), dim=outDim, dimnames=dim_names)
 	
 		return(outA)
 	
