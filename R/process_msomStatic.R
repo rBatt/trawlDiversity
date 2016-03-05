@@ -28,19 +28,27 @@ process_msomStatic <- function(rm_out, reg){
 	inputData <- lapply(reg_out, function(x)x$inputData)
 	out <- lapply(reg_out, function(x)x$out)
 	
-	# ---- Species Detection Probs ----
-	# first dimension is iterations
-	# second is year (which is just 1)
-	# third is site (stratum; but detection same across)
-	# fourth is species
-	theta_dist <- lapply(out, function(x)plogis(extract(x, pars="logit_theta")[[1]][,1,,]))
-	theta_dist_reg <- lapply(theta_dist, function(x)x[,1,])
+	
+	if(lang == "Stan"){
+		# ---- Species Detection Probs ----
+		# first dimension is iterations
+		# second is year (which is just 1)
+		# third is site (stratum; but detection same across)
+		# fourth is species
+		theta_dist <- lapply(out, function(x)plogis(extract(x, pars="logit_theta")[[1]][,1,,]))
+		theta_dist_reg <- lapply(theta_dist, function(x)x[,1,])
 	
 	
-	# ---- Species Presence Probs ----
-	# same dimensions as theta, except in this model presence changes across strata
-	psi_dist <- lapply(out, function(x)plogis(extract(x, pars="logit_psi")[[1]][,1,,]))
-	X_obs <- lapply(inputData, function(x)x$X[1,,])
+		# ---- Species Presence Probs ----
+		# same dimensions as theta, except in this model presence changes across strata
+		psi_dist <- lapply(out, function(x)plogis(extract(x, pars="logit_psi")[[1]][,1,,]))
+		
+		X_obs <- lapply(inputData, function(x)x$X[1,,])
+	}else{
+		X_obs <- lapply(inputData, function(x)x$X)
+	}
+
+
 	
 	
 	
@@ -88,15 +96,6 @@ process_msomStatic <- function(rm_out, reg){
 	}
 
 # plot(reg_rich, type="o")
-# ===================================
-# = # =============================
-# = # =======================
-# = # =================
-# = left off here =
-# ================= =
-# ======================= =
-# ============================= =
-# ===================================
 	
 	# psi_dist_upObs <- mapply(update_pr_avail_withObs, psi_dist, X_obs, SIMPLIFY=FALSE)
 	# reg_pres_dist_upObs <- lapply(psi_dist_upObs, function(x)apply(x, c(1,3), function(x)(1-prod(1-x))))
@@ -105,7 +104,8 @@ process_msomStatic <- function(rm_out, reg){
 	
 	
 	# ---- Covariates ----
-	bt0 <- lapply(inputData, function(x)x$U[1,,"bt"])
+	# bt0 <- lapply(inputData, function(x)x$U[1,,"bt"])
+	bt0 <- lapply(inputData, function(x)x$U[,"bt"])
 	bt_ann <- sapply(bt0, mean)
 	
 	yr <- 1:length(bt0)
