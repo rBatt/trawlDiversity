@@ -2,7 +2,7 @@
 # run on amphiprion: 
 # nohup R CMD BATCH -cwd --no-save trawlDiversity/pkgBuild/test/msom_source_script.R &
 
-# nohup R CMD BATCH -cwd --no-save trawlDiversity/pkgBuild/test/msom_source_script.R msom_source_script_AllRegs_annual_jags_10kIter_r9-10.Rout &
+# nohup R CMD BATCH -cwd --no-save trawlDiversity/pkgBuild/test/msom_source_script.R msom_source_script_AllRegs_annual_jags_30kIter_r2-1.Rout &
 
 
 # ========
@@ -26,11 +26,11 @@ model_location <- file.path(stan_folder, "msomStatic_norv_1yr.stan")
 compiled_stan_model <- stan_model(model_location)
 
 # for(r in length(regs):1){
-# for(r in 1:2){ # ebs and ai
+for(r in 2:1){ # ebs and ai
 # for(r in 3:4){ # goa and wctri
 # for(r in 5:6){ # wcann and gmex
 # for(r in 7:8){ # sa and neus
-for(r in 9:10){ # shelf and newf
+# for(r in 9:10){ # shelf and newf
 	
 	rm_out <- vector("list", length(regs)) # yes, this reset the contents of the list. Saving all regions together is too big
 	
@@ -66,7 +66,7 @@ for(r in 9:10){ # shelf and newf
 			model_type = "Static", 
 			compiled_model = compiled_stan_model,
 			cores = 4, chains = 4,
-			test=FALSE, n0=annual_n0[i], iter=10E3, pre_save=FALSE, save_warmup=FALSE
+			test=FALSE, n0=annual_n0[i], iter=30E3, pre_save=FALSE, save_warmup=FALSE
 		), error=function(cond){message(paste("**Run failed for:", msg_progress));NA})
 		
 		cat("\n\n")
