@@ -13,7 +13,7 @@ get_iters(X, pars, lang = c("JAGS", "Stan"), ignore_brackets = TRUE)
 
 \item{lang}{character vector indicating the language that generated X (either "JAGS" or "Stan")}
 
-\item{ignore_brackets}{logical indicating whether or not the brackets in parameter names should be ignored when matching \code{pars} to parameter names in model output. Only implemented for \code{lang == "JAGS"} at the moment}
+\item{ignore_brackets}{logical indicating whether or not the brackets in parameter names should be ignored when matching \code{pars} to parameter names in model output. Only implemented for \code{lang == "JAGS"} at the moment, and is only used if \code{pars} does not contain brackets itself.}
 }
 \value{
 A data.table with columns for each of \code{pars} and a column for \code{chain}, the latter of which indicates which of the chains the sample is from.

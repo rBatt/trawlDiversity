@@ -5,7 +5,7 @@
 #' @param X an object containing model output, e.g., as returned by \code{stan} or \code{jags}
 #' @param pars Character vector of parameter names. Note that naming coventions differ slightly for Stan and JAGS
 #' @param lang character vector indicating the language that generated X (either "JAGS" or "Stan")
-#' @param ignore_brackets logical indicating whether or not the brackets in parameter names should be ignored when matching \code{pars} to parameter names in model output. Only implemented for \code{lang == "JAGS"} at the moment
+#' @param ignore_brackets logical indicating whether or not the brackets in parameter names should be ignored when matching \code{pars} to parameter names in model output. Only implemented for \code{lang == "JAGS"} at the moment, and is only used if \code{pars} does not contain brackets itself.
 #' 
 #' @details 
 #' It is important to remember that models in the two languages might have different parameters/ parameter names. For example, if there is only one \code{beta_mu} parameter, it is \code{beta_mu} in JAGS and \code{beta_mu[1]} in Stan. Also, \code{logit_psi} and \code{logit_theta} are tracked in Stan but not JAGS, and \code{Z} parameters are only in JAGS. Both the way the models are written and the languages themselves contribute to these differences.
@@ -18,11 +18,12 @@ get_iters <- function(X, pars, lang=c("JAGS","Stan"), ignore_brackets=TRUE){
 	
 	lang <- match.arg(lang)
 	
-	if(ignore_brackets & lang == "JAGS"){
+	if(ignore_brackets & lang == "JAGS" & !grepl("\\[.*\\]$", pars)){
 		par_names <- dimnames(X$BUGSoutput$sims.array)[[3]]
 		strp_par_names <- gsub("\\[.*\\]$", "", par_names)
+		strp_pars <- gsub("\\[.*\\]$", "", pars)
 		
-		pars <- par_names[strp_par_names%in%pars]
+		pars <- par_names[strp_par_names%in%strp_pars]
 	}
 	
 	if(lang=="JAGS"){
