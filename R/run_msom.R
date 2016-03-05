@@ -19,7 +19,7 @@
 #' @param pre_save Logical; if TRUE (default) saves a workspace image before running the model
 #' @param save_dir Character string indicating the location of the directory to save the intermediate image; default is current directory
 #' @param model_dir Character string indicating the location of the model file; default is selected automatically based on \code{language} and \code{model_type}, and looks to models that come with this package
-#' @param compiled_model Only used when language="Stan"; a Stan model compiled using \code{\link{stan_model}}. Useful for preventing repeated model recompilation and/or reapeated loading of DLLs, which can cause an error if done enough. When provided, \code{\link{sampling}} is called instead of \code
+#' @param compiled_model Only used when language="Stan"; a Stan model compiled using \code{\link{stan_model}}. Useful for preventing repeated model recompilation and/or reapeated loading of DLLs, which can cause an error if done enough.
 #' @param ... arguments passed to \code{rstan::sampling}
 #' 
 #' @details

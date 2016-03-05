@@ -50,7 +50,7 @@ run_msom(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf", "sa",
 
 \item{model_dir}{Character string indicating the location of the model file; default is selected automatically based on \code{language} and \code{model_type}, and looks to models that come with this package}
 
-\item{compiled_model}{Only used when language="Stan"; a Stan model compiled using \code{\link{stan_model}}. Useful for preventing repeated model recompilation and/or reapeated loading of DLLs, which can cause an error if done enough. When provided, \code{\link{sampling}} is called instead of \code}
+\item{compiled_model}{Only used when language="Stan"; a Stan model compiled using \code{\link{stan_model}}. Useful for preventing repeated model recompilation and/or reapeated loading of DLLs, which can cause an error if done enough.}
 
 \item{...}{arguments passed to \code{rstan::sampling}}
 }
