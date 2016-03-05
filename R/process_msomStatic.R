@@ -14,12 +14,16 @@ process_msomStatic <- function(rm_out, reg){
 	library("trawlDiversity")
 	library("rbLib")
 	library("R2jags")
+	library("maps")
 	
 	
-	load("trawlDiversity/pkgBuild/results/msomStatic_norv_1yr_shelf_jags_start2016-03-02_23-14-33_r9.RData")
-	reg <- "shelf"
+	# load("trawlDiversity/pkgBuild/results/msomStatic_norv_1yr_shelf_jags_start2016-03-02_23-14-33_r9.RData")
+	# reg <- "shelf"
+	# lang <- "JAGS"
+	
+	load("trawlDiversity/pkgBuild/results/msomStatic_norv_1yr_goa_jags_start2016-03-03_04-46-31_r3.RData")
+	reg <- "goa"
 	lang <- "JAGS"
-	
 	
 	reg_results_ind <- which(sapply(rm_out, function(x)!is.null(x)))
 	stopifnot(length(reg_results_ind) == 1)
@@ -169,24 +173,27 @@ process_msomStatic <- function(rm_out, reg){
 	
 	# ---- Figures ----
 	fig1_name <- paste0("richness_bt_timeSeries_", reg, ".png")
-	png(file.path("trawlDiversity/pkgBuild/figures",fig1_name), width=3.5, height=6, units="in", res=200)
+	# png(file.path("trawlDiversity/pkgBuild/figures",fig1_name), width=3.5, height=6, units="in", res=200)
+	dev.new(width=3.5, height=6)
 	par(mfrow=c(3,1), mar=c(1.75,1.5,0.25,0.25), oma=c(0.1,0.1,0.75,0.1), mgp=c(0.75,0.1,0), tcl=-0.1, ps=8, cex=1)
 	plot(naive_rich, type="o", ylab="Naive Region Richness", xlab="Year")
 	plot(reg_rich, type="o", xlab="Year", ylab="MSOM Region Richness")
 	plot(bt_ann, type="o", xlab="Year", ylab="Annual Mean Bottom Temperature")
 	mtext(reg, side=3, line=0, outer=TRUE, font=2)
-	dev.off()
+	# dev.off()
 	
 	fig2_name <- paste0("richness_bt_scatter_", reg, ".png")
-	png(file.path("trawlDiversity/pkgBuild/figures",fig2_name), width=3.5, height=5, units="in", res=200)
+	# png(file.path("trawlDiversity/pkgBuild/figures",fig2_name), width=3.5, height=5, units="in", res=200)
+	dev.new(width=3.5, height=5)
 	par(mfrow=c(2,1), mar=c(1.75,1.5,0.25,0.25), oma=c(0.1,0.1,0.75,0.1), mgp=c(0.75,0.1,0), tcl=-0.1, ps=8, cex=1)
 	plot(bt_ann, naive_rich, type="p", ylab="Naive Region Richness", xlab="Annual Mean Bottom Temperature")
 	plot(bt_ann, reg_rich, type="p", ylab="MSOM Region Richness", xlab="Annual Mean Bottom Temperature")
 	mtext(reg, side=3, line=0, outer=TRUE, font=2)
-	dev.off()
+	# dev.off()
 	
 	fig3_name <- paste0("btempMap_", reg, ".png")
-	png(file.path("trawlDiversity/pkgBuild/figures",fig3_name), width=8, height=3, units="in", res=200)
+	# png(file.path("trawlDiversity/pkgBuild/figures",fig3_name), width=8, height=3, units="in", res=200)
+	dev.new(width=8, height=3)
 	par(mfrow=auto.mfrow(bt[,lu(yr)]), oma=c(0.1,0.1, 1,0.1), mar=c(1,1,0.1,0.1), mgp=c(0.75,0.1,0), tcl=-0.15, cex=1, ps=8)
 	bt[,j={
 		plot(lon, lat, type="n")
@@ -195,7 +202,7 @@ process_msomStatic <- function(rm_out, reg){
 		mtext(unique(yr), side=3, adj=0.1, line=-0.75, font=2)
 	}, by="yr"]
 	mtext(paste(reg, "Bottom Temperature"), outer=TRUE, side=3, line=0.25, font=2)
-	dev.off()
+	# dev.off()
 	
 	fig4_name <- paste0("traceplot_", reg, ".png")
 	# png(file.path("trawlDiversity/pkgBuild/figures",fig4_name), width=12, height=6, units="in", res=200)
