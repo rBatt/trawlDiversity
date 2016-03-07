@@ -21,13 +21,8 @@ process_msomStatic <- function(rm_out, reg, save_mem=TRUE){
 	
 	
 	# load("trawlDiversity/pkgBuild/results/msomStatic_norv_1yr_shelf_jags_start2016-03-02_23-14-33_r9.RData")
-	# lang <- "JAGS"
-	
 	# load("trawlDiversity/pkgBuild/results/msomStatic_norv_1yr_goa_jags_start2016-03-03_04-46-31_r3.RData")
-	# lang <- "JAGS"
-	
 	load("trawlDiversity/pkgBuild/results/msomStatic_norv_1yr_shelf_jags_start2016-03-06_14-03-15_r9.RData")
-	lang <- "JAGS"
 	
 	reg_results_ind <- which(sapply(rm_out, function(x)!is.null(x)))
 	stopifnot(length(reg_results_ind) == 1)
@@ -43,8 +38,12 @@ process_msomStatic <- function(rm_out, reg, save_mem=TRUE){
 	
 	
 	regs <- sapply(info, function(x)x["reg"])
-	stopifnot(lu(regs==1))
+	stopifnot(lu(regs)==1)
 	reg <- unique(regs)
+	
+	langs <- sapply(info, function(x)x["language"])
+	stopifnot(lu(langs)==1)
+	lang <- unique(langs)
 	
 	if(save_mem){
 		rm(list="reg_out")
