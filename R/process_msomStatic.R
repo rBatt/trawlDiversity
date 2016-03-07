@@ -4,11 +4,14 @@
 #' 
 #' @param rm_out A list with length equal to number of years in a region, with each element containing output from run_msom
 #' @param reg Region name (character)
+#' @param save_mem Save memory be deleting intermediate steps as function progresses; default TRUE (only reason for FALSE is for debugging)
 #' 
 #' @details Right now only intended for use with specific structuring of the output, so that it matches the output expected from running each year separately using the Stan version of the msomStatic model.
 #' 
 #' @export
-process_msomStatic <- function(rm_out, reg){
+process_msomStatic <- function(rm_out, reg, save_mem=TRUE){
+	
+	save_mem=TRUE
 	
 	library("rstan")
 	library("trawlDiversity")
@@ -21,16 +24,36 @@ process_msomStatic <- function(rm_out, reg){
 	# reg <- "shelf"
 	# lang <- "JAGS"
 	
-	load("trawlDiversity/pkgBuild/results/msomStatic_norv_1yr_goa_jags_start2016-03-03_04-46-31_r3.RData")
-	reg <- "goa"
+	# load("trawlDiversity/pkgBuild/results/msomStatic_norv_1yr_goa_jags_start2016-03-03_04-46-31_r3.RData")
+	# reg <- "goa"
+	# lang <- "JAGS"
+	
+	load("trawlDiversity/pkgBuild/results/msomStatic_norv_1yr_shelf_jags_start2016-03-06_14-03-15_r9.RData")
+	reg <- "shelf"
 	lang <- "JAGS"
 	
 	reg_results_ind <- which(sapply(rm_out, function(x)!is.null(x)))
 	stopifnot(length(reg_results_ind) == 1)
 	reg_out <- rm_out[[reg_results_ind]]
 	
-	inputData <- lapply(reg_out, function(x)x$inputData)
+	if(save_mem){
+		rm(list="rm_out")
+	}
+	
 	out <- lapply(reg_out, function(x)x$out)
+	inputData <- lapply(reg_out, function(x)x$inputData)
+	info <- lapply(reg_out, function(x)x$info)
+	
+	if(save_mem){
+		rm(list="reg_out")
+		
+		if(lang == "JAGS"){
+			for(i in 1:length(out)){
+				out[[i]]$BUGSoutput[c("sims.list","sims.matrix")] <- NULL
+			}
+		}
+	}
+	
 	
 	
 	if(lang == "Stan"){
@@ -96,6 +119,10 @@ process_msomStatic <- function(rm_out, reg){
 			reg_rich[i] <- reg_rich_iter[,mean(reg_rich)]
 		}
 
+
+		if(save_mem){
+			rm(list="Z_big_long")
+		}
 		
 	}
 
