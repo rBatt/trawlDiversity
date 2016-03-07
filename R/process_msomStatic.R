@@ -159,43 +159,12 @@ process_msomStatic <- function(rm_out, reg, save_mem=TRUE){
 	}
 	bt[,bt_col:=zCol(256, bt)]
 	
-
-	
-	
-	mytrace <- function(x, pars, lang, ...){
-		
-		sims <- get_iters(x, pars, lang=lang)
-		
-		cn <- colnames(sims)
-		for(h in 1:(ncol(sims)-1)){
-			ylim <- sims[,range(eval(s2c(cn[h]))[[1]])]
-			n_chains <- sims[,lu(chain)]
-			cols <- adjustcolor(1:n_chains, 0.5)
-			for(i in 1:n_chains){
-				
-				if(i == 1){
-					sims[chain==i, plot(eval(s2c(cn[h]))[[1]], ylim=ylim, type="l", col=cols[i], xlab="",ylab=cn[h], ...)]
-				}else{
-					sims[chain==i, lines(eval(s2c(cn[h]))[[1]], col=cols[i])]
-				}
-			}
-		}
-	}
-	
 	
 	if(lang == "Stan"){
 		pars_trace <- c("Omega","alpha_mu[1]", "alpha_mu[2]", "alpha_mu[3]", "alpha_mu[4]", "beta_mu[1]")
 	}else{
 		pars_trace <- c("Omega","alpha_mu[1]", "alpha_mu[2]", "alpha_mu[3]", "alpha_mu[4]", "beta_mu")
 	}
-	
-	
-	
-	
-
-
-	
-
 	
 	
 	# ---- Figures ----
