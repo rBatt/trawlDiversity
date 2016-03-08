@@ -77,7 +77,7 @@ process_msomStatic <- function(rm_out, reg, save_mem=TRUE){
 	}
 
 
-	
+	rd <- data_all[reg==(reg)]
 	
 	
 	# ---- Richness in the Region ----
@@ -133,6 +133,19 @@ process_msomStatic <- function(rm_out, reg, save_mem=TRUE){
 	# reg_pres_dist_upObs <- lapply(psi_dist_upObs, function(x)apply(x, c(1,3), function(x)(1-prod(1-x))))
 	# reg_pres_upObs <- lapply(reg_pres_dist_upObs, function(x)colMeans(x))
 	# reg_rich_upObs <- sapply(reg_pres_upObs, sum)
+	
+	
+	unobs_rich <- reg_rich - naive_rich
+	frac_unobs_rich <- unobs_rich/reg_rich
+	
+	processed <- data.table(reg = reg, year=rd[,sort(una(year))], Omega=Omega_mean, reg_rich=reg_rich, naive_rich=naive_rich, unobs_rich=unobs_rich)
+	
+
+	processed <- merge(processed, get_colonizers(rd), by="year", all=TRUE)
+	
+	processed[,plot(unobs_rich[-length(unobs_rich)], n_col[-1])]
+	
+	
 	
 	
 	# ---- Covariates ----
@@ -214,6 +227,10 @@ process_msomStatic <- function(rm_out, reg, save_mem=TRUE){
 		}
 	}
 	# dev.off()
+	
+	dev.new()
+	processed[,plot(unobs_rich[-length(unobs_rich)], n_col[-1], xlab="Unobserved species present last year", ylab="Species colonizing this year")]
+	abline(a=0, b=1)
 	
 }
 	
