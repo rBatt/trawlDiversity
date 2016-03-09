@@ -22,7 +22,17 @@ process_msomStatic <- function(rm_out, reg, save_mem=TRUE){
 	
 	# load("trawlDiversity/pkgBuild/results/msomStatic_norv_1yr_shelf_jags_start2016-03-02_23-14-33_r9.RData")
 	# load("trawlDiversity/pkgBuild/results/msomStatic_norv_1yr_goa_jags_start2016-03-03_04-46-31_r3.RData")
-	load("trawlDiversity/pkgBuild/results/msomStatic_norv_1yr_shelf_jags_start2016-03-06_14-03-15_r9.RData")
+	
+	reg_file <- c(
+		"trawlDiversity/pkgBuild/results/msomStatic_norv_1yr_ai_jags_start2016-03-06_19-10-49_r2.RData",
+		"trawlDiversity/pkgBuild/results/msomStatic_norv_1yr_goa_jags_start2016-03-07_06-21-58_r3.RData",
+		"trawlDiversity/pkgBuild/results/msomStatic_norv_1yr_wctri_jags_start2016-03-08_10-53-18_r4.RData",
+		"trawlDiversity/pkgBuild/results/msomStatic_norv_1yr_wcann_jags_start2016-03-07_13-25-01_r5.RData",
+		"trawlDiversity/pkgBuild/results/msomStatic_norv_1yr_sa_jags_start2016-03-06_16-15-08_r7.RData",
+		"trawlDiversity/pkgBuild/results/msomStatic_norv_1yr_shelf_jags_start2016-03-06_14-03-15_r9.RData"
+	)[5]
+	
+	load(reg_file)
 	
 	reg_results_ind <- which(sapply(rm_out, function(x)!is.null(x)))
 	stopifnot(length(reg_results_ind) == 1)
@@ -76,7 +86,7 @@ process_msomStatic <- function(rm_out, reg, save_mem=TRUE){
 		X_obs <- lapply(inputData, function(x)x$X)
 	}
 
-
+	# ---- Get the full data set for the region (region data = rd) ----
 	rd <- data_all[reg==(reg)]
 	
 	
@@ -139,15 +149,9 @@ process_msomStatic <- function(rm_out, reg, save_mem=TRUE){
 	frac_unobs_rich <- unobs_rich/reg_rich
 	
 	processed <- data.table(reg = reg, year=rd[,sort(una(year))], Omega=Omega_mean, reg_rich=reg_rich, naive_rich=naive_rich, unobs_rich=unobs_rich)
+	processed <- merge(processed, get_colonizers(rd)$n_cep, by="year", all=TRUE)
 	
 
-	processed <- merge(processed, get_colonizers(rd), by="year", all=TRUE)
-	
-	processed[,plot(unobs_rich[-length(unobs_rich)], n_col[-1])]
-	
-	
-	
-	
 	# ---- Covariates ----
 	# bt0 <- lapply(inputData, function(x)x$U[1,,"bt"])
 	bt0 <- lapply(inputData, function(x)x$U[,"bt"])
@@ -166,11 +170,7 @@ process_msomStatic <- function(rm_out, reg, save_mem=TRUE){
 	} 
 	bt[,c("lon","lat","depth_interval"):=strat2lld(stratum)]
 	
-	zCol <- function(nCols, Z){
-		cols <- colorRampPalette(c("#000099", "#00FEFF", "#45FE4F", "#FCFF00", "#FF9400", "#FF3100"))(nCols)
-		colVec_ind <- cut(Z, breaks=nCols)
-		colVec <- cols[colVec_ind]
-	}
+
 	bt[,bt_col:=zCol(256, bt)]
 	
 	
@@ -180,6 +180,8 @@ process_msomStatic <- function(rm_out, reg, save_mem=TRUE){
 		pars_trace <- c("Omega","alpha_mu[1]", "alpha_mu[2]", "alpha_mu[3]", "alpha_mu[4]", "beta_mu")
 	}
 	
+	
+	colonization <- get_colonizers(d=rd)
 	
 	# ---- Figures ----
 	fig1_name <- paste0("richness_bt_timeSeries_", reg, ".png")
@@ -231,6 +233,15 @@ process_msomStatic <- function(rm_out, reg, save_mem=TRUE){
 	dev.new()
 	processed[,plot(unobs_rich[-length(unobs_rich)], n_col[-1], xlab="Unobserved species present last year", ylab="Species colonizing this year")]
 	abline(a=0, b=1)
+	
+	# ---- Number of Colonizations per Stratum ----
+	dev.new(width=6, height=3)
+	par(mfrow=c(1,2), mar=c(1.5,1.5,0.1,0.1), mgp=c(1,0.1,0), tcl=-0.1, ps=8, cex=1)
+	colonization$n_spp_col_weighted_tot[,plot_space(lon, lat, n_spp_col_weighted, pch=19)]
+	map(add=TRUE, fill=TRUE, col="white")
+
+	colonization$n_spp_col_weighted_tot[,plot_space(lon, lat, n_spp_col_weighted, TRUE, pch=19)]
+	map(add=TRUE, fill=TRUE, col="white")
 	
 }
 	
