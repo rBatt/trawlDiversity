@@ -18,7 +18,7 @@ get_iters <- function(X, pars, lang=c("JAGS","Stan"), ignore_brackets=TRUE){
 	
 	lang <- match.arg(lang)
 	
-	if(ignore_brackets & lang == "JAGS" & !grepl("\\[.*\\]$", pars)){
+	if(ignore_brackets & lang == "JAGS" & !any(grepl("\\[.*\\]$", pars))){
 		par_names <- dimnames(X$BUGSoutput$sims.array)[[3]]
 		strp_par_names <- gsub("\\[.*\\]$", "", par_names)
 		strp_pars <- gsub("\\[.*\\]$", "", pars)
