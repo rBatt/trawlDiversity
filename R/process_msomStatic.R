@@ -30,7 +30,7 @@ process_msomStatic <- function(rm_out, reg, save_mem=TRUE){
 		"trawlDiversity/pkgBuild/results/msomStatic_norv_1yr_wcann_jags_start2016-03-07_13-25-01_r5.RData",
 		"trawlDiversity/pkgBuild/results/msomStatic_norv_1yr_sa_jags_start2016-03-06_16-15-08_r7.RData",
 		"trawlDiversity/pkgBuild/results/msomStatic_norv_1yr_shelf_jags_start2016-03-06_14-03-15_r9.RData"
-	)[5]
+	)[1]
 	
 	load(reg_file)
 	
@@ -43,15 +43,17 @@ process_msomStatic <- function(rm_out, reg, save_mem=TRUE){
 	}
 	
 	out <- lapply(reg_out, function(x)x$out)
-	inputData <- lapply(reg_out, function(x)x$inputData)
-	info <- lapply(reg_out, function(x)x$info)
+	empty_ind <- sapply(out, is.null)
+	out <- out[!empty_ind]
+	inputData <- lapply(reg_out, function(x)x$inputData)[!empty_ind]
+	info <- lapply(reg_out, function(x)x$info)[!empty_ind]
 	
 	
 	regs <- sapply(info, function(x)x["reg"])
 	stopifnot(lu(regs)==1)
 	reg <- unique(regs)
 	
-	langs <- sapply(info, function(x)x["language"])
+	langs <- unlist(sapply(info, function(x)x["language"]))
 	stopifnot(lu(langs)==1)
 	lang <- unique(langs)
 	
@@ -175,9 +177,9 @@ process_msomStatic <- function(rm_out, reg, save_mem=TRUE){
 	
 	
 	if(lang == "Stan"){
-		pars_trace <- c("Omega","alpha_mu[1]", "alpha_mu[2]", "alpha_mu[3]", "alpha_mu[4]", "beta_mu[1]")
+		pars_trace <- c("Omega","alpha_mu[1]", "alpha_mu[2]", "alpha_mu[3]", "alpha_mu[4]", "alpha_mu[5]", "beta_mu[1]")
 	}else{
-		pars_trace <- c("Omega","alpha_mu[1]", "alpha_mu[2]", "alpha_mu[3]", "alpha_mu[4]", "beta_mu")
+		pars_trace <- c("Omega","alpha_mu[1]", "alpha_mu[2]", "alpha_mu[3]", "alpha_mu[4]", "alpha_mu[5]", "beta_mu")
 	}
 	
 	
@@ -229,6 +231,15 @@ process_msomStatic <- function(rm_out, reg, save_mem=TRUE){
 		}
 	}
 	# dev.off()
+	
+	
+	# ---- look for correlation in posterior distribution of parameteres ----
+	# i.e., do parameter values covary
+	dev.new()
+	pairs(get_iters(out[[1]], pars_trace, "JAGS"))
+	
+	
+	
 	
 	dev.new()
 	processed[,plot(unobs_rich[-length(unobs_rich)], n_col[-1], xlab="Unobserved species present last year", ylab="Species colonizing this year")]
