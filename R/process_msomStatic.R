@@ -3,13 +3,12 @@
 #' Processes a list structured as run_msom output (level 2) within a year (level 1) to be used to summarize diversity. Note that this function then only processes 1 region at a time, so it expects a list whose length is equal to the number of years for a region. Currently, intended to work with Stan model.
 #' 
 #' @param rm_out A list with length equal to number of years in a region, with each element containing output from run_msom
-#' @param reg Region name (character)
 #' @param save_mem Save memory be deleting intermediate steps as function progresses; default TRUE (only reason for FALSE is for debugging)
 #' 
 #' @details Right now only intended for use with specific structuring of the output, so that it matches the output expected from running each year separately using the Stan version of the msomStatic model.
 #' 
 #' @export
-process_msomStatic <- function(rm_out, reg, save_mem=TRUE){
+process_msomStatic <- function(rm_out, save_mem=TRUE){
 	
 	save_mem=TRUE
 	
