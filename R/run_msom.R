@@ -299,9 +299,9 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 	# model_path = "~/Documents/School&Work/pinskyPost/trawl/trawlDiversity/inst/stan/msomStatic_norv.stan"
 	# model_path = "~/Documents/School&Work/pinskyPost/trawl/trawlDiversity/inst/jags/msomStatic_norv.jags"
 
-	tag <- paste0("start", format.Date(Sys.time(),"%Y-%m-%d_%H-%M-%S"))
+	tag <- paste0("start", format.Date(Sys.time(),"%Y-%m-%d"))
 
-	save_file <- paste0("msom", model_type, "_", reg, "_", tolower(language), "_", iter/1E3, "kIter_", tag, ".RData")
+	save_file <- paste0("msom", model_type, "_", reg, "_", tolower(language), "_", iter/1E3, "kIter_", n0, "nZ_", tag, ".RData")
 	save_path <- file.path(save_dir,save_file)
 
 	if(pre_save){
