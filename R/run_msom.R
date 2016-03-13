@@ -301,7 +301,7 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 
 	tag <- paste0("start", format.Date(Sys.time(),"%Y-%m-%d_%H-%M-%S"))
 
-	save_file <- paste0("msom", model_type, "_", reg, "_", tolower(language), "_", tag, ".RData")
+	save_file <- paste0("msom", model_type, "_", reg, "_", tolower(language), "_", iter/1E3, "kIter_", tag, ".RData")
 	save_path <- file.path(save_dir,save_file)
 
 	if(pre_save){
