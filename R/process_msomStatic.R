@@ -10,7 +10,7 @@
 #' @export
 process_msomStatic <- function(rm_out, save_mem=TRUE){
 	
-	save_mem=TRUE
+	save_mem=F
 	
 	library("rstan")
 	library("trawlDiversity")
@@ -23,15 +23,26 @@ process_msomStatic <- function(rm_out, save_mem=TRUE){
 	# load("trawlDiversity/pkgBuild/results/msomStatic_norv_1yr_goa_jags_start2016-03-03_04-46-31_r3.RData")
 	
 	reg_file <- c(
-		"trawlDiversity/pkgBuild/results/msomStatic_norv_1yr_ai_jags_start2016-03-06_19-10-49_r2.RData",
-		"trawlDiversity/pkgBuild/results/msomStatic_norv_1yr_goa_jags_start2016-03-07_06-21-58_r3.RData",
-		"trawlDiversity/pkgBuild/results/msomStatic_norv_1yr_wctri_jags_start2016-03-08_10-53-18_r4.RData",
-		"trawlDiversity/pkgBuild/results/msomStatic_norv_1yr_wcann_jags_start2016-03-07_13-25-01_r5.RData",
-		"trawlDiversity/pkgBuild/results/msomStatic_norv_1yr_sa_jags_start2016-03-06_16-15-08_r7.RData",
-		"trawlDiversity/pkgBuild/results/msomStatic_norv_1yr_shelf_jags_start2016-03-06_14-03-15_r9.RData"
-	)[1]
+		"msomStatic_norv_1yr_ebs_jags_start2016-03-10_16-44-44_r1.RData", # ebs 6k iter, converged
+		# "msomStatic_norv_1yr_ai_jags_start2016-03-11_16-01-45_r2.RData", #ai 6k iter, didn't converge
+		"msomStatic_norv_1yr_ai_jags_start2016-03-06_19-10-49_r2.RData", # ai 30k iter, didn't converge
+		# "msomStatic_norv_1yr_goa_jags_start2016-03-11_17-55-00_r3.RData", # goa 6k iter, didn't converge
+		"msomStatic_norv_1yr_goa_jags_start2016-03-07_06-21-58_r3.RData", # goa 30k iter, didn't converge
+		# "msomStatic_norv_1yr_wctri_jags_start2016-03-11_21-14-14_r4.RData", # wctri 6k iter, didn't converge (also too few 0 spp)
+		"msomStatic_norv_1yr_wctri_jags_start2016-03-08_10-53-18_r4.RData", # wctri 30k iter, didn't converge (better than most tho); also, needs more than 100 0 spp
+		# "msomStatic_norv_1yr_wcann_jags_start2016-03-11_23-18-31_r5.RData", # wcann 6k iter, didn't converge, too few 0 sp (50)
+		"msomStatic_norv_1yr_wcann_jags_start2016-03-07_13-25-01_r5.RData", # wcann 30k iter, didn't converge, too few 0 spp
+		"msomStatic_norv_1yr_gmex_jags_start2016-03-12_02-53-26_r6.RData", # gmex, 30k iter, didn't converge, too few 0 spp
+		# "msomStatic_norv_1yr_sa_jags_start2016-03-12_04-26-53_r7.RData", # sa, 6k iter, almost converged, but too few n0 spp
+		"msomStatic_norv_1yr_sa_jags_start2016-03-06_16-15-08_r7.RData", # sa, 30k iter, very nearly converged, but too few n0 spp
+		"msomStatic_norv_1yr_neus_jags_start2016-03-12_06-01-10_r8.RData", # neus, 6k iter, mostly converged, but too few n0 spp
+		# "msomStatic_norv_1yr_shelf_jags_start2016-03-12_12-00-07_r9.RData", # shelf, 6k iter, very nearly converged
+		"msomStatic_norv_1yr_shelf_jags_start2016-03-06_14-03-15_r9.RData", # shelf, 30k iter, better than 6k, but not perfect
+		"msomStatic_norv_1yr_newf_jags_start2016-03-12_13-30-24_r10.RData" # newf, 6k iter, really good mixing, mild lack of stationary
+		
+	)[10]
 	
-	load(reg_file)
+	load(paste0("trawlDiversity/pkgBuild/results/", reg_file))
 	
 	reg_results_ind <- which(sapply(rm_out, function(x)!is.null(x)))
 	stopifnot(length(reg_results_ind) == 1)
@@ -89,6 +100,8 @@ process_msomStatic <- function(rm_out, save_mem=TRUE){
 
 	# ---- Get the full data set for the region (region data = rd) ----
 	rd <- data_all[reg==(reg)]
+	rd_yr <- rd[,sort(unique(year))]
+	
 	
 	
 	# ---- Richness in the Region ----
@@ -152,15 +165,82 @@ process_msomStatic <- function(rm_out, save_mem=TRUE){
 	processed <- data.table(reg = reg, year=rd[,sort(una(year))], Omega=Omega_mean, reg_rich=reg_rich, naive_rich=naive_rich, unobs_rich=unobs_rich)
 	processed <- merge(processed, get_colonizers(rd)$n_cep, by="year", all=TRUE)
 	
+	
+	# ---- Get species-specific alpha and beta parameters ----
+	# Only for observed species (i.e., parameters that I can tie to a Latin name)
+	get_ab <- function(iD, o){
+		
+		# ---- put together spp dimension of parameter names ----
+		cnx <- colnames(iD$X)
+		cnx_spp <- !grepl("Unknown_[0-9]*", cnx)
+		t_spp <- cnx[cnx_spp]
+		spp_brack <- paste0(which(cnx_spp), "]")
+		n_spp <- length(spp_brack)
+		
+		# ---- put together alpha and beta dimension of parameter names ----
+		sl <- o$BUGSoutput$sims.list
+		n_alpha <- ncol(sl$alpha_mu)
+		n_beta <- ncol(sl$beta_mu)
+		
+		alpha_brack <- paste0("alpha[",1:n_alpha,",")
+		# if(n_alpha==1){
+		# 	alpha_brack <- "alpha["
+		# }else{
+		# 	alpha_brack <- paste0("alpha[",1:n_alpha,",")
+		# }
+		
+		beta_brack <- paste0("beta[",1:n_beta, ",")
+		# if(n_beta==1){
+		# 	beta_brack <- "beta["
+		# }else{
+		# 	beta_brack <- paste0("beta[",1:n_beta, ",")
+		# }
+		
+		# ---- alpha and beta parameter names to grab ----
+		alpha_params <- paste0(rep(alpha_brack, each=n_spp), rep(spp_brack, n_alpha))
+		beta_params <- paste0(rep(beta_brack, each=n_spp), rep(spp_brack, n_beta))
+		
+		# ---- keep track of what's what ----
+		alpha_id <- rep(1:n_alpha, each=n_spp)
+		beta_id <- rep(1:n_beta, each=n_spp)
+		spp_alpha_id <- rep(1:n_spp, n_alpha)
+		spp_beta_id <- rep(1:n_spp, n_beta)
+		
+		# ---- get iters ----
+		gi <- get_iters(X=o, pars=c(alpha_params, beta_params), lang="JAGS", FALSE)
+		n_iter <- nrow(gi)
+		
+		# ---- output data.table ----
+		ab <- data.table:::melt.data.table(gi, id.vars="chain", variable.name="parameter", "value.name"="value")
+		
+		a_name <- rep("alpha", length(alpha_id)*n_iter)
+		b_name <- rep("beta", length(beta_id)*n_iter)
+		ab[,par:=c(a_name, b_name)] # indicate whether each value is an alpha or beta
+		ab[,ab_ind:=c(rep(alpha_id, each=n_iter), rep(beta_id, each=n_iter))] # indicate which alpha/ beta
+
+		ab[,spp_id:=rep(c(spp_alpha_id,spp_beta_id), each=n_iter)] # spp index
+		ab[,spp:=t_spp[(spp_id)]] # spp name
+		
+		# ---- return ----
+		return(ab)
+	}
+	
+	ab_all <- mapply(get_ab, inputData, out, SIMPLIFY=FALSE)
+	for(i in 1:length(ab_all)){
+		tyr <- rd_yr[i]
+		ab_all[[i]] <- ab_all[[i]][,year:=tyr] 
+	}
+	ab <- rbindlist(ab_all)
+	
+	
 
 	# ---- Covariates ----
 	# bt0 <- lapply(inputData, function(x)x$U[1,,"bt"])
 	bt0 <- lapply(inputData, function(x)x$U[,"bt"])
 	bt_ann <- sapply(bt0, mean)
 	
-	yr <- 1:length(bt0)
 	bt2dt <- function(x,y)data.table(stratum=names(x), bt=x, yr=y)
-	bt <- rbindlist(mapply(bt2dt, bt0, yr, SIMPLIFY=FALSE))
+	bt <- rbindlist(mapply(bt2dt, bt0, rd_yr, SIMPLIFY=FALSE))
 	
 	strat2lld <- function(x){
 		s <- strsplit(x, split=" ")
@@ -244,6 +324,7 @@ process_msomStatic <- function(rm_out, save_mem=TRUE){
 	processed[,plot(unobs_rich[-length(unobs_rich)], n_col[-1], xlab="Unobserved species present last year", ylab="Species colonizing this year")]
 	abline(a=0, b=1)
 	
+	
 	# ---- Number of Colonizations per Stratum ----
 	dev.new(width=6, height=3)
 	par(mfrow=c(1,2), mar=c(1.5,1.5,0.1,0.1), mgp=c(1,0.1,0), tcl=-0.1, ps=8, cex=1)
@@ -252,6 +333,35 @@ process_msomStatic <- function(rm_out, save_mem=TRUE){
 
 	colonization$n_spp_col_weighted_tot[,plot_space(lon, lat, n_spp_col_weighted, TRUE, pch=19)]
 	map(add=TRUE, fill=TRUE, col="white")
+	
+	
+	# ---- Location of Colonizations ----
+	dev.new()
+	par(mfrow=auto.mfrow(ab[,lu(spp)]), mar=c(1,1,1,0.1), ps=6, mgp=c(0.6,0.1,0), tcl=-0.1, cex=1)
+	yc <- ab[,zCol(lu(year), una(year))]
+	names(yc) <- ab[,una(year)]
+	ab[par=="beta",j={
+		xyd <- .SD[,density(value)[c("x","y")],by="year"]
+		xlim <- xyd[,range(x)]
+		ylim <- xyd[,range(y)]
+		
+		# plot(1,1, type='n', xlim=xlim, ylim=ylim)
+		# xyd[,lines(x,y,col=yc[as.character(unique(year))]),by="year"]
+		ts <- una(spp)
+		tcom <- rd[spp==ts,una(common)]
+		si <- sppImg(ts, common=tcom)
+		if(!is.null(si)){ 
+			par(new=T)
+		}
+		plot(year, value, xlim=range(rd_yr), col=adjustcolor('gray', 0.01), cex=0.5, pch=21, bg=adjustcolor('white',0.01))
+		mu <- .SD[,list(mu=mean(value)),by="year"]
+		mu[,lines(year, mu, lwd=2, col='gray')]
+		mu[,lines(year, mu, lwd=1, col='white')]
+		if(is.null(si)){
+			mtext(paste(ts, tcom, sep="\n"), side=3)
+		}
+	
+	},by=c("spp")]
 	
 }
 	
