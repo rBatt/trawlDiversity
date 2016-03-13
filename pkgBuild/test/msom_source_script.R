@@ -2,7 +2,7 @@
 # run on amphiprion: 
 # nohup R CMD BATCH -cwd --no-save trawlDiversity/pkgBuild/test/msom_source_script.R &
 
-# nohup R CMD BATCH -cwd --no-save trawlDiversity/pkgBuild/test/msom_source_script.R msom_source_script_AllRegs_annual_jags_6kIter_forUpdating_allRegs.Rout &
+# nohup R CMD BATCH -cwd --no-save trawlDiversity/pkgBuild/test/msom_source_script.R msom_source_script_AllRegs_annual_jags_regIterN0_allRegs.Rout &
 
 
 # ========
@@ -17,13 +17,40 @@ library("R2jags")
 Sys.time()
 sessionInfo()
 
-n0_pad <- 50
 regs <- c("ebs", "ai", "goa", "wctri", "wcann", "gmex", "sa", "neus", "shelf", "newf")
 
 
 stan_folder <- file.path(system.file(package="trawlDiversity"), tolower("Stan"))
 model_location <- file.path(stan_folder, "msomStatic_norv_1yr.stan")
 compiled_stan_model <- stan_model(model_location)
+
+
+reg_n0_pad <- c(
+	"ebs" = 50,
+	"ai" = 50,
+	"goa" = 50,
+	"wctri" = 200,
+	"wcann" = 200,
+	"gmex" = 200,
+	"sa" = 200,
+	"neus" = 200,
+	"shelf" = 50,
+	"newf" = 50
+)
+
+reg_iter <- c(
+	"ebs" = 6E3,
+	"ai" = 60E3,
+	"goa" = 60E3,
+	"wctri" = 30E3, # didn't converge, but n0 was too low
+	"wcann" = 30E3, # didn't converge, but n0 was too low
+	"gmex" = 10E3, # 6k didn't converge, but n0 was too low
+	"sa" = 10E3, # 6k didn't converge, n0 too low
+	"neus" = 10E3, # 6k didn't converge, n0 too low
+	"shelf" = 40E3, # 6k almost converged, but 30k didn't look perfect
+	"newf" = 6E3
+)
+
 
 for(r in 1:length(regs)){
 # for(r in 1:2){ # ebs and ai
@@ -37,16 +64,16 @@ for(r in 1:length(regs)){
 	t_reg <- regs[r]
 	
 	data_in_all0 <- trim_msom(t_reg, gridSize=0.5, depthStratum=100, tolFraction=0.15, grid_stratum=TRUE, plot=FALSE)
-
 	data_in_all <- data_in_all0
 	setkey(data_in_all, year, stratum, haulid, spp)
+	
 	u_yrs <- data_in_all[,unique(year)]
 	n_spp <- data_in_all[,list(n_spp=lu(spp)), by="year"]
 	
 	S <- data_in_all[,lu(spp)]
-	annual_n0 <- (S + n0_pad) - n_spp[,n_spp]
+	annual_n0 <- (S + reg_n0_pad[regs[r]]) - n_spp[,n_spp]
 	
-	rm_out[[r]] <- vector("list", length(u_yrs))
+	rm_out[[r]] <- vector("list", length(u_yrs)) 
 	
 	for(i in 1:length(u_yrs)){
 		t_data <- data_in_all[year==u_yrs[i]]
@@ -57,6 +84,7 @@ for(r in 1:length(regs)){
 		msg_progress <- paste(msg_reg, msg_yr_id, msg_yr_cnt)
 		cat(paste("\n\n\n", msg_progress, "\n"))
 		print(Sys.time())
+		
 	
 		rm_out[[r]][[i]] <- tryCatch(run_msom(
 			reg = t_reg,
@@ -66,7 +94,7 @@ for(r in 1:length(regs)){
 			model_type = "Static", 
 			compiled_model = compiled_stan_model,
 			cores = 4, chains = 4,
-			test=FALSE, n0=annual_n0[i], iter=6E3, pre_save=FALSE, save_warmup=FALSE
+			test=FALSE, n0=annual_n0[i], iter=reg_iter[regs[r]], pre_save=FALSE, save_warmup=FALSE
 		), error=function(cond){message(paste("**Run failed for:", msg_progress));NA})
 		
 		rm_out[[r]][[i]]$info['year'] <- u_yrs[i]
