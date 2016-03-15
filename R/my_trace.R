@@ -2,7 +2,7 @@
 #' 
 #' Generate traceplots from either JAGS or Stan output
 #' 
-#' @param x model output
+#' @param x model output, or a data.table result from the output of \code{\link{get_iters}}
 #' @param pars names of parameters to be plotted. Uses \code{get_iters} defaults for getting parameters.
 #' @param lang model language (of \code{x})
 #' 
@@ -12,10 +12,14 @@
 #' @export
 mytrace <- function(x, pars, lang, ...){
 	
-	sims <- get_iters(x, pars, lang=lang)
+	if(!any(class(x)=="data.table")){
+		sims <- get_iters(x, pars, lang=lang)
+	}else{
+		sims <- x
+	}
 	
-	cn <- colnames(sims)
-	for(h in 1:(ncol(sims)-1)){
+	cn <- pars #colnames(sims)
+	for(h in 1:length(cn)){
 		ylim <- sims[,range(eval(s2c(cn[h]))[[1]])]
 		n_chains <- sims[,lu(chain)]
 		cols <- adjustcolor(1:n_chains, 0.5)
