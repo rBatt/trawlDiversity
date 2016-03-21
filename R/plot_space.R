@@ -24,7 +24,7 @@ plot_space <- function(x, y, z, scatter=FALSE, ...){
 		colScat(x, y, z, ...)
 	}else{
 	
-		smooth_hat_fit <- fields::Tps(matrix(c(x,y), ncol=2), Y=z, lon.lat=TRUE)
+		smooth_hat_fit <- fields::Tps(matrix(c(x,y), ncol=2), Y=z, lon.lat=TRUE, scale.type="unscaled")
 		# smooth_hat_fit <- n_spp_col_weighted_tot[,Krig(matrix(c(lon,lat), ncol=2), Y=n_spp_col_weighted)]
 		smooth_hat <- fields::predictSurface(smooth_hat_fit)
 		smooth_hat_arr <- array(smooth_hat$z, dim=dim(smooth_hat$z), dimnames=list(lon=smooth_hat$x, lat=smooth_hat$y))
