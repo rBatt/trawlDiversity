@@ -4,12 +4,13 @@
 #' 
 #' @param iD inputData element from output of \code{\link{run_msom}}
 #' @param o out element from output of \code{\link{run_msom}}
+#' @param yr the year corresponding to input
 #' 
 #' @return
 #' A data.table with iterations of all alpha and beta parameters, which are species-specific. Columns for chain, parameter, value (value is a sample of the posterior), par (alpha or beta), ab_ind (which alpha/ beta parameter, which is the first dimension in parameter), spp_id (species index, second dimension in parameter), spp (species name), and year.
 #' 
 #' @export
-get_ab <- function(iD, o){
+get_ab <- function(iD, o, yr){
 	
 	# ---- put together spp dimension of parameter names ----
 	cnx <- colnames(iD$X)
@@ -22,20 +23,23 @@ get_ab <- function(iD, o){
 	sl <- o$BUGSoutput$sims.list
 	n_alpha <- ncol(sl$alpha_mu)
 	n_beta <- ncol(sl$beta_mu)
+	dnames <- dimnames(o$BUGSoutput$sims.array)[[3]]
 	
-	alpha_brack <- paste0("alpha[",1:n_alpha,",")
-	# if(n_alpha==1){
-	# 	alpha_brack <- "alpha["
-	# }else{
-	# 	alpha_brack <- paste0("alpha[",1:n_alpha,",")
-	# }
+	# alpha_brack <- paste0("alpha[",1:n_alpha,",")
+	use_alpha_comma <- grepl("alpha[[0-9]*,.*]", dnames[grepl("alpha",dnames)])
+	if(n_alpha==1 & !any(use_alpha_comma)){
+		alpha_brack <- "alpha["
+	}else{
+		alpha_brack <- paste0("alpha[",1:n_alpha,",")
+	}
 	
-	beta_brack <- paste0("beta[",1:n_beta, ",")
-	# if(n_beta==1){
-	# 	beta_brack <- "beta["
-	# }else{
-	# 	beta_brack <- paste0("beta[",1:n_beta, ",")
-	# }
+	# beta_brack <- paste0("beta[",1:n_beta, ",")
+	use_beta_comma <- grepl("beta[[0-9]*,.*]", dnames[grepl("beta",dnames)])
+	if(n_beta==1 & !any(use_beta_comma)){
+		beta_brack <- "beta["
+	}else{
+		beta_brack <- paste0("beta[",1:n_beta, ",")
+	}
 	
 	# ---- alpha and beta parameter names to grab ----
 	alpha_params <- paste0(rep(alpha_brack, each=n_spp), rep(spp_brack, n_alpha))
@@ -61,6 +65,7 @@ get_ab <- function(iD, o){
 
 	ab[,spp_id:=rep(c(spp_alpha_id,spp_beta_id), each=n_iter)] # spp index
 	ab[,spp:=t_spp[(spp_id)]] # spp name
+	ab[,year:=as.integer(yr)]
 	
 	# ---- return ----
 	return(ab)

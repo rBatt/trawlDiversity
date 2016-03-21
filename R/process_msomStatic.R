@@ -131,11 +131,7 @@ process_msomStatic <- function(reg_out, save_mem=TRUE){
 	# ---- Species-specific Alpha and Beta Parameters ----
 	# ---- Makes [ab] ----
 	# Only for observed species (i.e., parameters that I can tie to a Latin name)
-	ab_all <- mapply(get_ab, inputData, out, SIMPLIFY=FALSE)
-	for(i in 1:length(ab_all)){
-		tyr <- rd_yr[i]
-		ab_all[[i]] <- ab_all[[i]][,year:=tyr] 
-	}
+	ab_all <- mapply(get_ab, inputData, out, rd_yr, SIMPLIFY=FALSE)
 	ab <- rbindlist(ab_all)
 	
 	
