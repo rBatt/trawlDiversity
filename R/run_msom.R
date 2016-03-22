@@ -104,6 +104,10 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 	regX.a2[,year:=as.character(year)]
 
 	# aggregate and transform (^2) btemp stemp
+	btemp.mu <- regX.a2[,mean(bt, na.rm=TRUE)]
+	btemp.sd <- regX.a2[,sd(bt, na.rm=TRUE)]
+	if(btemp.sd == 0){btemp.sd <- 1}
+	regX.a2[,bt:=(bt-btemp.mu)/btemp.sd]
 	mk_cov_rv_pow(regX.a2, "bt", across="K", by=c("stratum","year"), pow=2)
 	# mk_cov_rv_pow(regX.a2, "st", across="K", by=c("stratum","year"), pow=2)
 	
@@ -366,6 +370,16 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 	
 	# ---- Add N back in to inputData (was removed in the case of JAGS) ----
 	inputData$N <- iD_N
+	
+	# ---- Add other relevant info to inputData ----
+	inputData$scaling <- c(
+		"doy.mu" = doy.mu,
+		"doy.sd" = doy.sd,
+		"depth.mu" = depth.mu,
+		"depth.sd" = depth.sd,
+		"btemp.mu" = btemp.mu,
+		"btemp.sd" = btemp.mu
+	)
 	
 	
 	# ---- Return ----
