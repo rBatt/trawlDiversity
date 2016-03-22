@@ -12,6 +12,8 @@ mytrace(x, pars, lang, ...)
 \item{pars}{names of parameters to be plotted. Uses \code{get_iters} defaults for getting parameters.}
 
 \item{lang}{model language (of \code{x})}
+
+\item{...}{arguments passed to plot}
 }
 \description{
 Generate traceplots from either JAGS or Stan output

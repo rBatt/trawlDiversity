@@ -14,6 +14,8 @@ plot_space(x, y, z, scatter = FALSE, ...)
 \item{z}{z values (dependent value)}
 
 \item{scatter}{logical, if true, plots a scatter plot of raw values; else, smooths data with Krigging}
+
+\item{...}{arguments passed to plot via colScat}
 }
 \description{
 Plot spatial data consistent of X, Y, and Z components

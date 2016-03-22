@@ -19,4 +19,7 @@ A data.table with iterations of all alpha and beta parameters, which are species
 \description{
 Get alpha and beta parameters given output of an MSOM model run in Stan or JAGS.
 }
+\details{
+Gets the alpha and beta parameters from the msom. Alpha parameters are related to true presence of species, beta parameters are related to detection.
+}
 
