@@ -29,25 +29,25 @@ reg_n0_pad <- c(
 	"ebs" = 50,
 	"ai" = 50,
 	"goa" = 50,
-	"wctri" = 200,
-	"wcann" = 200,
-	"gmex" = 200,
-	"sa" = 200,
-	"neus" = 200,
+	"wctri" = 50,
+	"wcann" = 50,
+	"gmex" = 50,
+	"sa" = 50,
+	"neus" = 50,
 	"shelf" = 50,
 	"newf" = 50
 )
 
 reg_iter <- c(
 	"ebs" = 6E3,
-	"ai" = 60E3,
-	"goa" = 60E3,
-	"wctri" = 30E3, # didn't converge, but n0 was too low
-	"wcann" = 30E3, # didn't converge, but n0 was too low
-	"gmex" = 10E3, # 6k didn't converge, but n0 was too low
-	"sa" = 10E3, # 6k didn't converge, n0 too low
-	"neus" = 10E3, # 6k didn't converge, n0 too low
-	"shelf" = 40E3, # 6k almost converged, but 30k didn't look perfect
+	"ai" = 20E3,
+	"goa" = 6E3,
+	"wctri" = 6E3, # didn't converge, but n0 was too low
+	"wcann" = 6E3, # didn't converge, but n0 was too low
+	"gmex" = 6E3, # 6k didn't converge, but n0 was too low
+	"sa" = 6E3, # 6k didn't converge, n0 too low
+	"neus" = 6E3, # 6k didn't converge, n0 too low
+	"shelf" = 6E3, # 6k almost converged, but 30k didn't look perfect
 	"newf" = 6E3
 )
 
@@ -76,6 +76,7 @@ for(r in 1:length(regs)){
 	rm_out[[r]] <- vector("list", length(u_yrs)) 
 	
 	for(i in 1:length(u_yrs)){
+	# for(i in 1:3){
 		t_data <- data_in_all[year==u_yrs[i]]
 	
 		msg_reg <- toupper(t_data[,unique(reg)])
@@ -107,6 +108,7 @@ for(r in 1:length(regs)){
 	append_r <- paste0("_r", r, ".RData")
 	save_name <- gsub("\\.RData", append_r, rm_out[[r]][[1]][[3]]["save_path"])
 	save_name <- gsub("^\\./", "./trawlDiversity/pkgBuild/results/", save_name)
+	save_name <- gsub("[0-9]+(?=nZ)",reg_n0_pad[regs[r]],save_name, perl=TRUE)
 	save(rm_out, file=save_name, compress="xz")
 	
 	cat(paste0("\n\n\n\n\n",  paste(rep("=", 50), collapse=""), "\n\n\n"))
