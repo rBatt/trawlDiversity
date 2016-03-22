@@ -2,7 +2,7 @@
 # run on amphiprion: 
 # nohup R CMD BATCH -cwd --no-save trawlDiversity/pkgBuild/test/msom_source_script.R &
 
-# nohup R CMD BATCH -cwd --no-save trawlDiversity/pkgBuild/test/msom_source_script.R msom_source_script_AllRegs_annual_jags_regIterN0_allRegs.Rout &
+# nohup R CMD BATCH -cwd --no-save trawlDiversity/pkgBuild/test/msom_source_script.R msom_source_script_AllRegs_annual_jags_scaledCovs.Rout &
 
 
 # ========
@@ -40,14 +40,14 @@ reg_n0_pad <- c(
 
 reg_iter <- c(
 	"ebs" = 6E3,
-	"ai" = 20E3,
-	"goa" = 6E3,
-	"wctri" = 6E3, # didn't converge, but n0 was too low
-	"wcann" = 6E3, # didn't converge, but n0 was too low
-	"gmex" = 6E3, # 6k didn't converge, but n0 was too low
-	"sa" = 6E3, # 6k didn't converge, n0 too low
-	"neus" = 6E3, # 6k didn't converge, n0 too low
-	"shelf" = 6E3, # 6k almost converged, but 30k didn't look perfect
+	"ai" = 12E3,
+	"goa" = 12E3,
+	"wctri" = 12E3, 
+	"wcann" = 12E3, 
+	"gmex" = 12E3, 
+	"sa" = 12E3, 
+	"neus" = 12E3, 
+	"shelf" = 6E3, 
 	"newf" = 6E3
 )
 
