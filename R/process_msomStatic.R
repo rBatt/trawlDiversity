@@ -43,7 +43,9 @@ process_msomStatic <- function(reg_out, save_mem=TRUE){
 	# = Get Full Data Set =
 	# =====================
 	# ---- Makes [rd] ----
-	rd <- data_all[reg==(reg)] # data_all is an object associated with the trawlDiversity package!
+	info_yrs <- sapply(info, function(x)as.integer(x['year']))
+	sub_reg <- reg
+	rd <- data_all[year %in% info_yrs & sub_reg==(reg)] # data_all is an object associated with the trawlDiversity package!
 	rd_yr <- rd[,sort(unique(year))]
 	
 	
@@ -167,8 +169,8 @@ process_msomStatic <- function(reg_out, save_mem=TRUE){
 	frac_unobs_rich <- unobs_rich/reg_rich
 	
 	# create processed object
-	processed <- data.table(reg = reg, year=rd[,sort(una(year))], Omega=Omega_mean, reg_rich=reg_rich, naive_rich=naive_rich, unobs_rich=unobs_rich)
-	processed <- merge(processed, get_colonizers(rd)$n_cep, by="year", all=TRUE)
+	processed <- data.table(reg = reg, year=rd_yr, Omega=Omega_mean, reg_rich=reg_rich, naive_rich=naive_rich, unobs_rich=unobs_rich)
+	processed <- merge(processed, colonization$n_cep, by="year", all=TRUE)
 	processed <- merge(processed, bt[,list(bt_ann=mean(bt)), by="year"], by="year", all=TRUE)
 	
 
