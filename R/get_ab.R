@@ -6,6 +6,9 @@
 #' @param o out element from output of \code{\link{run_msom}}
 #' @param yr the year corresponding to input
 #' 
+#' @details
+#' Gets the alpha and beta parameters from the msom. Alpha parameters are related to true presence of species, beta parameters are related to detection.
+#' 
 #' @return
 #' A data.table with iterations of all alpha and beta parameters, which are species-specific. Columns for chain, parameter, value (value is a sample of the posterior), par (alpha or beta), ab_ind (which alpha/ beta parameter, which is the first dimension in parameter), spp_id (species index, second dimension in parameter), spp (species name), and year.
 #' 
