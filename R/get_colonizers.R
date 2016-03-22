@@ -16,33 +16,77 @@
 #' 
 #' @export
 get_colonizers <- function(d){
+	d <- copy(d)
 	
-	tbl <- d[,table(spp, year)]
-	col_ext <- apply(tbl>0, 1, diff)
-	col_ext_dt <- data.table(reshape2::melt(col_ext, varnames=c("year","spp")), key=c("year","spp"))
+	# ---- baseline steps for getting colonization/ extinction ----
+	tbl <- d[,table(spp, year)] # counts (table) of spp in each year
+	col_ext <- apply(tbl>0, 1, diff) # for each species, get the presence/absence (>0 logic) sequential difference (col/ext)
+	col_ext_dt <- data.table(reshape2::melt(col_ext, varnames=c("year","spp")), key=c("year","spp")) # turn the table into a data.table
+	col_ext_dt[,spp:=as.character(spp)] # make spp a character, not factor
 	
-	n_cep <- col_ext_dt[,list(n_col=.SD[value==1, sum(value)], n_ext=.SD[value==-1, abs(sum(value))], n_pers=.SD[value==0, lu(spp)]), by="year"]
+	# ---- make extinction events occur in the year before the species is absent ----
+	# done so that extinctions can be associated with a (last known) place (stratum)
+	years <- d[,sort(una(year))] # all the unique years, in order
+	ext_year <- years[match(col_ext_dt[value==-1, year], years) - 1] # the year vector for extinctions
+	ext_spp <- col_ext_dt[value==-1, spp] # the species vector for extinctions
+	col_ext_dt[value==-1, value:=0] # swap the old extinction year to 0
+	col_ext_dt <- rbind(data.table(year=years[1], spp=d[,sort(una(spp))], value=0), col_ext_dt) # add 1st yr b/c new ext timing
+	col_ext_dt[paste0(spp,year)%in%paste0(ext_spp,ext_year), value:=-1] # change in the extinctions to previous year
+	
+	# ---- make lon, lat, and depth consistent w/in a stratum-year, instead of just w/in a haulid ----
+	# doing this makes things consistent in the long term
+	# but without resorting to the gridded lon-lat in the stratum definition, 
+	# which would cause strata w/ same lon-lat but different depths to be plotted perfectly on top of each other
+	# but at the same time gives a consistent (but unique!) spatial definition for events in x-y coordinates
+	d_lld <- d[!duplicated(haulid), list(lon, lat, depth), by=c('stratum', 'year')] # now each haul represented once
+	d_lld <- d_lld[, list(lon=meanna(lon), lat=meanna(lat), depth=meanna(depth)), by=c('stratum','year')] # strat-year avg; hauls equal
+	d_lld <- d_lld[,list(lon=meanna(lon), lat=meanna(lat), depth=meanna(depth)), by=c('stratum')] # strat avg; years equal
+	d[,c('lon','lat','depth'):=NULL]
+	d <- merge(d, d_lld, by=c('stratum'))
+	
+	# ---- Tally up annual colonizations, extinctions, and no-changes ----
+	n_cep <- col_ext_dt[,list(n_col=sum(value==1), n_ext=sum(value==-1), n_pers=sum(value==0)), by="year"]
 	
 	d_new <- merge(d, col_ext_dt, by=c("year","spp"), all=TRUE)
 	setnames(d_new, "value", "col_ext")
-	
-	col_tbl <- d_new[col_ext==1,table(year, stratum,spp)>0]
-	col_dt <- data.table(reshape2::melt(col_tbl, value.name="col_logic"))
-	col_dt[,n_spp_col:=sum(col_logic),by=c("year","stratum")]
-	col_dt[,n_strat_col:=sum(col_logic),by=c("year","spp")]
-	col_dt[n_strat_col>0, n_spp_col_weighted:=sum(as.integer(col_logic)/n_strat_col), by=c("year","stratum")]
-	col_dt[n_strat_col<=0, n_spp_col_weighted:=0]
-	
-	yrs_sampled <- reshape2::melt(d[,apply(table(stratum,year)>0, 1, sum)], value.name="yrs_sampled")
-	yrs_sampled <- data.table(stratum=rownames(yrs_sampled), yrs_sampled=yrs_sampled[,1])
-	col_dt <- merge(col_dt, yrs_sampled, by=c("stratum"), all=TRUE)
-	
-	n_spp_col_weighted <- col_dt[, list(n_spp_col_weighted=una(n_spp_col_weighted)),by=c("year","stratum","yrs_sampled")]
-	n_spp_col_weighted <- merge(n_spp_col_weighted, unique(d[,list(lon, lat, depth),keyby=c("year","stratum")]), by=c("year","stratum"))
-	
-	n_spp_col_weighted_tot <- n_spp_col_weighted[,list(lon=mean(lon), lat=mean(lat), depth=mean(depth), n_spp_col_weighted=sum(n_spp_col_weighted)/una(yrs_sampled)),by=c("stratum")]
+
+	get_ce <- function(cet, ce=c('col','ext')){
+		ce <- c(col=1, ext=-1)[match.arg(ce)]
+		cet <- copy(cet)
+
+		ce_tbl <- cet[,table(year, stratum,spp,col_ext)>0][,,,as.character(ce)]
+		ce_dt <- data.table(reshape2::melt(ce_tbl, value.name="col_logic"))
+		ce_dt[,c("stratum","spp"):=list(as.character(stratum),as.character(spp))]
+		setkey(ce_dt, year, stratum, spp)
+		ce_dt[,n_spp_col:=sum(col_logic),by=c("year","stratum")]
+		ce_dt[,n_strat_col:=sum(col_logic),by=c("year","spp")]
+		ce_dt[n_strat_col>0, n_spp_col_weighted:=sum(as.integer(col_logic)/n_strat_col), by=c("year","stratum")]
+		ce_dt[n_strat_col<=0, n_spp_col_weighted:=0]
 		
+		yrs_sampled <- reshape2::melt(d[,apply(table(stratum,year)>0, 1, sum)], value.name="yrs_sampled")
+		yrs_sampled <- data.table(stratum=rownames(yrs_sampled), yrs_sampled=yrs_sampled[,1])
+		ce_dt <- merge(ce_dt, yrs_sampled, by=c("stratum"), all=TRUE)
 	
-	return(list(col_dt=col_dt, col_ext_dt=col_ext_dt, n_cep=n_cep, n_spp_col_weighted=n_spp_col_weighted, n_spp_col_weighted_tot=n_spp_col_weighted_tot))
+		n_spp_ce_weighted <- ce_dt[, list(n_spp_col_weighted=una(n_spp_col_weighted)),by=c("year","stratum","yrs_sampled")]
+		n_spp_ce_weighted <- merge(n_spp_ce_weighted, unique(d[,list(lon, lat, depth),keyby=c("year","stratum")]), by=c("year","stratum"))
+	
+		n_spp_ce_weighted_tot <- n_spp_ce_weighted[,list(lon=mean(lon), lat=mean(lat), depth=mean(depth), n_spp_col_weighted=sum(n_spp_col_weighted)/una(yrs_sampled)),by=c("stratum")]
+		
+		if(ce == -1){
+			setnames(ce_dt, c("n_spp_col", "n_strat_col", "n_spp_col_weighted"),  c("n_spp_ext", "n_strat_ext", "n_spp_ext_weighted"))
+			setnames(n_spp_ce_weighted, "n_spp_col_weighted", "n_spp_ext_weighted")
+			setnames(n_spp_ce_weighted_tot, "n_spp_col_weighted", "n_spp_ext_weighted")
+			
+			return(list(ext_dt=ce_dt, n_spp_ext_weighted=n_spp_ce_weighted, n_spp_ext_weighted_tot=n_spp_ce_weighted_tot))
+		}else{
+			return(list(col_dt=ce_dt, n_spp_col_weighted=n_spp_ce_weighted, n_spp_col_weighted_tot=n_spp_ce_weighted_tot))
+		}
+	}
+
+
+	cols <- get_ce(d_new, "col")
+	exts <- get_ce(d_new, "ext")
+	ce_out <- c(list(col_ext_dt=col_ext_dt, n_cep=n_cep), cols, exts)
+	return(ce_out)
 
 }
