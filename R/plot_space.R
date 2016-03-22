@@ -6,6 +6,7 @@
 #' @param y y values (independent)
 #' @param z z values (dependent value)
 #' @param scatter logical, if true, plots a scatter plot of raw values; else, smooths data with Krigging
+#' @param ... arguments passed to plot via colScat
 #' 
 #' @export
 plot_space <- function(x, y, z, scatter=FALSE, ...){

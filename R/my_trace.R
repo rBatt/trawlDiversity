@@ -5,6 +5,7 @@
 #' @param x model output, or a data.table result from the output of \code{\link{get_iters}}
 #' @param pars names of parameters to be plotted. Uses \code{get_iters} defaults for getting parameters.
 #' @param lang model language (of \code{x})
+#' @param ... arguments passed to plot
 #' 
 #' @details
 #' Easier to handle than other traceplots (if, e.g., wanted to add trace plot from multiple models to same figure, hard to do w/ Stan function). Works for JAGS or Stan output (via R2jags and rstan).
