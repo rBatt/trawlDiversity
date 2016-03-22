@@ -4,12 +4,10 @@
 \alias{process_msomStatic}
 \title{Process Output from msomStatic (annual)}
 \usage{
-process_msomStatic(rm_out, reg, save_mem = TRUE)
+process_msomStatic(reg_out, save_mem = TRUE)
 }
 \arguments{
-\item{rm_out}{A list with length equal to number of years in a region, with each element containing output from run_msom}
-
-\item{reg}{Region name (character)}
+\item{reg_out}{A list with length equal to number of years in a region, with each element containing output from run_msom}
 
 \item{save_mem}{Save memory be deleting intermediate steps as function progresses; default TRUE (only reason for FALSE is for debugging)}
 }

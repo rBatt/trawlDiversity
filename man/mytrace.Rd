@@ -7,7 +7,7 @@
 mytrace(x, pars, lang, ...)
 }
 \arguments{
-\item{x}{model output}
+\item{x}{model output, or a data.table result from the output of \code{\link{get_iters}}}
 
 \item{pars}{names of parameters to be plotted. Uses \code{get_iters} defaults for getting parameters.}
 

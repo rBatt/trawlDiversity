@@ -8,16 +8,18 @@ Authors@R: c(person(given="Ryan D.", family="Batt", email="battrd@gmail.com", ro
 	person(given="Malin L.", family="Pinsky", email="malin.pinsky@rutgers.edu", role=c("aut")))
 Description: Abstract. North American bottom trawl surveys over past 3-5
     decades, MSOM to estimate biodiversity.
-Depends: 
+Depends:
     R (>= 3.1.3),
     data.table,
     trawlData (>= 0.2.1)
 License: GPL-3
 LazyData: true
-RoxygenNote: 5.0.0.9000
-Suggests: reshape2,
+RoxygenNote: 5.0.1
+Suggests:
+    reshape2,
     R2jags,
     rstan,
     vegan,
     zoo
-Imports: rbLib
+Imports:
+    rbLib

@@ -4,15 +4,20 @@
 \alias{get_colonizers}
 \title{Get Colonizers}
 \usage{
-get_colonizers(d, smry = TRUE)
+get_colonizers(d)
 }
 \arguments{
 \item{d}{An input data.table with columns spp, year (may have others, but they aren't used)}
-
-\item{smry}{Logical, when TRUE (default), the results are summarized in terms of number of species in each category; if FALSE, species-specific categorizations are return}
 }
 \value{
-A data.table with a column for year and columns relating to colonization, extinction, and persistence. If \code{smry} is TRUE, remaining columns are \code{n_col} (number of colonizations), \code{n_ext} (number of extinctions), and \code{n_pers} (number of species persisting). If \code{smry} is FALSE, columns are year, spp, and value. If value is 1 that species colonized (is present now, wasn't last year), if -1 it went extinct (not present now, but was last year), and if 0 it persisted (present both last year and this year).
+A list of length 5:
+\tabular{ll}{
+\code{col_dt} \tab colonization events for each year-stratum-species. \code{col_logic} is specific to year-stratum-spp, \code{n_spp_col} is specific to year-stratum (number of species colonizing), and \code{n_strat_col} is specific to year-spp (number of strata occupied by that species in that year [if it colonized the region that year]). Like the weighted version, \code{n_spp_col_weighted} indicates the number of species colonizing a stratum in a year, but if a species colonizes 5 strata, it only contributes 0.2 to each, instead of 1. The number of years a stratum was sampled is \code{yrs_sampled}.
+\code{col_ext_dt} \tab colonization (1), extinction (-1), or no change for each species-year \cr
+\code{n_cep} \tab the number of colonizations, extinctions, or no-change events in the whole region for each year \cr
+\code{n_spp_col_weighted} \tab appropriate aggregation of the column by this name in \code{col_dt} \cr
+\code{n_spp_col_weighted_tot} \tab like \code{n_spp_col_weighted}, but summed up across years (and divided by \code{yrs_sampled}) \cr
+}
 }
 \description{
 Identify species colonizing, going extinct, and persisting between years
