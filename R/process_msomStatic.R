@@ -139,29 +139,24 @@ process_msomStatic <- function(reg_out, save_mem=TRUE){
 		reg_rich <- sapply(reg_pres, sum)
 		
 	}else if(lang == "JAGS"){
-		Z_big <- lapply(out, get_iters, pars="Z", lang="JAGS")
-		nr <- nrow(Z_big[[1]])
-		for(i in 1:length(Z_big)){
-			Z_big[[i]] <- Z_big[[i]][,iter:=(1:nr)]
-		}
-		
-		Z_big_long <- lapply(Z_big, data.table:::melt.data.table, id.vars=c("iter","chain"))
 		z_spp <- function(x){gsub("Z\\[[0-9]+\\,([0-9]+)\\]$", "\\1", x)}
 		z_j <- function(x){gsub("Z\\[([0-9]+)\\,[0-9]+\\]$", "\\1", x)}
-		for(i in 1:length(Z_big_long)){
-			td <- Z_big_long[[i]]
-			td[, c("sppID","jID"):=list(z_spp((variable)), z_j((variable))), by=c("variable")]
-			Z_big_long[[i]] <- td
-		}
-		
-		reg_rich <- rep(NA, length(Z_big_long))
-		for(i in 1:length(Z_big_long)){
-			mu_site_Z <- Z_big_long[[i]][,j={ list(mu_site_Z = max(value)) }, by=c("iter","chain","sppID")]
-			reg_rich_iter <- mu_site_Z[, j={list(reg_rich = sum(mu_site_Z))}, by=c("iter","chain")] # this is different than how I did it for Stan -- for Stan I calculated took the mean (across iterations) probability of a species being present somewhere in the region, then summed up across species to get richness. Here I get the pres/abs for each species in the region for each iteration, then I sum across species but w/in an iteration to get the posterior of region wide richness (that summing is done on this line), and then in the next line I take the mean of the posterior distribution of region-wide richness
+		reg_rich <- rep(NA, length(out))
+		for(i in 1:length(out)){
+			t_Z_big <- get_iters(out[[i]], pars="Z", lang="JAGS")
+			t_Z_big[,iter:=(1:nrow(t_Z_big))]
+				
+			t_Z_big_long <- data.table:::melt.data.table(t_Z_big, id.vars=c("iter","chain"))
+			t_Z_big_long[, c("sppID","jID"):=list(z_spp((variable)), z_j((variable))), by=c("variable")]
+			if(save_mem){rm(list="t_Z_big")}
+			
+			mu_site_Z <- t_Z_big_long[,j={ list(mu_site_Z = max(value)) }, by=c("iter","chain","sppID")]
+			reg_rich_iter <- mu_site_Z[, j={list(reg_rich = sum(mu_site_Z))}, by=c("iter","chain")]
 			reg_rich[i] <- reg_rich_iter[,mean(reg_rich)]
+			if(save_mem){rm(list="t_Z_big_long")}
+				
+			 # this is different than how I did it for Stan -- for Stan I calculated took the mean (across iterations) probability of a species being present somewhere in the region, then summed up across species to get richness. Here I get the pres/abs for each species in the region for each iteration, then I sum across species but w/in an iteration to get the posterior of region wide richness (that summing is done on this line), and then in the next line I take the mean of the posterior distribution of region-wide richness
 		}
-
-		if(save_mem){rm(list="Z_big_long")}
 	}
 	
 	# get unobserved but present species
