@@ -4,6 +4,7 @@ library("trawlDiversity")
 library("rbLib")
 library("R2jags")
 library("maps")
+library("beanplot")
 
 setwd("~/Documents/School&Work/pinskyPost/trawl")
 
@@ -282,7 +283,7 @@ for(reg_num in 1:length(p)){
 	plot_ce_setup(spp_col_only)
 	for(i in 1:length(spp_col_only)){
 		t_sco <- spp_col_only[i]
-		plot_ce(t_sco, pad_top_mar=0, plt_pts=FALSE)
+		plot_ce(t_sco, pad_top_mar=ifelse(length(spp_col_only)>15, 2, 0), plt_pts=FALSE)
 	}
 	
 	plot_ce_setup(spp_col_and_ext)
