@@ -378,7 +378,7 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 		"depth.mu" = depth.mu,
 		"depth.sd" = depth.sd,
 		"btemp.mu" = btemp.mu,
-		"btemp.sd" = btemp.mu
+		"btemp.sd" = btemp.sd
 	)
 	
 	
