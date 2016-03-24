@@ -6,31 +6,10 @@ library("R2jags")
 library("maps")
 
 setwd("~/Documents/School&Work/pinskyPost/trawl")
+
 load("trawlDiversity/pkgBuild/results/processedMsom/p.RData")
 
 Figures <- list()
-
-# ---- Function to plot time series of species parameter ----
-plot_ab <- function(X, t_spp){
-
-	si <- sppImg(t_spp)
-	if(!is.null(si)){
-		par(new=T)
-	}
-	
-	fin <- par("fin")[2]
-	fac <- 0.01*fin^3/2
-
-	plot(X[,year], X[,value], col=adjustcolor('gray', fac), cex=0.5, pch=21, bg=adjustcolor('white',fac))
-	mu <- X[,list(mu=mean(value)),by="year"]
-	mu[,lines(year, mu, lwd=2, col='gray')]
-	mu[,lines(year, mu, lwd=1, col='white')]
-	if(is.null(si)){
-		common_name <- spp.key[spp==t_spp, una(common)]
-		mtext(paste(t_spp, common_name, sep="\n"), side=3)
-	}
-
-}
 
 
 for(reg_num in 1:length(p)){
@@ -46,7 +25,7 @@ for(reg_num in 1:length(p)){
 	ab <- p[[reg_num]]$ab
 
 	reg <- processed[,una(reg)]
-	lang = "JAGS"
+	lang <- "JAGS"
 
 	if(lang == "Stan"){
 		pars_trace <- c("Omega","alpha_mu[1]", "alpha_mu[2]", "alpha_mu[3]", "alpha_mu[4]", "alpha_mu[5]", "beta_mu[1]")
@@ -258,7 +237,101 @@ for(reg_num in 1:length(p)){
 	cre[,plot_space(lon, lat, rel_col_ext, pch=19)]
 	map(add=TRUE, fill=TRUE, col="white")
 	
+	
+	# ---- Figure 8.6: Who Colonized? ----
+	fig_wc_name <- paste0("who_colonized_andLeft", reg, ".png")
+	ncolspp <- 15 # maximum number of columns in the figure
+	
+	spp_col <- colonization[[1]][value==1, una(spp)]
+	spp_ext <- colonization[[1]][value==-1, una(spp)]
+	spp_col_only <- spp_col[!spp_col %in% spp_ext]
+	spp_col_and_ext <- spp_col[spp_col%in%spp_ext]
+	
+	
+	plot_ce_setup <- function(spp2use, width=12, max_spp_columns=15, nPlots=3){
+		ncolspp <- max_spp_columns
+		
+		
+		if(length(spp2use) > ncolspp){
+			nrowspp <- ceiling(length(spp2use)/ncolspp)
+			lmat0 <- matrix(rep(1:(ncolspp*nrowspp),each=nPlots), nrow=nrowspp*nPlots, ncol=ncolspp)
+			lmat <- lmat0
+			lmat[] <- 1:prod(dim(lmat))
+			lmat <- lmat[,apply(lmat < (length(spp2use)*nPlots), 2, function(x)any(x))]
+		
+			fwc_ldim <- dim(lmat)
+			fwc_w <- width
+			fwc_h <- fwc_w * fwc_ldim[1] / fwc_ldim[2] * 1.1
+			fwc_dim <- c("width"=fwc_w, "height"=fwc_h)
+			dev.new(width=fwc_dim[1], height=fwc_dim[2])
+			layout(mat=lmat, heights=rep(c(1.5,1,1), nrowspp))
+			par(mar=c(1.5,1,0.25,0.1) ,oma=c(0.1,0.1,0.1,0.1), ps=6, mgp=c(0.5, 0.01, 0), tcl=-0.01, cex=1)
+				
+		}else{
+			fwc_mfr <- c(nPlots, length(spp2use))
+			fwc_w <- width
+			fwc_h <- fwc_w * fwc_mfr[1] / fwc_mfr[2] * 1.1
+			fwc_dim <- c(width=fwc_w, height=fwc_h)
+			dev.new(width=fwc_dim[1], height=fwc_dim[2])
+			par(mfcol=fwc_mfr, mar=c(1,1,1,0.1) ,oma=c(0.1,0.1,1.5,0.1), ps=6, mgp=c(0.6, 0.1, 0), tcl=-0.1, cex=1)
+		}
+	
+	}
 
+	fig_hc_name <- paste0("who_colonized", reg, ".png")
+	plot_ce_setup(spp_col_only)
+	for(i in 1:length(spp_col_only)){
+		t_sco <- spp_col_only[i]
+		plot_ce(t_sco, pad_top_mar=0, plt_pts=FALSE)
+	}
+	
+	plot_ce_setup(spp_col_and_ext)
+	for(i in 1:length(spp_col_and_ext)){
+		t_sco <- spp_col_and_ext[i]
+		plot_ce(t_sco)
+	}
+	
+	
+	# ---- Figure 8.7:  ----
+	tr <- rank_temp(rd)
+	tr2 <- tr[[2]]
+	tr2[spp%in%spp_col & !spp%in%spp_ext, status:="colonizer"]
+	tr2[spp%in%spp_ext & !spp%in%spp_col, status:="leaver"]
+	tr2[spp%in%spp_ext & spp%in%spp_col, status:="both"]
+	tr2[!spp%in%spp_ext & !spp%in%spp_col, status:="neither"]
+	
+	
+	dev.new(width=3.5, height=6)
+	par(mfrow=c(2,1), mar=c(2,2,1,0.1), mgp=c(1,0.1,0), tcl=-0.1, cex=1, ps=8)
+	tr2[,j={
+		nc <- sum(status=="colonizer")
+		nl <- sum(status=="leaver")
+		nb <- sum(status=="both")
+		nn <- sum(status=="neither")
+		n <- c(nc, nl, nb, nn)
+		tot <- sum(n)
+		barplot(n/tot, names.arg=c("colonizer", "leaver","both","neither"), main=reg, ylab="Proportion of Species")
+	}]
+	# tr2[,j={boxplot(bt_mean_rank~status, ylab="Species Temperature Rank", main=reg);NULL}]
+	
+	bLine <- rainbow(n=5, v=0.8, s=1)
+	names(bLine) <- c("colonizer", "leaver","both","neither","blah")
+	bFill <- rgb(t(col2rgb(bLine, alpha=TRUE)), alpha=40, maxColorValue=255)
+	names(bFill) <- c("colonizer", "leaver","both","neither","blah")
+	beanCol <- list(
+		colonizer = c(bFill[1]),
+		leaver = c(bFill[2]),
+		both = c(bFill[3]),
+		neither = c(bFill[4])
+	)
+	
+	bFill <- bFill[names(bFill)%in%tr2[,una(status)]]
+	beanCol <- beanCol[names(beanCol)%in%tr2[,una(status)]]
+	bLine <- bLine[names(bLine)%in%tr2[,una(status)]]
+	
+	tr2[,j={beanplot(bt_mean_rank~status, ylab="Species Temperature Rank", main=reg, border=bLine, col=beanCol, ll=0.01, beanlinewd=1.5);NULL}] 
+	
+	
 
 	# # ---- Figure 9 ----
 	# # ---- Time Series of Species Detection Parameter (Beta) ----
