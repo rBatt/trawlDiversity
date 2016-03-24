@@ -13,7 +13,8 @@
 #' 
 #' A problem with this new statistic is that 'thermal rank' is subject to change if the number of warm-water to cold-water species changes among years, which of course can change as regional temperatures change over time. The severity of this problem depends on the breadth of species' thermal tolerances, the spatial variability in temperature, and the temporal variability in temperature. If thermal tolerances are broad and/or if spatial variation is large, and if in addition to either of those temporal variability is relatively low, then this potential bias is minimized.
 #' 
-#' @returns A list of 2 data.table s
+#' @return
+#' A list of 2 data.table s
 #' 
 #' @export
 rank_temp <- function(data){

@@ -7,9 +7,10 @@
 #' @param plt_pts logical indicating whether or not to plot points for first figure (see \code{plot_ab})
 #' @param ... arguments passed to \code{plot_ab}, \code{plot}, and \code{plot_space}
 #' 
-#' @details Used in process_msom_figures.R
+#' @details 
+#' Used in process_msom_figures.R
 #' 
-#' @returns nothing
+#' @return nothing
 #' 
 #' @export
 plot_ce <- function(t_sco, pad_top_mar=2, plt_pts=FALSE, ...){

@@ -13,7 +13,8 @@
 #' 
 #' The function tries to adjust the opacity of the points according to the size of the panel, with the intention of not completely obscuring the background image and so that opacity can be used as an indicator of posterior density. However, if the panel is too small, the transparency may be truncated to 0, so the posterior dots are just invisible.
 #' 
-#' @returns the output of \code{sppImg}, or if \code{plt_img} is \code{FALSE}, returns \code{NULL}
+#' @return
+#' the output of \code{sppImg}, or if \code{plt_img} is \code{FALSE}, returns \code{NULL}
 #' 
 #' @export
 plot_ab <- function(X, t_spp, plt_img=TRUE, plt_pts=TRUE, ...){
