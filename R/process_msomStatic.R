@@ -61,7 +61,10 @@ process_msomStatic <- function(reg_out, save_mem=TRUE){
 	# ==============
 	# ---- Bottom Temperature ----
 	# ---- Makes [bt] ----
-	bt0 <- lapply(inputData, function(x)x$U[,"bt"])	
+	get_bt <- function(id){
+		(id$U[,"bt"]*id$scaling["btemp.sd"]) + id$scaling["btemp.mu"]
+	}
+	bt0 <- lapply(inputData, get_bt)	
 	bt2dt <- function(x,y)data.table(stratum=names(x), bt=x, year=y)
 	bt <- rbindlist(mapply(bt2dt, bt0, rd_yr, SIMPLIFY=FALSE))
 	strat2lld <- function(x){
