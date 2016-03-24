@@ -8,14 +8,17 @@ library("maps")
 setwd("~/Documents/School&Work/pinskyPost/trawl")
 
 reg_file <- c(
-	"msomStatic_norv_1yr_ebs_jags_6kIter_89nZ_start2016-03-13_r1.RData", # ebs 6k iter
+	"msomStatic_norv_1yr_ebs_jags_6kIter_50nZ_start2016-03-22_r1.RData", # ebs 6k iter -- converged, mostly
+	# "msomStatic_norv_1yr_ebs_jags_6kIter_89nZ_start2016-03-13_r1.RData", # ebs 6k iter
 	# "msomStatic_norv_1yr_ebs_jags_start2016-03-10_16-44-44_r1.RData", # ebs 6k iter, converged
 	
+	"msomStatic_norv_1yr_ai_jags_12kIter_50nZ_start2016-03-23_r2.RData", # ai 12k iter -- converged
 	# "msomStatic_norv_1yr_ai_jags_60kIter_61nZ_start2016-03-14_r2.RData", # ai, 60k iter, didn't converge
-	"msomStatic_norv_1yr_ai_jags_start2016-03-11_16-01-45_r2.RData", #ai 6k iter, didn't converge
+	# "msomStatic_norv_1yr_ai_jags_start2016-03-11_16-01-45_r2.RData", #ai 6k iter, didn't converge
 	# "msomStatic_norv_1yr_ai_jags_start2016-03-06_19-10-49_r2.RData", # ai 30k iter, didn't converge
 	
-	"msomStatic_norv_1yr_goa_jags_60kIter_62nZ_start2016-03-15_r3.RData", # goa 60k iter, not converged by improving
+	"msomStatic_norv_1yr_goa_jags_12kIter_50nZ_start2016-03-23_r3.RData", # goa 12k iter --- converged
+	# "msomStatic_norv_1yr_goa_jags_60kIter_62nZ_start2016-03-15_r3.RData", # goa 60k iter, not converged by improving
 	# "msomStatic_norv_1yr_goa_jags_start2016-03-11_17-55-00_r3.RData", # goa 6k iter, didn't converge
 	# "msomStatic_norv_1yr_goa_jags_start2016-03-07_06-21-58_r3.RData", # goa 30k iter, didn't converge
 	
