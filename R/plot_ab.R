@@ -5,6 +5,7 @@
 #' @param X a data.table with columns for year and value
 #' @param t_spp character indicating a species name
 #' @param plt_img logical indicating whether or not to plot a picture of the species in the background
+#' @param plt_pts logical indicating whether or not to plot the posterior points, or just the mean of the posterior
 #' @param ... arguments passed to both \code{sppImg} and \code{plot}
 #' 
 #' @details 
@@ -15,7 +16,7 @@
 #' @returns the output of \code{sppImg}, or if \code{plt_img} is \code{FALSE}, returns \code{NULL}
 #' 
 #' @export
-plot_ab <- function(X, t_spp, plt_img=TRUE, ...){
+plot_ab <- function(X, t_spp, plt_img=TRUE, plt_pts=TRUE, ...){
 
 	if(plt_img){
 		si <- sppImg(t_spp, ...)
@@ -28,10 +29,14 @@ plot_ab <- function(X, t_spp, plt_img=TRUE, ...){
 	
 	fin <- par("fin")[2]
 	fac <- 0.01*fin^3/2
-
-	plot(X[,year], X[,value], col=adjustcolor('gray', fac), cex=0.5, pch=21, bg=adjustcolor('white',fac), ...)
+	
 	mu <- X[,list(mu=mean(value)),by="year"]
-	mu[,lines(year, mu, lwd=2, col='gray')]
+	if(plt_pts){
+		plot(X[,year], X[,value], col=adjustcolor('gray', fac), cex=0.5, pch=21, bg=adjustcolor('white',fac), ...)
+		mu[,lines(year, mu, lwd=2, col='gray')]
+	}else{
+		mu[,plot(year, mu, lwd=2, col='gray', type="l", ...)]
+	}
 	mu[,lines(year, mu, lwd=1, col='white')]
 	if(is.null(si) & plt_img){
 		common_name <- spp.key[spp==t_spp, una(common)]
