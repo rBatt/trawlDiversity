@@ -120,22 +120,25 @@ process_msomStatic <- function(reg_out, save_mem=TRUE){
 	
 	# ---- Unscale Alpha ----
 	# ---- Makes [alpha_unscale] ----
-	unscale_ab <- function(abDat, x_scaling){
+	unscale_ab <- function(abDat){
 		ab_un <- unscale(
 			abDat[ab_ind==1, value],
 			abDat[ab_ind==2, value],
 			abDat[ab_ind==3, value],
 			abDat[ab_ind==4, value],
 			abDat[ab_ind==5, value],
-			x_scaling[,btemp.mu],
-			x_scaling[,depth.mu],
-			x_scaling[,btemp.sd],
-			x_scaling[,depth.sd]	
+			abDat[ab_ind==1,btemp.mu],
+			abDat[ab_ind==1,depth.mu],
+			abDat[ab_ind==1,btemp.sd],
+			abDat[ab_ind==1,depth.sd]	
 		)
 		return(as.data.table(ab_un))
 	}
 	scaling <- rbindlist(lapply(inputData, function(x)as.list((x$scaling))))
-	alpha_unscale <- ab[par=="alpha", unscale_ab(.SD, scaling),by=c("spp","spp_id","year")]
+	scaling[,year:=as.numeric(sapply(info, function(x)x["year"]))]
+	ab2 <- merge(ab, scaling, by="year")
+	alpha_unscale <- ab2[par=="alpha", unscale_ab(.SD),by=c("spp","spp_id","year")]
+	rm(list="ab2")
 	
 	
 	
