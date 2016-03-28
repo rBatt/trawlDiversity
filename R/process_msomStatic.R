@@ -59,6 +59,14 @@ process_msomStatic <- function(reg_out, save_mem=TRUE){
 	# ==============
 	# = Covariates =
 	# ==============
+	strat2lld <- function(x){
+		s <- strsplit(x, split=" ")
+		lon <- sapply(s, function(x)x[1])
+		lat <- sapply(s, function(x)x[2])
+		depth_interval <- sapply(s, function(x)x[3])
+		data.table(lon=as.numeric(lon), lat=as.numeric(lat), depth_interval=as.numeric(depth_interval))
+	} 
+	
 	# ---- Bottom Temperature ----
 	# ---- Makes [bt] ----
 	get_bt <- function(id){
@@ -67,15 +75,23 @@ process_msomStatic <- function(reg_out, save_mem=TRUE){
 	bt0 <- lapply(inputData, get_bt)	
 	bt2dt <- function(x,y)data.table(stratum=names(x), bt=x, year=y)
 	bt <- rbindlist(mapply(bt2dt, bt0, rd_yr, SIMPLIFY=FALSE))
-	strat2lld <- function(x){
-		s <- strsplit(x, split=" ")
-		lon <- sapply(s, function(x)x[1])
-		lat <- sapply(s, function(x)x[2])
-		depth_interval <- sapply(s, function(x)x[3])
-		data.table(lon=as.numeric(lon), lat=as.numeric(lat), depth_interval=as.numeric(depth_interval))
-	} 
+
 	bt[,c("lon","lat","depth_interval"):=strat2lld(stratum)]
 	bt[,bt_col:=zCol(256, bt)]
+	
+	# ---- Depth ----
+	# ---- Adds to [bt] ----
+	get_depth <- function(id){
+		(id$U[,"depth"]*id$scaling["depth.sd"]) + id$scaling["depth.mu"]
+	}
+	depth0 <- lapply(inputData, get_depth)	
+	depth2dt <- function(x,y)data.table(stratum=names(x), depth=x, year=y)
+	depth <- rbindlist(mapply(depth2dt, depth0, rd_yr, SIMPLIFY=FALSE))
+
+	depth[,c("lon","lat","depth_interval"):=strat2lld(stratum)]
+	depth[,depth_col:=zCol(256, depth)]
+	
+	bt <- merge(bt, depth, by=c("stratum","lon","year","lat","depth_interval"), all=TRUE)
 	
 	
 	# ====================================================
@@ -100,6 +116,27 @@ process_msomStatic <- function(reg_out, save_mem=TRUE){
 	# Only for observed species (i.e., parameters that I can tie to a Latin name)
 	ab_all <- mapply(get_ab, inputData, out, rd_yr, SIMPLIFY=FALSE)
 	ab <- rbindlist(ab_all)
+	
+	
+	# ---- Unscale Alpha ----
+	# ---- Makes [alpha_unscale] ----
+	unscale_ab <- function(abDat, x_scaling){
+		ab_un <- unscale(
+			abDat[ab_ind==1, value],
+			abDat[ab_ind==2, value],
+			abDat[ab_ind==3, value],
+			abDat[ab_ind==4, value],
+			abDat[ab_ind==5, value],
+			x_scaling[,btemp.mu],
+			x_scaling[,depth.mu],
+			x_scaling[,btemp.sd],
+			x_scaling[,depth.sd]	
+		)
+		return(as.data.table(ab_un))
+	}
+	scaling <- rbindlist(lapply(inputData, function(x)as.list((x$scaling))))
+	alpha_unscale <- ab[par=="alpha", unscale_ab(.SD, scaling),by=c("spp","spp_id","year")]
+	
 	
 	
 	# =========================================
@@ -172,7 +209,7 @@ process_msomStatic <- function(reg_out, save_mem=TRUE){
 	processed <- merge(processed, bt[,list(bt_ann=mean(bt)), by="year"], by="year", all=TRUE)
 	
 
-	return(list(rd=rd, colonization=colonization, bt=bt, param_iters=param_iters, processed=processed, ab=ab))
+	return(list(rd=rd, colonization=colonization, bt=bt, param_iters=param_iters, processed=processed, ab=ab, alpha_unscale=alpha_unscale))
 	
 }
 	
