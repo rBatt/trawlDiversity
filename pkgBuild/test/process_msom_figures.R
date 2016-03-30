@@ -5,6 +5,7 @@ library("rbLib")
 library("R2jags")
 library("maps")
 library("beanplot")
+library("fields")
 
 setwd("~/Documents/School&Work/pinskyPost/trawl")
 
@@ -15,322 +16,53 @@ Figures <- list()
 
 for(reg_num in 1:length(p)){
 	
-	# ========
-	# = Prep =
-	# ========
-	rd <- p[[reg_num]]$rd
-	processed <- p[[reg_num]]$processed
-	bt <- p[[reg_num]]$bt
-	colonization <- p[[reg_num]]$colonization
-	param_iters <- p[[reg_num]]$param_iters
-	ab <- p[[reg_num]]$ab
 
-	reg <- processed[,una(reg)]
-	lang <- "JAGS"
-
-	if(lang == "Stan"){
-		pars_trace <- c("Omega","alpha_mu[1]", "alpha_mu[2]", "alpha_mu[3]", "alpha_mu[4]", "alpha_mu[5]", "beta_mu[1]")
-	}else{
-		pars_trace <- c("Omega","alpha_mu[1]", "alpha_mu[2]", "alpha_mu[3]", "alpha_mu[4]", "alpha_mu[5]", "beta_mu")
-	}
-
-	naive_rich <- processed[,naive_rich, by='year']
-	reg_rich <- processed[,reg_rich, by='year']
-	bt_ann <- bt[,list(bt_ann=mean(bt)), by='year']
-
-	n_pars <- length(pars_trace)
-	n_yrs <- param_iters[,lu(year)]
-	n_spp <- rd[,lu(spp)]
-
+	t_prn <- p[[reg_num]]
 
 	# ===========
 	# = Figures =
 	# ===========
 
 	# ---- Figure 1 ----
-	fig1_name <- paste0("richness_bt_timeSeries_", reg, ".png")
-	fig1_dim <- c(3.5, 6)
-	
-	dev.new(width=3.5, height=6)
-	par(mfrow=c(3,1), mar=c(1.75,1.5,0.25,0.25), oma=c(0.1,0.1,0.75,0.1), mgp=c(0.75,0.1,0), tcl=-0.1, ps=8, cex=1)
-	
-	plot(naive_rich, type="o", ylab="Naive Region Richness", xlab="Year")
-	plot(reg_rich, type="o", xlab="Year", ylab="MSOM Region Richness")
-	plot(bt_ann, type="o", xlab="Year", ylab="Annual Mean Bottom Temperature")
-	mtext(reg, side=3, line=0, outer=TRUE, font=2)
-	
-	Figures[[reg]][['Figure1']][["figure"]] <- recordPlot()
-	Figures[[reg]][['Figure1']][["name"]] <- fig1_name
-	Figures[[reg]][['Figure1']][["dim"]] <- fig1_dim
-	dev.off()
+	Figures <- plot_rich_bt_ts(t_prn)
+	# dev.off()
 
 	# ---- Figure 2 ----
-	fig2_name <- paste0("richness_bt_scatter_", reg, ".png")
-	fig2_dim <- c(3.5, 5)
-
-	dev.new(width=3.5, height=5)
-	par(mfrow=c(2,1), mar=c(1.75,1.5,0.25,0.25), oma=c(0.1,0.1,0.75,0.1), mgp=c(0.75,0.1,0), tcl=-0.1, ps=8, cex=1)
-	
-	plot(processed[,list(bt_ann,naive_rich)], type="p", ylab="Naive Region Richness", xlab="Annual Mean Bottom Temperature")
-	plot(processed[,list(bt_ann,reg_rich)], type="p", ylab="MSOM Region Richness", xlab="Annual Mean Bottom Temperature")
-	mtext(reg, side=3, line=0, outer=TRUE, font=2)
-	
-	Figures[[reg]][['Figure2']][["figure"]] <- recordPlot()
-	Figures[[reg]][['Figure2']][["name"]] <- fig2_name
-	Figures[[reg]][['Figure2']][["dim"]] <- fig2_dim
-	dev.off()
+	Figures <- plot_rich_bt_scatter(t_prn, Figures)
+	# dev.off()
 
 	# ---- Figure 3 ----
-	fig3_name <- paste0("btempMap_", reg, ".png")
-	f3_mfrow <- auto.mfrow(n_yrs)
-	f3_height <- 6
-	f3_width <- f3_mfrow[2]*f3_height/f3_mfrow[1]
-	fig3_dim <- c(f3_width, f3_height)
-	
-	dev.new(width=f3_width, height=f3_height)
-	par(mfrow=f3_mfrow, oma=c(0.1,0.1, 1,0.1), mar=c(1,1,0.1,0.1), mgp=c(0.75,0.1,0), tcl=-0.15, cex=1, ps=8)
-	
-	bt[,j={
-		plot(lon, lat, type="n")
-		map(add=TRUE)
-		points(lon, lat, col=bt_col, pch=20)
-		mtext(unique(year), side=3, adj=0.1, line=-0.75, font=2)
-	}, by="year"]
-	mtext(paste(reg, "Bottom Temperature"), outer=TRUE, side=3, line=0.25, font=2)
-	
-	Figures[[reg]][['Figure3']][["figure"]] <- recordPlot()
-	Figures[[reg]][['Figure3']][["name"]] <- fig3_name
-	Figures[[reg]][['Figure3']][["dim"]] <- fig3_dim
-	dev.off()
+	Figures <- plot_btemp_map(t_prn, Figures)
+	# dev.off()
 	
 	# ---- Figure 4 ----
-	fig4_name <- paste0("traceplot_", reg, ".png")
-	f4_mfrow <- c(n_pars, n_yrs)
-	f4_height <- 5
-	f4_width <- f4_mfrow[2]*f4_height/f4_mfrow[1]
-	fig4_dim <- c(f4_width, f4_height)
-
-	dev.new(width=f4_width, height=f4_height)
-	par(mfrow=f4_mfrow, oma=c(1,1, 1,0.1), mar=c(0.5,0.5,0.1,0.1), mgp=c(0.25,0.1,0), tcl=-0.1, cex=1, ps=6)
-	
-	for(h in 1:length(pars_trace)){
-		for(i in 1:n_yrs){
-			t_yr <- param_iters[,una(year)][i]
-			t_iters <- param_iters[year==t_yr]
-			mytrace(t_iters, pars=pars_trace[h], lang=lang, xaxt='n')
-			if(i == 1){
-				mtext(pars_trace[h], side=2, line=0.75)
-			}
-		}
-	}
-	
-	Figures[[reg]][['Figure4']][["figure"]] <- recordPlot()
-	Figures[[reg]][['Figure4']][["name"]] <- fig4_name
-	Figures[[reg]][['Figure4']][["dim"]] <- fig4_dim
-	dev.off()
+	Figures <- plot_traceplot(t_prn, Figures)
+	# dev.off()
 
 
 	# ---- Figure 5 ----
-	fig5_name <- paste0("posteriorCorrelation_", reg, ".png")
-	fig5_dim <- c(7, 7)
-	
-	dev.new(fig5_dim[1], fig5_dim[2])
-	
-	pairs(param_iters[year==param_iters[,una(year)][1], eval(s2c(pars_trace))])
-	
-	Figures[[reg]][['Figure5']][["figure"]] <- recordPlot()
-	Figures[[reg]][['Figure5']][["name"]] <- fig5_name
-	Figures[[reg]][['Figure5']][["dim"]] <- fig5_dim
-	dev.off()
+	Figures <- plot_post_corr(t_prn, Figures, yr=1)
+	# dev.off()
 
 
 	# ---- Figure 6 ----
-	fig6_name <- paste0("Colonization_UnobsSpp_", reg, ".png")
-	fig6_dim <- c(3.5, 3.5)
-	
-	dev.new(fig6_dim[1], fig6_dim[2])
-	
-	processed[,plot(unobs_rich[-length(unobs_rich)], n_col[-1], xlab="Unobserved species present last year", ylab="Species colonizing this year")]
-	abline(a=0, b=1)
-	
-	Figures[[reg]][['Figure6']][["figure"]] <- recordPlot()
-	Figures[[reg]][['Figure6']][["name"]] <- fig6_name
-	Figures[[reg]][['Figure6']][["dim"]] <- fig6_dim
-	dev.off()
+	Figures <- plot_col_vs_unobsSpp(t_prn, Figures)
+	# dev.off()
 
 
 	# ---- Figure 7 ----
-	# ---- Number of Colonizations per Stratum ----
-	r_lon <- colonization$n_spp_col_weighted_tot[,range(lon)]
-	r_lat <- colonization$n_spp_col_weighted_tot[,range(lat)]
-	if(diff(r_lon) > diff(r_lat)){
-		fig7_mfr <- c(2,1)
-		fig7_h <- 2.5
-		fig7_w <- (diff(r_lon) * fig7_h / diff(r_lat)) * (fig7_mfr[2]/fig7_mfr[1])
-	}else{
-		fig7_mfr <- c(1,2)
-		fig7_w <- 2.5
-		fig7_h <- (diff(r_lat) * fig7_w / diff(r_lon)) / (fig7_mfr[2]/fig7_mfr[1])
-	}
+	# ---- Number of Colonizations per Stratum ----	
+	Figures <- plot_colExt_perStrat(t_prn, Figures)
 
-	fig7_name <- paste0("colonizations_per_stratum_", reg, ".png")
-	fig7_dim <- c(fig7_w, fig7_h)
-	dev.new(width=fig7_w, height=fig7_h)
-	par(mfrow=fig7_mfr, mar=c(1.5,1.5,0.1,0.1), mgp=c(1,0.1,0), tcl=-0.1, ps=8, cex=1)
-
-	# site-specific colonizations from data
-	colonization$n_spp_col_weighted_tot[,plot_space(lon, lat, n_spp_col_weighted, TRUE, pch=19)]
-	map(add=TRUE, fill=TRUE, col="white")
-	# smoothed map for convex hull of site observations
-	colonization$n_spp_col_weighted_tot[,plot_space(lon, lat, n_spp_col_weighted, pch=19)]
-	map(add=TRUE, fill=TRUE, col="white")
-
-	Figures[[reg]][['Figure7']][["figure"]] <- recordPlot()
-	Figures[[reg]][['Figure7']][["name"]] <- fig7_name
-	Figures[[reg]][['Figure7']][["dim"]] <- fig7_dim
-	dev.off()
-	
-	
 	# ---- Figure 8 ----
-	# ---- Number of extinctions per stratum ----
-	fig8_name <- paste0("extinctions_per_stratum_", reg, ".png")
-	fig8_dim <- c(fig7_w, fig7_h)
-	dev.new(width=fig7_w, height=fig7_h)
-	par(mfrow=fig7_mfr, mar=c(1.5,1.5,0.1,0.1), mgp=c(1,0.1,0), tcl=-0.1, ps=8, cex=1)
-
-	# site-specific extinctions from data
-	colonization$n_spp_ext_weighted_tot[,plot_space(lon, lat, n_spp_ext_weighted, TRUE, pch=19)]
-	map(add=TRUE, fill=TRUE, col="white")
-	# smoothed map for convex hull of site observations
-	colonization$n_spp_ext_weighted_tot[,plot_space(lon, lat, n_spp_ext_weighted, pch=19)]
-	map(add=TRUE, fill=TRUE, col="white")
-
-	Figures[[reg]][['Figure8']][["figure"]] <- recordPlot()
-	Figures[[reg]][['Figure8']][["name"]] <- fig8_name
-	Figures[[reg]][['Figure8']][["dim"]] <- fig8_dim
-	dev.off()
+	# ---- Plot Information and Identity of Colonizers, Leavers, etc ----
+	Figures <- plot_ce_wrap(t_prn, Figures, spp_cat="col", width=12, max_spp_columns=20)
+	Figures <- plot_ce_wrap(t_prn, Figures, spp_cat="ext", width=12, max_spp_columns=20)
 	
 	
-	# ---- Figure 8.5 ----
-	# ---- Colonizations relative to extinctions per stratum ----
-	fig8.5_name <- paste0("ColRelExt_per_stratum_", reg, ".png")
-	fig8.5_dim <- c(fig7_w, fig7_h)
-	dev.new(width=fig7_w, height=fig7_h)
-	par(mfrow=fig7_mfr, mar=c(1.5,1.5,0.1,0.1), mgp=c(1,0.1,0), tcl=-0.1, ps=8, cex=1)
-	
-	strat2lld <- function(x){
-		s <- strsplit(x, split=" ")
-		lon <- sapply(s, function(x)x[1])
-		lat <- sapply(s, function(x)x[2])
-		depth_interval <- sapply(s, function(x)x[3])
-		data.table(lon=as.numeric(lon), lat=as.numeric(lat), depth_interval=as.numeric(depth_interval))
-	} 
-
-	# site-specific extinctions from data
-	cre <- merge(colonization$n_spp_col_weighted_tot, colonization$n_spp_ext_weighted_tot, by=c("stratum","lon","lat","depth"), all=TRUE)
-	# cre <- data.table(cre[,list(stratum, n_spp_ext_weighted, n_spp_col_weighted)], cre[,strat2lld(stratum)])
-# 	cre[is.na(n_spp_ext_weighted), n_spp_ext_weighted:=0]
-# 	cre[is.na(n_spp_col_weighted), n_spp_col_weighted:=0]
-	cre[,rel_col_ext:=(n_spp_col_weighted - n_spp_ext_weighted) ]
-	cre[,plot_space(lon, lat, rel_col_ext, TRUE, pch=19)]
-	map(add=TRUE, fill=TRUE, col="white")
-	# smoothed map for convex hull of site observations
-	cre[,plot_space(lon, lat, rel_col_ext, pch=19)]
-	map(add=TRUE, fill=TRUE, col="white")
-	
-	
-	# ---- Figure 8.6: Who Colonized? ----
-	fig_wc_name <- paste0("who_colonized_andLeft", reg, ".png")
-	ncolspp <- 15 # maximum number of columns in the figure
-	
-	spp_col <- colonization[[1]][value==1, una(spp)]
-	spp_ext <- colonization[[1]][value==-1, una(spp)]
-	spp_col_only <- spp_col[!spp_col %in% spp_ext]
-	spp_col_and_ext <- spp_col[spp_col%in%spp_ext]
-	
-	
-	plot_ce_setup <- function(spp2use, width=12, max_spp_columns=15, nPlots=3){
-		ncolspp <- max_spp_columns
-		
-		
-		if(length(spp2use) > ncolspp){
-			nrowspp <- ceiling(length(spp2use)/ncolspp)
-			lmat0 <- matrix(rep(1:(ncolspp*nrowspp),each=nPlots), nrow=nrowspp*nPlots, ncol=ncolspp)
-			lmat <- lmat0
-			lmat[] <- 1:prod(dim(lmat))
-			lmat <- lmat[,apply(lmat < (length(spp2use)*nPlots), 2, function(x)any(x))]
-		
-			fwc_ldim <- dim(lmat)
-			fwc_w <- width
-			fwc_h <- fwc_w * fwc_ldim[1] / fwc_ldim[2] * 1.1
-			fwc_dim <- c("width"=fwc_w, "height"=fwc_h)
-			dev.new(width=fwc_dim[1], height=fwc_dim[2])
-			layout(mat=lmat, heights=rep(c(1.5,1,1), nrowspp))
-			par(mar=c(1.5,1,0.25,0.1) ,oma=c(0.1,0.1,0.1,0.1), ps=6, mgp=c(0.5, 0.01, 0), tcl=-0.01, cex=1)
-				
-		}else{
-			fwc_mfr <- c(nPlots, length(spp2use))
-			fwc_w <- width
-			fwc_h <- fwc_w * fwc_mfr[1] / fwc_mfr[2] * 1.1
-			fwc_dim <- c(width=fwc_w, height=fwc_h)
-			dev.new(width=fwc_dim[1], height=fwc_dim[2])
-			par(mfcol=fwc_mfr, mar=c(1,1,1,0.1) ,oma=c(0.1,0.1,1.5,0.1), ps=6, mgp=c(0.6, 0.1, 0), tcl=-0.1, cex=1)
-		}
-	
-	}
-
-	fig_hc_name <- paste0("who_colonized", reg, ".png")
-	plot_ce_setup(spp_col_only)
-	for(i in 1:length(spp_col_only)){
-		t_sco <- spp_col_only[i]
-		plot_ce(t_sco, pad_top_mar=ifelse(length(spp_col_only)>15, 2, 0), plt_pts=FALSE)
-	}
-	
-	plot_ce_setup(spp_col_and_ext)
-	for(i in 1:length(spp_col_and_ext)){
-		t_sco <- spp_col_and_ext[i]
-		plot_ce(t_sco)
-	}
-	
-	
-	# ---- Figure 8.7:  ----
-	tr <- rank_temp(rd)
-	tr2 <- tr[[2]]
-	tr2[spp%in%spp_col & !spp%in%spp_ext, status:="colonizer"]
-	tr2[spp%in%spp_ext & !spp%in%spp_col, status:="leaver"]
-	tr2[spp%in%spp_ext & spp%in%spp_col, status:="both"]
-	tr2[!spp%in%spp_ext & !spp%in%spp_col, status:="neither"]
-	
-	
-	dev.new(width=3.5, height=6)
-	par(mfrow=c(2,1), mar=c(2,2,1,0.1), mgp=c(1,0.1,0), tcl=-0.1, cex=1, ps=8)
-	tr2[,j={
-		nc <- sum(status=="colonizer")
-		nl <- sum(status=="leaver")
-		nb <- sum(status=="both")
-		nn <- sum(status=="neither")
-		n <- c(nc, nl, nb, nn)
-		tot <- sum(n)
-		barplot(n/tot, names.arg=c("colonizer", "leaver","both","neither"), main=reg, ylab="Proportion of Species")
-	}]
-	# tr2[,j={boxplot(bt_mean_rank~status, ylab="Species Temperature Rank", main=reg);NULL}]
-	
-	bLine <- rainbow(n=5, v=0.8, s=1)
-	names(bLine) <- c("colonizer", "leaver","both","neither","blah")
-	bFill <- rgb(t(col2rgb(bLine, alpha=TRUE)), alpha=40, maxColorValue=255)
-	names(bFill) <- c("colonizer", "leaver","both","neither","blah")
-	beanCol <- list(
-		colonizer = c(bFill[1]),
-		leaver = c(bFill[2]),
-		both = c(bFill[3]),
-		neither = c(bFill[4])
-	)
-	
-	bFill <- bFill[names(bFill)%in%tr2[,una(status)]]
-	beanCol <- beanCol[names(beanCol)%in%tr2[,una(status)]]
-	bLine <- bLine[names(bLine)%in%tr2[,una(status)]]
-	
-	tr2[,j={beanplot(bt_mean_rank~status, ylab="Species Temperature Rank", main=reg, border=bLine, col=beanCol, ll=0.01, beanlinewd=1.5);NULL}] 
+	# ---- Figure 9:  ----
+	# ---- Plot Number of Colonizers, Leavers, and Plot Temp Rank ----
+	Figures <- plot_rank_temp(t_prn, Figures)
 	
 	
 
@@ -378,7 +110,11 @@ for(reg_num in 1:length(p)){
 	# Figures[[reg]][['Figure10']][["name"]] <- fig10_name
 	# Figures[[reg]][['Figure10']][["dim"]] <- fig10_dim
 	# dev.off()
+	
+	
+	# ---- Figure 11:  ----
 
+	graphics.off()
 }
 
 # ==========================
