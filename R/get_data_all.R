@@ -8,11 +8,13 @@
 #' 
 #' @export
 get_data_all <- function(region){
-	regs <- match.arg(region, c("ebs", "ai", "goa", "wctri", "wcann", "gmex", "sa", "neus", "shelf", "newf"), several.ok=TRUE)
+	poss_regs <- c("ebs", "ai", "goa", "wctri", "wcann", "gmex", "sa", "neus", "shelf", "newf")
+	if(missing(region)){region <- poss_regs}
+	regs <- match.arg(region, poss_regs, several.ok=TRUE)
 	pretty_reg <- c("ebs"="E. Bering Sea", "ai"="Aleutian Islands", "goa"="Gulf of Alaska", "wc"="West Coast US", "gmex"="Gulf of Mexico", "sa"="Southeast US", "neus"="Northeast US", "shelf"="Scotian Shelf", "newf"="Newfoundland")
 	pr <- names(pretty_reg)
 
-	names(pretty_col) <- pr
+	# names(pretty_col) <- pr
 
 
 	# ====================================
