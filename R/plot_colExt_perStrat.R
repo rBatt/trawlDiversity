@@ -32,8 +32,8 @@ plot_colExt_perStrat <- function(prn, Figures){
 	
 	lay_logic <- diff(r_lon) > diff(r_lat)
 	if(lay_logic){
-		fig7_mfr <- c(2,1*3)
-		fig7_h <- 2.5#*3
+		fig7_mfr <- c(3,2)
+		fig7_h <- 3
 		fig7_w <- (diff(r_lon) * fig7_h / diff(r_lat)) * (fig7_mfr[2]/fig7_mfr[1])
 	}else{
 		# fig7_mfr <- c(1*3,2)
@@ -43,23 +43,23 @@ plot_colExt_perStrat <- function(prn, Figures){
 		fig7_h <- 7#*3
 		fig7_w <- (diff(r_lon) * fig7_h / diff(r_lat)) * (fig7_mfr[2]/fig7_mfr[1])
 		
-		lay_logic <- !lay_logic
+		# lay_logic <- !lay_logic
 	}
 
 	fig7_name <- paste0("colonizations_per_stratum_", reg, ".png")
 	fig7_dim <- c(fig7_w, fig7_h)
 	dev.new(width=fig7_w, height=fig7_h)
 	if(lay_logic){
-		par(mfcol=fig7_mfr)
-	}else{
 		par(mfrow=fig7_mfr)
+	}else{
+		par(mfcol=fig7_mfr)
 	}
 	par(mar=c(1.25,1.25,0.1,0.1), oma=c(0.1,1,1,0.1), mgp=c(1,0.1,0), tcl=-0.1, ps=8, cex=1)
 
 	# site-specific colonizations from data
 	colonization$n_spp_col_weighted_tot[,plot_space(lon, lat, n_spp_col_weighted, TRUE, pch=19, ylab="", xlab="")]
 	map(add=TRUE, fill=TRUE, col="white")
-	mtext("Colonizations (C)", side=ifelse(lay_logic, 3, 1), line=ifelse(lay_logic, 0.25, 2))
+	mtext("Colonizations (C)", side=ifelse(lay_logic, 2, 3), line=ifelse(lay_logic, 1, 0.25))
 	# smoothed map for convex hull of site observations
 	colonization$n_spp_col_weighted_tot[,plot_space(lon, lat, n_spp_col_weighted, pch=19, ylab="", xlab="")]
 	map(add=TRUE, fill=TRUE, col="white")
@@ -68,7 +68,7 @@ plot_colExt_perStrat <- function(prn, Figures){
 	# site-specific extinctions from data
 	colonization$n_spp_ext_weighted_tot[,plot_space(lon, lat, n_spp_ext_weighted, TRUE, pch=19, ylab="", xlab="")]
 	map(add=TRUE, fill=TRUE, col="white")
-	mtext("Extinctions (E)", side=ifelse(lay_logic, 3, 1), line=ifelse(lay_logic, 0.25, 2))
+	mtext("Extinctions (E)", side=ifelse(lay_logic, 2, 3), line=ifelse(lay_logic, 1, 0.25))
 	# smoothed map for convex hull of site observations
 	colonization$n_spp_ext_weighted_tot[,plot_space(lon, lat, n_spp_ext_weighted, pch=19, ylab="", xlab="")]
 	map(add=TRUE, fill=TRUE, col="white")
@@ -81,7 +81,7 @@ plot_colExt_perStrat <- function(prn, Figures){
 	cre[,rel_col_ext:=(n_spp_col_weighted - n_spp_ext_weighted) ]
 	cre[,plot_space(lon, lat, rel_col_ext, TRUE, pch=19, ylab="", xlab="")]
 	map(add=TRUE, fill=TRUE, col="white")
-	mtext("C - E", side=ifelse(lay_logic, 3, 1), line=ifelse(lay_logic, 0.25, 2))
+	mtext("C - E", side=ifelse(lay_logic, 2, 3), line=ifelse(lay_logic, 1, 0.25))
 	# smoothed map for convex hull of site observations
 	cre[,plot_space(lon, lat, rel_col_ext, pch=19, ylab="", xlab="")]
 	map(add=TRUE, fill=TRUE, col="white")
