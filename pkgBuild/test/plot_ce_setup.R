@@ -1,3 +1,23 @@
+#' Setup Colonization & Extinction Plot
+#' 
+#' Creates layout and dimensions for c/e plot
+#' 
+#' @param spp2use character vector of species names
+#' @param width.max the maximum width of the figure in inches
+#' @param height.max the maximum height of the figure in inches
+#' @param max_spp_columns the maximum number of columns to use when arranging panels
+#' @param nPlots the number of plots per species; determined by \code{\link{plot_ce}}
+#' 
+#' @details
+#' Shouldn't need to use this function directly. See \code{\link{plot_ce_wrap}}
+#' 
+#' @return
+#' Returns a numeric vector of length 2 indicating the width and height of the output figure, in inches
+#' 
+#' @seealso 
+#' There are several functions that are run through the process_msom_figures script. Richness and temperature plots are \code{\link{plot_btemp_map}}, \code{\link{plot_rich_bt_scatter}}, and \code{\link{plot_rich_bt_ts}}. Figures for colonization, extinction, and the species and places associated with those processes are \code{\link{plot_ce_wrap}}, \code{\link{plot_col_vs_unobs}}, \code{\link{plot_colExt_perStrat}}, and \code{\link{plot_rank_temp}}. Figures for diagnostics are \code{\link{plot_traceplot}} and \code{\link{plot_post_corr}}.
+#' 
+#' @export
 plot_ce_setup <- function(spp2use, width.max=12, height.max=7, max_spp_columns=15, nPlots=3){
 	ncolspp <- max_spp_columns
 	

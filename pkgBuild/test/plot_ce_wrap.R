@@ -1,3 +1,23 @@
+#' Colonization and Extinction Plotting Wrapper
+#' 
+#' Creates 3 plots for each species involved in some combination of colonization and extinction
+#' 
+#' @param prn the p object (processed msom; output from \code{process_msomStatic})
+#' @param Figures option list to which the figure and its information should be added
+#' @param spp_cat Category for colonization/ extinction to be chosen
+#' 
+#' @details
+#' This figure is rather complicated, and is divided into 3 parts. This function is the piece that should be interacted with. The core piece of the function is \code{\link{plot_ce}}, which creates 3 core plots. Setting up the figure layout and size can also be tricky, but is accomplished by \code{\link{plot_ce_setup}}.
+#' 
+#' The function uses \code{unpack_p} to get much of the information it needs. The \code{Figures} object is a list whose first level is intended to be the region. The second level is specific to each figure. The third level has 3 elements: 'figure', 'name', and 'dim'. The 'figure' element is the result of using \code{\link{recordPlot}} on what is plotted. The name of the figure is, e.g., what the saved figure would be called. The dim is the width and height (in that order) in inches.
+#' 
+#' @return
+#' Returns the Figure object
+#' 
+#' @seealso 
+#' There are several functions that are run through the process_msom_figures script. Richness and temperature plots are \code{\link{plot_btemp_map}}, \code{\link{plot_rich_bt_scatter}}, and \code{\link{plot_rich_bt_ts}}. Figures for colonization, extinction, and the species and places associated with those processes are \code{\link{plot_ce_wrap}}, \code{\link{plot_col_vs_unobs}}, \code{\link{plot_colExt_perStrat}}, and \code{\link{plot_rank_temp}}. Figures for diagnostics are \code{\link{plot_traceplot}} and \code{\link{plot_post_corr}}.
+#' 
+#' @export
 plot_ce_wrap <- function(prn, Figures, spp_cat=c("col","ext","both","neither"), ...){
 	unpack_p(prn)
 	
