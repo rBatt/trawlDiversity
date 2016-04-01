@@ -4,7 +4,7 @@
 \alias{plot_ce}
 \title{Plot a Species that Colonizes and/or goes Extinct}
 \usage{
-plot_ce(t_sco, pad_top_mar = 2, plt_pts = FALSE, ...)
+plot_ce(t_sco, pad_top_mar = 2, plt_pts = FALSE, use_ext = FALSE, ...)
 }
 \arguments{
 \item{t_sco}{a character indicating a species name}
@@ -12,6 +12,8 @@ plot_ce(t_sco, pad_top_mar = 2, plt_pts = FALSE, ...)
 \item{pad_top_mar}{numeric indicating the amount to increase the size of the top margin for the first of the 3 panels}
 
 \item{plt_pts}{logical indicating whether or not to plot points for first figure (see \code{plot_ab})}
+
+\item{use_ext}{Logical, whether map should indicate colonizations (FALSE, default), or extinctions (TRUE)}
 
 \item{...}{arguments passed to \code{plot_ab}, \code{plot}, and \code{plot_space}}
 }
