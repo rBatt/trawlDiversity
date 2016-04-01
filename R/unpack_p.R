@@ -1,3 +1,13 @@
+#' Unpack P
+#' 
+#' Unpacks the object containing the processed MSOM results
+#' 
+#' @param p_rn The p object subset to a region
+#' 
+#' @details
+#' Make sure to only supply p after it's been subset (e.g., \code{p[[1]]}). The structure of p is such that the first level is the regions, the second is the years, then the third contains the varius elements associated with the processed output of a single model run.
+#' 
+#' @export
 unpack_p <- function(p_rn){
 	rd <<- p_rn$rd
 	processed <<- p_rn$processed
