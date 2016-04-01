@@ -14,7 +14,7 @@ load("trawlDiversity/pkgBuild/results/processedMsom/p.RData")
 Figures <- list()
 
 
-for(reg_num in 1:length(p)){
+for(reg_num in 8:length(p)){
 	
 
 	t_prn <- p[[reg_num]]
@@ -24,7 +24,7 @@ for(reg_num in 1:length(p)){
 	# ===========
 
 	# ---- Figure 1 ----
-	Figures <- plot_rich_bt_ts(t_prn)
+	Figures <- plot_rich_bt_ts(t_prn, Figures)
 	# dev.off()
 
 	# ---- Figure 2 ----
@@ -56,8 +56,8 @@ for(reg_num in 1:length(p)){
 
 	# ---- Figure 8 ----
 	# ---- Plot Information and Identity of Colonizers, Leavers, etc ----
-	Figures <- plot_ce_wrap(t_prn, Figures, spp_cat="col", width=12, max_spp_columns=20)
-	Figures <- plot_ce_wrap(t_prn, Figures, spp_cat="ext", width=12, max_spp_columns=20)
+	Figures <- plot_ce_wrap(t_prn, Figures, spp_cat="col", width.max=12, max_spp_columns=12)
+	Figures <- plot_ce_wrap(t_prn, Figures, spp_cat="ext", width.max=12, max_spp_columns=12)
 	
 	
 	# ---- Figure 9:  ----
@@ -134,7 +134,11 @@ plot_Figures <- function(x, FUN, ...){
 	}
 }
 
-plot_Figures(Figures[[1]][[1]], "dev.new")
+
+
+for(i in 1:length(p)){
+	plot_Figures(Figures[[i]][[1]], "dev.new")
+}
 
 
 
