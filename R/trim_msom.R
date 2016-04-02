@@ -82,6 +82,10 @@ trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tol
 		bad_spp_sa <- "Stomolophus meleagris"
 		X.t <- X.t[!spp%in%bad_spp_sa,]
 	}
+	if(reg == "newf"){
+		bad_spp_newf <- c("Thalarctos maritimus")
+		X.t <- X.t[!spp%in%bad_spp_newf,]
+	}
 	
 	o_reg <- reg
 	bad_spp <- show_up_spp[(reg)==o_reg,una(spp)]
