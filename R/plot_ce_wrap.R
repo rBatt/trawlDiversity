@@ -73,8 +73,8 @@ plot_ce_wrap <- function(prn, Figures, spp_cat=c("col","ext","both","neither"), 
 		t_sco <- spp2use[i]
 		plot_ce(t_sco, pad_top_mar=ifelse(length(spp2use)>max_spp_columns, 2, 1), plt_pts=FALSE, use_ext=ifelse(spp_cat=="ext", TRUE, FALSE))
 		# plot_ce(t_sco, pad_top_mar=2, plt_pts=FALSE, use_ext=ifelse(spp_cat=="ext", TRUE, FALSE))
-		mtext(main_title, side=3, line=-0.5, outer=TRUE, font=2)
 	}
+	mtext(main_title, side=3, line=-0.5, outer=TRUE, font=2)
 	
 	
 	Figures[[reg]][[paste0('Figure8.',fig_ind)]][["figure"]] <- recordPlot()
