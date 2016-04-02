@@ -42,10 +42,18 @@ plot_ce_wrap <- function(prn, Figures, spp_cat=c("col","ext","both","neither"), 
 		"neither" = spp_neither
 	)[[spp_cat]]
 	
+	main_title <- c(
+		"col" = "Colonizing Species",
+		"ext" = "Leaving Species",
+		"both" = "Species that Colonize and Go Extinct",
+		"neither" = "Species that Are Always Present"
+	)[spp_cat]
+	
 	if(length(spp2use)==0){
 		message("No species in this category")
 		dev.new(width=3.5,height=3.5)
-		plot(1, type="n")
+		plot(1, type="n", xlab="", ylab="", xaxt="n", yaxt="n")
+		text(1,1, paste("This Region Has 0", main_title))
 		
 		Figures[[reg]][[paste0('Figure8.',fig_ind)]][["figure"]] <- recordPlot()
 		Figures[[reg]][[paste0('Figure8.',fig_ind)]][["name"]] <- fig_name
@@ -54,10 +62,18 @@ plot_ce_wrap <- function(prn, Figures, spp_cat=c("col","ext","both","neither"), 
 		return(Figures)
 	}
 	
+	if(!"max_spp_columns"%in%names(list(...))){
+		max_spp_columns <- formals(plot_ce_setup$max_spp_columns)
+	}else{
+		max_spp_columns <- list(...)$max_spp_columns
+	}
+	
 	fd <- plot_ce_setup(spp2use, ...)
 	for(i in 1:length(spp2use)){
 		t_sco <- spp2use[i]
-		plot_ce(t_sco, pad_top_mar=ifelse(length(spp2use)>15, 2, 0), plt_pts=FALSE, use_ext=ifelse(spp_cat=="ext", TRUE, FALSE))
+		plot_ce(t_sco, pad_top_mar=ifelse(length(spp2use)>max_spp_columns, 2, 1), plt_pts=FALSE, use_ext=ifelse(spp_cat=="ext", TRUE, FALSE))
+		# plot_ce(t_sco, pad_top_mar=2, plt_pts=FALSE, use_ext=ifelse(spp_cat=="ext", TRUE, FALSE))
+		mtext(main_title, side=3, line=-0.5, outer=TRUE, font=2)
 	}
 	
 	
