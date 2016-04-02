@@ -31,12 +31,22 @@ plot_btemp_map <- function(prn, Figures){
 	dev.new(width=f3_width, height=f3_height)
 	par(mfrow=f3_mfrow, oma=c(0.1,0.1, 1,0.1), mar=c(1,1,0.1,0.1), mgp=c(0.75,0.1,0), tcl=-0.15, cex=1, ps=8)
 	
-	bt[,j={
-		plot(lon, lat, type="n")
+	yrs2loop <- bt[,sort(una(year))]
+	for(y in 1:length(yrs2loop)){
+		t_lon <- bt[year==yrs2loop[y],lon]
+		t_lat <- bt[year==yrs2loop[y],lat]
+		t_bt_col <- bt[year==yrs2loop[y],bt_col]
+		plot(t_lon, t_lat, type="n")
 		map(add=TRUE)
-		points(lon, lat, col=bt_col, pch=20)
-		mtext(unique(year), side=3, adj=0.1, line=-0.75, font=2)
-	}, by="year"]
+		points(t_lon, t_lat, col=t_bt_col, pch=20)
+		mtext(yrs2loop[y], side=3, adj=0.1, line=-0.75, font=2)
+	}
+	# bt[,j={
+# 		plot(lon, lat, type="n")
+# 		map(add=TRUE)
+# 		points(lon, lat, col=bt_col, pch=20)
+# 		mtext(unique(year), side=3, adj=0.1, line=-0.75, font=2)
+# 	}, by="year"]
 	mtext(paste(reg, "Bottom Temperature"), outer=TRUE, side=3, line=0.25, font=2)
 	
 	Figures[[reg]][['Figure3']][["figure"]] <- recordPlot()
