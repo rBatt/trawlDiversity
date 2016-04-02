@@ -52,8 +52,9 @@ plot_ce_wrap <- function(prn, Figures, spp_cat=c("col","ext","both","neither"), 
 	if(length(spp2use)==0){
 		message("No species in this category")
 		dev.new(width=3.5,height=3.5)
+		par(mar=c(0.5,0.5,0.5,0.5), cex=1, ps=10)
 		plot(1, type="n", xlab="", ylab="", xaxt="n", yaxt="n")
-		text(1,1, paste("This Region Has 0", main_title))
+		text(1,1, paste0("This Region Has 0\n", main_title))
 		
 		Figures[[reg]][[paste0('Figure8.',fig_ind)]][["figure"]] <- recordPlot()
 		Figures[[reg]][[paste0('Figure8.',fig_ind)]][["name"]] <- fig_name
