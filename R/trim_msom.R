@@ -22,6 +22,18 @@ trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tol
 	# tolFraction = 0.15
 	# plot=TRUE
 	
+	# notes on depthStratum
+	# neus doesn't need it, or set to 500
+	# shelf doesn't need it, or set to 500
+	# goa doesn't need it, or set to 500 (200 isn't bad either)
+	# gmex doesn't change much between 1000 or 100 ...
+	# ai loses about 20 strata going from 100 to 500 (keep at 100)
+	# ebs is basically same; loses 3 strata going from 500 to 100
+	# wctri loses almost half strata going from 100 to 500 (keep at 100)
+	# wcann loses 12 strata and gets gaps in coverage going from 500 to 100 (recommend 500)
+	# sa doesn't change at all between 100 and 500
+	# newf loses about 80 strata going from 500 to 100 and gets gaps in coverage (recommend 500)
+	
 	
 	# use default trimming
 	X.t <- trawlTrim(reg)

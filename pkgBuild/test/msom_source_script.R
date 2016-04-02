@@ -51,6 +51,19 @@ reg_iter <- c(
 	"newf" = 6E3
 )
 
+reg_depthStratum <- c(
+	"ebs" = 500,
+	"ai" = 100,
+	"goa" = 500,
+	"wctri" = 100, 
+	"wcann" = 500, 
+	"gmex" = 500, 
+	"sa" = 500, 
+	"neus" = 500, 
+	"shelf" = 500, 
+	"newf" = 500
+)
+
 
 for(r in 1:length(regs)){
 # for(r in 1:2){ # ebs and ai
@@ -63,7 +76,7 @@ for(r in 1:length(regs)){
 	
 	t_reg <- regs[r]
 	
-	data_in_all0 <- trim_msom(t_reg, gridSize=0.5, depthStratum=100, tolFraction=0.15, grid_stratum=TRUE, plot=FALSE)
+	data_in_all0 <- trim_msom(t_reg, gridSize=0.5, depthStratum=reg_depthStratum[t_reg], tolFraction=0.15, grid_stratum=TRUE, plot=FALSE)
 	data_in_all <- data_in_all0
 	setkey(data_in_all, year, stratum, haulid, spp)
 	
