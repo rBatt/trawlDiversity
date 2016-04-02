@@ -39,7 +39,7 @@ reg_n0_pad <- c(
 )
 
 reg_iter <- c(
-	"ebs" = 6E3,
+	"ebs" = 12E3,
 	"ai" = 12E3,
 	"goa" = 12E3,
 	"wctri" = 12E3, 
@@ -47,8 +47,8 @@ reg_iter <- c(
 	"gmex" = 12E3, 
 	"sa" = 12E3, 
 	"neus" = 12E3, 
-	"shelf" = 6E3, 
-	"newf" = 6E3
+	"shelf" = 12E3, 
+	"newf" = 12E3
 )
 
 reg_depthStratum <- c(
