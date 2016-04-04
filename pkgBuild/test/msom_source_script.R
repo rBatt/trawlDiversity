@@ -22,7 +22,7 @@ regs <- c("ebs", "ai", "goa", "wctri", "wcann", "gmex", "sa", "neus", "shelf", "
 
 stan_folder <- file.path(system.file(package="trawlDiversity"), tolower("Stan"))
 model_location <- file.path(stan_folder, "msomStatic_norv_1yr.stan")
-compiled_stan_model <- stan_model(model_location)
+compiled_stan_model <- NULL #stan_model(model_location)
 
 
 reg_n0_pad <- c(
@@ -51,19 +51,6 @@ reg_iter <- c(
 	"newf" = 12E3
 )
 
-reg_depthStratum <- c(
-	"ebs" = 500,
-	"ai" = 100,
-	"goa" = 500,
-	"wctri" = 100, 
-	"wcann" = 500, 
-	"gmex" = 500, 
-	"sa" = 500, 
-	"neus" = 500, 
-	"shelf" = 500, 
-	"newf" = 500
-)
-
 
 for(r in 1:length(regs)){
 # for(r in 1:2){ # ebs and ai
@@ -75,10 +62,7 @@ for(r in 1:length(regs)){
 	rm_out <- vector("list", length(regs)) # yes, this reset the contents of the list. Saving all regions together is too big
 	
 	t_reg <- regs[r]
-	
-	data_in_all0 <- trim_msom(t_reg, gridSize=0.5, depthStratum=reg_depthStratum[t_reg], tolFraction=0.15, grid_stratum=TRUE, plot=FALSE)
-	data_in_all <- data_in_all0
-	setkey(data_in_all, year, stratum, haulid, spp)
+	data_in_all <- data_all[reg==t_reg]
 	
 	u_yrs <- data_in_all[,unique(year)]
 	n_spp <- data_in_all[,list(n_spp=lu(spp)), by="year"]
@@ -89,7 +73,6 @@ for(r in 1:length(regs)){
 	rm_out[[r]] <- vector("list", length(u_yrs)) 
 	
 	for(i in 1:length(u_yrs)){
-	# for(i in 1:3){
 		t_data <- data_in_all[year==u_yrs[i]]
 	
 		msg_reg <- toupper(t_data[,unique(reg)])
