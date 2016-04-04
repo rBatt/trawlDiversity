@@ -17,13 +17,11 @@ library("R2jags")
 Sys.time()
 sessionInfo()
 
-regs <- c("ebs", "ai", "goa", "wctri", "wcann", "gmex", "sa", "neus", "shelf", "newf")
 
-
-stan_folder <- file.path(system.file(package="trawlDiversity"), tolower("Stan"))
-model_location <- file.path(stan_folder, "msomStatic_norv_1yr.stan")
-compiled_stan_model <- NULL #stan_model(model_location)
-
+# ===========
+# = Options =
+# ===========
+lang_used <- c("JAGS", "Stan")[1]
 
 reg_n0_pad <- c(
 	"ebs" = 50,
@@ -52,13 +50,32 @@ reg_iter <- c(
 )
 
 
+# =========
+# = Setup =
+# =========
+regs <- c("ebs", "ai", "goa", "wctri", "wcann", "gmex", "sa", "neus", "shelf", "newf")
+
+
+if(lang_used=="Stan"){
+	stan_folder <- file.path(system.file(package="trawlDiversity"), tolower("Stan"))
+	model_location <- file.path(stan_folder, "msomStatic_norv_1yr.stan")
+	compiled_stan_model <- stan_model(model_location)
+}else{
+	compiled_stan_model <- NULL
+}
+
+
+# =====================
+# = Loop and Run MSOM =
+# =====================
 for(r in 1:length(regs)){
-# for(r in 1:2){ # ebs and ai
-# for(r in 3:4){ # goa and wctri
-# for(r in 5:6){ # wcann and gmex
-# for(r in 7:8){ # sa and neus
+# for(r in 1:1){ # ebs
+# for(r in 2:3){ # ai & goa
+# for(r in 4:5){ # wctri & wcann
+# for(r in 6:7){ # gmex & sa
+# for(r in 8:8){ # neus
 # for(r in 9:10){ # shelf and newf
-	
+
 	rm_out <- vector("list", length(regs)) # yes, this reset the contents of the list. Saving all regions together is too big
 	
 	t_reg <- regs[r]
@@ -87,7 +104,7 @@ for(r in 1:length(regs)){
 			reg = t_reg,
 			regX.a1 = t_data,
 			params_out = c("params"),
-			language="JAGS", 
+			language=lang_used, 
 			model_type = "Static", 
 			compiled_model = compiled_stan_model,
 			cores = 4, chains = 4,
