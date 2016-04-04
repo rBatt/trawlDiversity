@@ -385,11 +385,4 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 	# ---- Return ----
 	return(list(out=out, inputData=inputData, info=c(reg=reg, language=language, run_info=run_info, model_file=model_file, model_path=model_path, tag=tag, save_file=save_file, save_path=save_path)))
 	
-	
-	# ---- Helpful Reinstall Code (not actually part of function) ----
-	# setwd("~/Documents/School&Work/pinskyPost/trawl")
-	# remove.packages('trawlDiversity')
-	# library(devtools)
-	# install('trawlDiversity', upgrade_dependencies=FALSE)
-	
 }
