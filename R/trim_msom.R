@@ -8,12 +8,13 @@
 #' @param depthStratum The depth range to use to define stratum; the default does not use depth at all. If using, a reasonable value might be 100.
 #' @param tolFraction The fraction of years that a stratum can not be sampled yet still be included in output. Default is 1/3, indicating that a stratum will be included in output so long as it is sampled for at least 2/3 of years. Actual number of years tolerated is rounded up. This value determines the strat_tol argument in \code{\link{check_strat}}
 #' @param plot Logical, default FALSE; for \code{check_strat}, should the stratum tolerance be plotted?
+#' @param cull_show_up Logical, default \code{FALSE}; should spp in \code{\link{show_up_spp}} be removed when trimming?
 #' 
 #' @return
 #' A data.table 
 #' 
 #' @export
-trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tolFraction=1/3, plot=FALSE){
+trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tolFraction=1/3, plot=FALSE, cull_show_up=FALSE){
 		#
 	# reg = 'neus'
 	# gridSize = 0.5
@@ -99,9 +100,11 @@ trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tol
 		X.t <- X.t[!spp%in%bad_spp_newf,]
 	}
 	
-	o_reg <- reg
-	bad_spp <- show_up_spp[(reg)==o_reg,una(spp)]
-	X.t <- X.t[!spp%in%bad_spp,]
+	if(cull_show_up){
+		o_reg <- reg
+		bad_spp <- show_up_spp[(reg)==o_reg,una(spp)]
+		X.t <- X.t[!spp%in%bad_spp,]
+	}
 	
 	
 	# ---- Deal with consistent strata ----
