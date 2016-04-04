@@ -61,7 +61,7 @@ for(reg_num in 1:length(p)){
 	dev.off()
 	Figures <- plot_ce_wrap(t_prn, Figures, spp_cat="ext", width.max=12, max_spp_columns=12)
 	dev.off()
-	Figures <- plot_ce_wrap(t_prn, Figures, spp_cat="both", width.max=12, height.max=15, max_spp_columns=12)
+	Figures <- plot_ce_wrap(t_prn, Figures, spp_cat="both", width.max=12, height.max=18, max_spp_columns=12)
 	dev.off()
 	
 	
