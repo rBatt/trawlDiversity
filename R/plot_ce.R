@@ -29,6 +29,9 @@ plot_ce <- function(t_sco, pad_top_mar=2, plt_pts=FALSE, use_ext=FALSE, ...){
 	
 	# first plot
 	t_detect <- ab[par=="beta" & (spp)==t_sco]
+	if(nrow(t_detect)==0){
+		t_detect <- data.table(year=1:2, value=1:2)
+	}
 	par(mar=omar+c(0,0,pad_top_mar,0))
 	plot_ab(X=t_detect, t_spp=t_sco, plt_img=TRUE, plt_pts=plt_pts, ylab="beta", xlab="",  ...)
 	
