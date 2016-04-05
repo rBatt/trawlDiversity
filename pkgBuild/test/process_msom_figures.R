@@ -9,7 +9,7 @@ library("fields")
 
 setwd("~/Documents/School&Work/pinskyPost/trawl")
 
-load("trawlDiversity/pkgBuild/results/processedMsom/p.RData")
+load("trawlDiversity/pkgBuild/results/processedMsom/p_new.RData")
 
 Figures <- list()
 
@@ -113,7 +113,7 @@ for(i in 1:length(p)){
 	}
 	ins <- file.path(td, fig_names) #list.files(td, pattern="*.pdf", full.names=TRUE, include.dirs=TRUE)
 	i_reg <- p[[i]]$rd[,una(reg)]
-	save_name <- paste0(od, "/trawlDiversity/pkgBuild/figures/processed_msom_figures_", i_reg, ".pdf")
+	save_name <- paste0(od, "/trawlDiversity/pkgBuild/figures/new_processed_msom_figures_", i_reg, ".pdf")
 	combine_pdf(ins, shQuote(save_name, "cmd"))
 	
 	setwd(od)

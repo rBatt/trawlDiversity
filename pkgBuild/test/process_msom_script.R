@@ -74,9 +74,4 @@ for(i in 1:length(reg_file)){
 }
 
 
-save(p, file="trawlDiversity/pkgBuild/results/processedMsom/p.RData")
-
-
-
-
-	
+save(p, file="trawlDiversity/pkgBuild/results/processedMsom/p_new.RData")
