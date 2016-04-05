@@ -2,11 +2,11 @@
 # run on amphiprion: 
 # nohup R CMD BATCH -cwd --no-save trawlDiversity/pkgBuild/test/msom_source_script.R &
 
-# nohup R CMD BATCH -cwd --no-save trawlDiversity/pkgBuild/test/msom_source_script.R msom_source_script_AllRegs_annual_jags_noCulling_r1-1.Rout &
+# nohup R CMD BATCH -cwd --no-save trawlDiversity/pkgBuild/test/msom_source_script.R msom_source_script_AllRegs_annual_jags_noCulling_r2-3.Rout &
 
 
 # amphiprion process id's
-# ebs: 
+# ebs: 2616
 # ai & goa: 
 # wctri & wcann: 
 # gmex & sa:
@@ -79,8 +79,8 @@ if(lang_used=="Stan"){
 # = Loop and Run MSOM =
 # =====================
 # for(r in 1:length(regs)){
-for(r in 1:1){ # ebs
-# for(r in 2:3){ # ai & goa
+# for(r in 1:1){ # ebs
+for(r in 2:3){ # ai & goa
 # for(r in 4:5){ # wctri & wcann
 # for(r in 6:7){ # gmex & sa
 # for(r in 8:8){ # neus
