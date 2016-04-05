@@ -102,10 +102,21 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 	# regX.a2[,yr:=scale(as.integer(year))] # fails with 1 year; also, mu and sd not weighted to unique years, so kinda weird
 	regX.a2[,yr:=as.numeric(year)]
 	regX.a2[,year:=as.character(year)]
+	
+	# get means and sd's for cov columns
+	a1 <- c("year","K","stratum")
+	a2 <- c("year","stratum")
+	a3 <- c("")
+	a_list <- list(a1, a2, a3)
+	f_list_sds <- list(mean, mean, sd)
+	f_list_mus <- list(mean, mean, mean)
+	vals <- c("bt","depth","doy")
+	mus <- seqAgg(regX.a2, val=vals, FUN=f_list_mus, by=a_list, na.rm=TRUE)
+	sds <- seqAgg(regX.a2, val=vals, FUN=f_list_sds, by=a_list, na.rm=TRUE)
 
 	# aggregate and transform (^2) btemp stemp
-	btemp.mu <- regX.a2[,mean(bt, na.rm=TRUE)]
-	btemp.sd <- regX.a2[,sd(bt, na.rm=TRUE)]
+	btemp.mu <- mus[,bt]
+	btemp.sd <- sds[,bt]
 	if(btemp.sd == 0){btemp.sd <- 1}
 	regX.a2[,bt:=(bt-btemp.mu)/btemp.sd]
 	mk_cov_rv_pow(regX.a2, "bt", across="K", by=c("stratum","year"), pow=2)
@@ -116,15 +127,15 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 	mk_cov_rv_pow(regX.a2, "yr", across="K", by=c("stratum","year"), pow=2)
 
 	# scale and aggregate doy
-	doy.mu <- regX.a2[,mean(doy, na.rm=TRUE)]
-	doy.sd <- regX.a2[,sd(doy, na.rm=TRUE)]
+	doy.mu <- mus[,doy]
+	doy.sd <- sds[,doy]
 	regX.a2[,doy:=(doy-doy.mu)/doy.sd]
 	mk_cov_rv(regX.a2, "doy", across="K", by=c("stratum","year"))
 	mk_cov_rv_pow(regX.a2, "doy", across="K", by=c("stratum","year"), pow=2)
 
 	# scale and aggregate depth
-	depth.mu <- regX.a2[,mean(depth, na.rm=TRUE)]
-	depth.sd <- regX.a2[,sd(depth, na.rm=TRUE)]
+	depth.mu <- mus[,depth]
+	depth.sd <- sds[,depth]
 	regX.a2[,depth:=(depth-depth.mu)/depth.sd]
 	mk_cov_rv(regX.a2, "depth", across="K", by=c("stratum","year"))
 	mk_cov_rv_pow(regX.a2, "depth", across="K", by=c("stratum","year"), pow=2)
