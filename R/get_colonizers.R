@@ -7,12 +7,12 @@
 #' @return
 #' A list of length 5:
 #' \tabular{ll}{
-	#'\code{col_dt} \tab colonization events for each year-stratum-species. \cr
+	#' \code{col_dt} \tab colonization events for each year-stratum-species. \cr
 	#' \code{col_ext_dt} \tab colonization (1), extinction (-1), or no change for each species-year \cr
 	#' \code{n_cep} \tab the number of colonizations, extinctions, or no-change events in the whole region for each year \cr
 	#' \code{n_spp_col_weighted} \tab appropriate aggregation of the column by this name in \code{col_dt} \cr
-	#'\code{n_spp_col_weighted_tot} \tab like \code{n_spp_col_weighted}, but summed up across years (and divided by \code{yrs_sampled}) \cr
-#'	}
+	#' \code{n_spp_col_weighted_tot} \tab like \code{n_spp_col_weighted}, but summed up across years (and divided by \code{yrs_sampled}) \cr
+#' }
 #' 
 #' Note that for each element with "col" in its name, there is an extinction counterpart; i.e., \code{ext_dt}, \code{n_spp_ext_weighted}, \code{n_spp_ext_weighted_tot}.
 #' 
