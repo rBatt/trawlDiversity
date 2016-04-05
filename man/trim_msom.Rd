@@ -5,7 +5,7 @@
 \title{Trim trawl data for msom}
 \usage{
 trim_msom(reg, gridSize = 1, grid_stratum = TRUE, depthStratum = NULL,
-  tolFraction = 1/3, plot = FALSE)
+  tolFraction = 1/3, plot = FALSE, cull_show_up = FALSE)
 }
 \arguments{
 \item{reg}{Character name of region or data.table to be passed to \code{\link{trawlTrim}}.}
@@ -19,6 +19,8 @@ trim_msom(reg, gridSize = 1, grid_stratum = TRUE, depthStratum = NULL,
 \item{tolFraction}{The fraction of years that a stratum can not be sampled yet still be included in output. Default is 1/3, indicating that a stratum will be included in output so long as it is sampled for at least 2/3 of years. Actual number of years tolerated is rounded up. This value determines the strat_tol argument in \code{\link{check_strat}}}
 
 \item{plot}{Logical, default FALSE; for \code{check_strat}, should the stratum tolerance be plotted?}
+
+\item{cull_show_up}{Logical, default \code{FALSE}; should spp in \code{\link{show_up_spp}} be removed when trimming?}
 }
 \value{
 A data.table
