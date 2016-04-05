@@ -1,6 +1,15 @@
 
 library(devtools)
+library(trawlDiversity)
 setwd("~/Documents/School&Work/pinskyPost/trawl")
+
+# =========================
+# = Uninstall & Reinstall =
+# =========================
+# shoudl be repeated after script is run, or just done at end
+# putting here so easy to reinstall w/o rebuilding
+remove.packages('trawlDiversity')
+install('trawlDiversity', upgrade_dependencies=FALSE)
 
 
 # ==================
@@ -54,14 +63,11 @@ if(show_up_choice){
 		data_all_list[[r]] <- trim_msom(t_reg, gridSize=0.5, depthStratum=reg_depthStratum[t_reg], tolFraction=0.15, grid_stratum=TRUE, plot=FALSE, cull_show_up=show_up_choice)
 	}
 }
-data_all <- rbindlist(data_all_list)
-setkey(data_all, year, stratum, haulid, spp)
+data_all <- rbindlist(data_all_list, fill=TRUE)
+setkey(data_all, reg, year, stratum, haulid, spp)
 save(data_all, file="trawlDiversity/data/data_all.RData")
+# dev.new(); par(mfrow=c(5,2), mar=c(1.85, 1.85, 1, 0.1),mgp=c(0.5,0.1,0), tcl=-0.1, cex=1, ps=8); data_all[,plot(.SD[,list(x=una(year), y=lu(spp)),by='year'][,list(x,y)], type="o", main=una(reg)),by='reg']
 
 
-# =========================
-# = Uninstall & Reinstall =
-# =========================
-remove.packages('trawlDiversity')
-install('trawlDiversity', upgrade_dependencies=FALSE)
+
 
