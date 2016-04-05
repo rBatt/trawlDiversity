@@ -57,9 +57,9 @@ for(reg_num in 1:length(p)){
 
 	# ---- Figure 8 ----
 	# ---- Plot Information and Identity of Colonizers, Leavers, etc ----
-	Figures <- plot_ce_wrap(t_prn, Figures, spp_cat="col", width.max=12, max_spp_columns=12)
+	Figures <- plot_ce_wrap(t_prn, Figures, spp_cat="col", width.max=12, height.max=18, max_spp_columns=12)
 	dev.off()
-	Figures <- plot_ce_wrap(t_prn, Figures, spp_cat="ext", width.max=12, max_spp_columns=12)
+	Figures <- plot_ce_wrap(t_prn, Figures, spp_cat="ext", width.max=12, height.max=18, max_spp_columns=12)
 	dev.off()
 	Figures <- plot_ce_wrap(t_prn, Figures, spp_cat="both", width.max=12, height.max=18, max_spp_columns=12)
 	dev.off()
