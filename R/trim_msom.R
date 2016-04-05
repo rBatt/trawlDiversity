@@ -53,6 +53,9 @@ trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tol
 	if(reg == "ai"){
 		X.t <- X.t[(year)>1900,]
 	}
+	if(reg == "ebs"){
+		X.t <- X.t[(year)>1983,]
+	}
 	if(reg == "gmex" | reg == "neus"){
 		X.t <- X.t[(year)!=2015,]
 	}
@@ -70,6 +73,9 @@ trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tol
 	}
 	if(reg == "shelf"){
 		X.t <- X.t[(year)!=2011 & (year)>1950,]
+	}
+	if(reg == "wcann"){
+		X.t <- X.t[(year)>2003,]
 	}
 	
 	# ---- constratin/ standardize time of year (day of year) sampling occurred ----
