@@ -1,6 +1,5 @@
 
 library(devtools)
-library(trawlDiversity)
 setwd("~/Documents/School&Work/pinskyPost/trawl")
 
 # =========================
@@ -10,6 +9,7 @@ setwd("~/Documents/School&Work/pinskyPost/trawl")
 # putting here so easy to reinstall w/o rebuilding
 remove.packages('trawlDiversity')
 install('trawlDiversity', upgrade_dependencies=FALSE)
+library(trawlDiversity)
 
 
 # ==================
