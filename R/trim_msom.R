@@ -97,6 +97,32 @@ trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tol
 	)
 
 	# ---- Cut out methodologically suspicious species ----
+	if(reg == "ebs"){
+		bad_spp_ebs <- c(
+			"Lepidopsetta polyxystra", # showed up in 1996 and was prolific ever since
+			"Chrysaora melanaste" # jellyfish, showed up in 2003 and slightly increasingly prevalent; more gradual in ai
+		)
+		X.t <- X.t[!spp%in%bad_spp_ebs,]
+	}
+	if(reg == "ai"){
+		bad_spp_ai <- c(
+			"Paragorgia arborea", # coral, shows up in 3rd year at ~15% strata
+			"Lepidopsetta polyxystra", # flatfish, shows up in 1997 for 80% strata (also in ebs)
+			"Pteraster militaris", # seastar, show sup at 40% in 1994
+			"Ophiopholis aculeata" # sea star, shows up in 1994 at ~35%
+		)
+		X.t <- X.t[!spp%in%bad_spp_ai,]
+	}
+	if(reg == "goa"){
+		bad_spp_goa <- c(
+			"Sebastes aleutianus", # shows up at 45% in 2007 and stays high
+			"Lepidopsetta bilineata", # rock sole, shows up at 60% in 1996 and stays pretty high
+			"Lepidopsetta polyxystra" # rock sole/ flatfish that shows up at ~50% in 1996 and stays high
+		)
+		X.t <- X.t[!spp%in%bad_spp_goa,]
+	}
+	
+	
 	if(reg == "sa"){
 		bad_spp_sa <- "Stomolophus meleagris"
 		X.t <- X.t[!spp%in%bad_spp_sa,]
