@@ -19,7 +19,6 @@ process_msomStatic <- function(reg_out, save_mem=TRUE){
 	inputData <- lapply(reg_out, function(x)x$inputData)[!empty_ind]
 	info <- lapply(reg_out, function(x)x$info)[!empty_ind]
 	
-	
 	regs <- sapply(info, function(x)x["reg"])
 	stopifnot(lu(regs)==1)
 	reg <- unique(regs)
@@ -27,7 +26,33 @@ process_msomStatic <- function(reg_out, save_mem=TRUE){
 	langs <- unlist(sapply(info, function(x)x["language"]))
 	stopifnot(lu(langs)==1)
 	lang <- unique(langs)
-		
+	
+	
+	# =====================
+	# = Get Full Data Set =
+	# =====================
+	# ---- Makes [rd] ----
+	info_yrs <- sapply(info, function(x)as.integer(x['year']))
+	sub_reg <- reg
+	rd <- data_all[year %in% info_yrs & sub_reg==(reg)] # data_all is an object associated with the trawlDiversity package!
+	rd_yr <- rd[,sort(unique(year))]
+	
+	
+	# ================================================
+	# = Subset MSOM Output to Years in Full Data Set =
+	# ================================================
+	yr_match_msomSub <- info_yrs %in% rd_yr
+	out <- out[yr_match_msomSub]
+	inputData <- inputData[yr_match_msomSub]
+	info <- info[yr_match_msomSub]
+	info_yrs <- info_yrs[yr_match_msomSub]
+	
+	stopifnot(all(info_yrs==rd_yr))
+	
+	
+	# ======================================
+	# = Memory Save by Deleting from 'out' =
+	# ======================================
 	if(save_mem){
 		# rm(list="reg_out")
 		if(lang == "JAGS"){
@@ -39,14 +64,7 @@ process_msomStatic <- function(reg_out, save_mem=TRUE){
 	}
 	
 	
-	# =====================
-	# = Get Full Data Set =
-	# =====================
-	# ---- Makes [rd] ----
-	info_yrs <- sapply(info, function(x)as.integer(x['year']))
-	sub_reg <- reg
-	rd <- data_all[year %in% info_yrs & sub_reg==(reg)] # data_all is an object associated with the trawlDiversity package!
-	rd_yr <- rd[,sort(unique(year))]
+
 	
 	
 	# ================================================
@@ -74,7 +92,7 @@ process_msomStatic <- function(reg_out, save_mem=TRUE){
 	}
 	bt0 <- lapply(inputData, get_bt)	
 	bt2dt <- function(x,y)data.table(stratum=names(x), bt=x, year=y)
-	bt <- rbindlist(mapply(bt2dt, bt0, rd_yr, SIMPLIFY=FALSE))
+	bt <- rbindlist(mapply(bt2dt, bt0, info_yrs, SIMPLIFY=FALSE))
 
 	bt[,c("lon","lat","depth_interval"):=strat2lld(stratum)]
 	bt[,bt_col:=zCol(256, bt)]
@@ -86,7 +104,7 @@ process_msomStatic <- function(reg_out, save_mem=TRUE){
 	}
 	depth0 <- lapply(inputData, get_depth)	
 	depth2dt <- function(x,y)data.table(stratum=names(x), depth=x, year=y)
-	depth <- rbindlist(mapply(depth2dt, depth0, rd_yr, SIMPLIFY=FALSE))
+	depth <- rbindlist(mapply(depth2dt, depth0, info_yrs, SIMPLIFY=FALSE))
 
 	depth[,c("lon","lat","depth_interval"):=strat2lld(stratum)]
 	depth[,depth_col:=zCol(256, depth)]
@@ -114,7 +132,7 @@ process_msomStatic <- function(reg_out, save_mem=TRUE){
 	# ---- Species-specific Alpha and Beta Parameters ----
 	# ---- Makes [ab] ----
 	# Only for observed species (i.e., parameters that I can tie to a Latin name)
-	ab_all <- mapply(get_ab, inputData, out, rd_yr, SIMPLIFY=FALSE)
+	ab_all <- mapply(get_ab, inputData, out, info_yrs, SIMPLIFY=FALSE)
 	ab <- rbindlist(ab_all)
 	
 	
