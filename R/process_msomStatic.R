@@ -47,6 +47,8 @@ process_msomStatic <- function(reg_out, save_mem=TRUE){
 	info <- info[yr_match_msomSub]
 	info_yrs <- info_yrs[yr_match_msomSub]
 	
+	stopifnot(all(info_yrs==rd_yr))
+	
 	
 	# ======================================
 	# = Memory Save by Deleting from 'out' =
@@ -90,7 +92,7 @@ process_msomStatic <- function(reg_out, save_mem=TRUE){
 	}
 	bt0 <- lapply(inputData, get_bt)	
 	bt2dt <- function(x,y)data.table(stratum=names(x), bt=x, year=y)
-	bt <- rbindlist(mapply(bt2dt, bt0, rd_yr, SIMPLIFY=FALSE))
+	bt <- rbindlist(mapply(bt2dt, bt0, info_yrs, SIMPLIFY=FALSE))
 
 	bt[,c("lon","lat","depth_interval"):=strat2lld(stratum)]
 	bt[,bt_col:=zCol(256, bt)]
@@ -102,7 +104,7 @@ process_msomStatic <- function(reg_out, save_mem=TRUE){
 	}
 	depth0 <- lapply(inputData, get_depth)	
 	depth2dt <- function(x,y)data.table(stratum=names(x), depth=x, year=y)
-	depth <- rbindlist(mapply(depth2dt, depth0, rd_yr, SIMPLIFY=FALSE))
+	depth <- rbindlist(mapply(depth2dt, depth0, info_yrs, SIMPLIFY=FALSE))
 
 	depth[,c("lon","lat","depth_interval"):=strat2lld(stratum)]
 	depth[,depth_col:=zCol(256, depth)]
@@ -130,7 +132,7 @@ process_msomStatic <- function(reg_out, save_mem=TRUE){
 	# ---- Species-specific Alpha and Beta Parameters ----
 	# ---- Makes [ab] ----
 	# Only for observed species (i.e., parameters that I can tie to a Latin name)
-	ab_all <- mapply(get_ab, inputData, out, rd_yr, SIMPLIFY=FALSE)
+	ab_all <- mapply(get_ab, inputData, out, info_yrs, SIMPLIFY=FALSE)
 	ab <- rbindlist(ab_all)
 	
 	
