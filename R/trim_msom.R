@@ -99,8 +99,10 @@ trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tol
 	# ---- Cut out methodologically suspicious species ----
 	if(reg == "ebs"){
 		bad_spp_ebs <- c(
-			"Lepidopsetta polyxystra", # showed up in 1996 and was prolific ever since
-			"Chrysaora melanaste" # jellyfish, showed up in 2003 and slightly increasingly prevalent; more gradual in ai
+			"Lepidopsetta polyxystra", # showed up in 1996 and was prolific ever since; also line 182 in Kotwicki & Lauth
+			"Chrysaora melanaster", # jellyfish, showed up in 2003 and slightly increasingly prevalent; more gradual in ai
+			
+			"Bathyraja parmifera" # line 182 Kotwicki & Lauth draft MS
 		)
 		X.t <- X.t[!spp%in%bad_spp_ebs,]
 	}
@@ -124,7 +126,17 @@ trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tol
 	
 	
 	if(reg == "sa"){
-		bad_spp_sa <- "Stomolophus meleagris"
+		bad_spp_sa <- c(
+			"Limulus polyphemus", # horseshoe crab weren't previously ID'd
+			"Libinia dubia", # disappeared b/c they started aggregating to genus
+			"Libinia emarginata", # aggreagting to genus
+			"Anchoa hepsetus", # aggregating to genus; removed beforehand in trawlData clean.trimRow
+			"Anchoa lyolepis", # aggregating to genus; removed beforehand in trawlData clean.trimRow
+			"Anchoa mitchilli", # aggregating to genus; removed beforehand in trawlData clean.trimRow
+			"Anchoa cubana", # aggregating to genus; removed beforehand in trawlData clean.trimRow
+			# "Sciaenops ocellatus", # long line red drum
+			"Stomolophus meleagris" # cannonball jelly; started ID'ing late
+		)
 		X.t <- X.t[!spp%in%bad_spp_sa,]
 	}
 	if(reg == "newf"){
