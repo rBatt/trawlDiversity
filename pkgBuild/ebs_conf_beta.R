@@ -1,3 +1,9 @@
+
+library(trawlDiversity)
+
+setwd("~/Documents/School&Work/pinskyPost/trawl/")
+load("trawlDiversity/pkgBuild/results/processedMsom/p_new.RData")
+
 ebs_detect_fish <- fread("Detectability/Ebs Spp ID Confidence Fish.csv", header=TRUE)
 ebs_detect_inverts <- fread("Detectability/Ebs Spp ID Confidence Inverts.csv", header=TRUE)
 
@@ -17,6 +23,35 @@ conf <- det[spp_ind]
 p_beta <- p[[1]]$ab[par=="beta",list(beta=mean(value)), by=c("spp","year")]
 
 beta_conf <- merge(p_beta, conf, all=FALSE, by=c("spp","year"))
+
+
+# detability predicting colonizers?
+cdt <- p[[1]]$colonization$col_dt
+edt <- p[[1]]$colonization$ext_dt
+
+detect_spp <- conf[year>1983,lu(conf)>1, by="spp"][(V1),una(spp)]
+col_spp <- cdt[(col_logic)&year>1983,una(spp)]
+ext_spp <- edt[(col_logic)&year>1983,una(spp)]
+
+bad_col <- col_spp[col_spp%in%detect_spp]
+bad_ext <- ext_spp[ext_spp%in%detect_spp]
+
+# col_yr <- cdt[(col_logic)&year>1983, list(col=lu(spp)),keyby="year"]
+# ext_yr <- edt[(col_logic)&year>1983, list(ext=lu(spp)),keyby="year"]
+# r_yr <- merge(col_yr,ext_yr,all=TRUE)
+# r_yr[is.na(r_yr)] <- 0
+# r_yr[,r:=(col-ext)]
+# r_yr[,plot(year, r, type="o")]
+#
+# col_yr_fix <- cdt[(col_logic)&(!spp%in%bad_col)&year>1983, list(col=lu(spp)),keyby="year"]
+# ext_yr_fix <- edt[(col_logic)&(!spp%in%bad_ext)&year>1983, list(ext=lu(spp)),keyby="year"]
+# r_yr_fix <- merge(col_yr_fix,ext_yr_fix,all=TRUE)
+# r_yr_fix[is.na(r_yr_fix)] <- 0
+# r_yr_fix[,r:=(col-ext)]
+# r_yr_fix[,plot(year, r, type="o")]
+
+plot(data_all[reg=="ebs", lu(spp), keyby="year"], type="o")
+plot(data_all[reg=="ebs"&!spp%in%detect_spp, lu(spp), keyby="year"], type="o")
 
 
 
