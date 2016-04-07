@@ -1,3 +1,5 @@
+# nohup R CMD BATCH -cwd --no-save trawlDiversity/pkgBuild/temporary_rebuild_figures_process.R temporary_rebuild_figures_process.Rout &
+
 
 library("rstan")
 library("trawlDiversity")
