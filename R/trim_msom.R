@@ -100,9 +100,30 @@ trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tol
 	if(reg == "ebs"){
 		bad_spp_ebs <- c(
 			"Lepidopsetta polyxystra", # showed up in 1996 and was prolific ever since; also line 182 in Kotwicki & Lauth
-			"Chrysaora melanaster", # jellyfish, showed up in 2003 and slightly increasingly prevalent; more gradual in ai
+			"Bathyraja parmifera", # line 182 Kotwicki & Lauth draft MS
+			# "Chrysaora melanaster", # jellyfish, showed up in 2003 and slightly increasingly prevalent; more gradual in ai; but not mentioned as of variable detectabilty, and actually rated as a 1 (best detectability) in every year
 			
-			"Bathyraja parmifera" # line 182 Kotwicki & Lauth draft MS
+			# species that have variable detectability according to data providers
+			# "Bathyraja parmifera", # I already spotted this one
+			# "Lepidopsetta polyxystra", # I already spotted this one
+			"Acantholumpenus mackayi", "Atheresthes evermanni", "Atheresthes stomias", 
+			"Bathyraja aleutica", "Bathyraja interrupta", "Bathyraja maculata", 
+			 "Bathyraja taranetzi", "Boreogadus saida", 
+			"Careproctus rastrinus", "Ctenodiscus crispatus", "Elassochirus cavimanus", 
+			"Elassochirus tenuimanus", "Eurymen gyrinus", "Gymnocanthus detrisus", 
+			"Gymnocanthus galeatus", "Gymnocanthus pistilliger", "Gymnocanthus tricuspis", 
+			"Hemilepidotus papilio", "Isopsetta isolepis", "Labidochirus splendescens", 
+			"Lepidopsetta bilineata", "Leptychaster anomalus", 
+			"Lumpenella longirostris", "Lumpenus fabricii", "Lumpenus medius", 
+			"Lumpenus sagitta", "Myoxocephalus jaok", "Myoxocephalus polyacanthocephalus", 
+			"Myoxocephalus verrucosus", "Octopus dofleini", "Pagurus aleuticus", 
+			"Pagurus beringanus", "Pagurus brandti", "Pagurus capillatus", 
+			"Pagurus confragosus", "Pagurus cornutus", "Pagurus dalli", "Pagurus kennerlyi", 
+			"Pagurus ochotensis", "Pagurus rathbuni", "Pagurus tanneri", 
+			"Pagurus trigonocheirus", "Podothecus veternus", "Poroclinus rothrocki", 
+			"Raja binoculata", "Sebastes aleutianus", "Sebastes melanostictus", 
+			"Stichaeus punctatus"
+			
 		)
 		X.t <- X.t[!spp%in%bad_spp_ebs,]
 	}
