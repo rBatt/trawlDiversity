@@ -4,11 +4,12 @@
 #' 
 #' @param reg_out A list with length equal to number of years in a region, with each element containing output from run_msom
 #' @param save_mem Save memory be deleting intermediate steps as function progresses; default TRUE (only reason for FALSE is for debugging)
+#' @param obs_yrs Optional vector of integers of calendar years used to process richness from observed data; used to subset years of MSOM analysis
 #' 
 #' @details Right now only intended for use with specific structuring of the output, so that it matches the output expected from running each year separately using the Stan version of the msomStatic model.
 #' 
 #' @export
-process_msomStatic <- function(reg_out, save_mem=TRUE){
+process_msomStatic <- function(reg_out, save_mem=TRUE, obs_yrs){
 	
 	# ====================
 	# = Organize Read-in =
@@ -34,20 +35,23 @@ process_msomStatic <- function(reg_out, save_mem=TRUE){
 	# ---- Makes [rd] ----
 	info_yrs <- sapply(info, function(x)as.integer(x['year']))
 	sub_reg <- reg
-	rd <- data_all[year %in% info_yrs & sub_reg==(reg)] # data_all is an object associated with the trawlDiversity package!
-	rd_yr <- rd[,sort(unique(year))]
+	# rd <- data_all[year %in% info_yrs & sub_reg==(reg)] # data_all is an object associated with the trawlDiversity package!
+	# rd_yr <- rd[,sort(unique(year))]
 	
 	
 	# ================================================
 	# = Subset MSOM Output to Years in Full Data Set =
 	# ================================================
-	yr_match_msomSub <- info_yrs %in% rd_yr
-	out <- out[yr_match_msomSub]
-	inputData <- inputData[yr_match_msomSub]
-	info <- info[yr_match_msomSub]
-	info_yrs <- info_yrs[yr_match_msomSub]
+	if(!missing(obs_yrs)){
+		yr_match_msomSub <- info_yrs %in% rd_yr
+		out <- out[yr_match_msomSub]
+		inputData <- inputData[yr_match_msomSub]
+		info <- info[yr_match_msomSub]
+		info_yrs <- info_yrs[yr_match_msomSub]
 	
-	stopifnot(all(info_yrs==rd_yr))
+		# stopifnot(all(info_yrs==rd_yr))
+	}
+
 	
 	
 	# ======================================
@@ -71,45 +75,45 @@ process_msomStatic <- function(reg_out, save_mem=TRUE){
 	# = Get Colonization Patterns from Observations =
 	# ================================================
 	# ---- Makes [colonization] ----
-	colonization <- get_colonizers(d=rd)
+	# colonization <- get_colonizers(d=rd)
 	
 	
 	# ==============
 	# = Covariates =
 	# ==============
-	strat2lld <- function(x){
-		s <- strsplit(x, split=" ")
-		lon <- sapply(s, function(x)x[1])
-		lat <- sapply(s, function(x)x[2])
-		depth_interval <- sapply(s, function(x)x[3])
-		data.table(lon=as.numeric(lon), lat=as.numeric(lat), depth_interval=as.numeric(depth_interval))
-	} 
-	
-	# ---- Bottom Temperature ----
-	# ---- Makes [bt] ----
-	get_bt <- function(id){
-		(id$U[,"bt"]*id$scaling["btemp.sd"]) + id$scaling["btemp.mu"]
-	}
-	bt0 <- lapply(inputData, get_bt)	
-	bt2dt <- function(x,y)data.table(stratum=names(x), bt=x, year=y)
-	bt <- rbindlist(mapply(bt2dt, bt0, info_yrs, SIMPLIFY=FALSE))
-
-	bt[,c("lon","lat","depth_interval"):=strat2lld(stratum)]
-	bt[,bt_col:=zCol(256, bt)]
-	
-	# ---- Depth ----
-	# ---- Adds to [bt] ----
-	get_depth <- function(id){
-		(id$U[,"depth"]*id$scaling["depth.sd"]) + id$scaling["depth.mu"]
-	}
-	depth0 <- lapply(inputData, get_depth)	
-	depth2dt <- function(x,y)data.table(stratum=names(x), depth=x, year=y)
-	depth <- rbindlist(mapply(depth2dt, depth0, info_yrs, SIMPLIFY=FALSE))
-
-	depth[,c("lon","lat","depth_interval"):=strat2lld(stratum)]
-	depth[,depth_col:=zCol(256, depth)]
-	
-	bt <- merge(bt, depth, by=c("stratum","lon","year","lat","depth_interval"), all=TRUE)
+	# strat2lld <- function(x){
+	# 	s <- strsplit(x, split=" ")
+	# 	lon <- sapply(s, function(x)x[1])
+	# 	lat <- sapply(s, function(x)x[2])
+	# 	depth_interval <- sapply(s, function(x)x[3])
+	# 	data.table(lon=as.numeric(lon), lat=as.numeric(lat), depth_interval=as.numeric(depth_interval))
+	# }
+	#
+	# # ---- Bottom Temperature ----
+	# # ---- Makes [bt] ----
+	# get_bt <- function(id){
+	# 	(id$U[,"bt"]*id$scaling["btemp.sd"]) + id$scaling["btemp.mu"]
+	# }
+	# bt0 <- lapply(inputData, get_bt)
+	# bt2dt <- function(x,y)data.table(stratum=names(x), bt=x, year=y)
+	# bt <- rbindlist(mapply(bt2dt, bt0, info_yrs, SIMPLIFY=FALSE))
+	#
+	# bt[,c("lon","lat","depth_interval"):=strat2lld(stratum)]
+	# bt[,bt_col:=zCol(256, bt)]
+	#
+	# # ---- Depth ----
+	# # ---- Adds to [bt] ----
+	# get_depth <- function(id){
+	# 	(id$U[,"depth"]*id$scaling["depth.sd"]) + id$scaling["depth.mu"]
+	# }
+	# depth0 <- lapply(inputData, get_depth)
+	# depth2dt <- function(x,y)data.table(stratum=names(x), depth=x, year=y)
+	# depth <- rbindlist(mapply(depth2dt, depth0, info_yrs, SIMPLIFY=FALSE))
+	#
+	# depth[,c("lon","lat","depth_interval"):=strat2lld(stratum)]
+	# depth[,depth_col:=zCol(256, depth)]
+	#
+	# bt <- merge(bt, depth, by=c("stratum","lon","year","lat","depth_interval"), all=TRUE)
 	
 	
 	# ====================================================
@@ -191,7 +195,7 @@ process_msomStatic <- function(reg_out, save_mem=TRUE){
 	# ---- Richness in the Region ----
 	Omega_iter <- param_iters[,list(year,Omega)] #lapply(out, get_iters, pars="Omega", lang="JAGS")
 	Omega_mean <- Omega_iter[,mean(Omega), by="year"][,V1] #sapply(Omega_iter, function(x)x[,mean(Omega)])
-	naive_rich <- sapply(inputData, function(x)x$N)
+	# naive_rich <- sapply(inputData, function(x)x$N)
 	rich_pureModel <- Omega_mean * sapply(inputData, function(x)x$nS)
 	
 	if(lang=="Stan"){
@@ -220,17 +224,13 @@ process_msomStatic <- function(reg_out, save_mem=TRUE){
 		}
 	}
 	
-	# get unobserved but present species
-	unobs_rich <- reg_rich - naive_rich
-	frac_unobs_rich <- unobs_rich/reg_rich
-	
 	# create processed object
-	processed <- data.table(reg = reg, year=rd_yr, Omega=Omega_mean, reg_rich=reg_rich, naive_rich=naive_rich, unobs_rich=unobs_rich)
-	processed <- merge(processed, colonization$n_cep, by="year", all=TRUE)
-	processed <- merge(processed, bt[,list(bt_ann=mean(bt)), by="year"], by="year", all=TRUE)
+	processed <- data.table(reg = reg, year=rd_yr, Omega=Omega_mean, reg_rich=reg_rich, unobs_rich=unobs_rich)
+	# processed <- merge(processed, colonization$n_cep, by="year", all=TRUE)
+	# processed <- merge(processed, bt[,list(bt_ann=mean(bt)), by="year"], by="year", all=TRUE)
 	
 
-	return(list(rd=rd, colonization=colonization, bt=bt, param_iters=param_iters, processed=processed, ab=ab, alpha_unscale=alpha_unscale))
+	return(list(param_iters=param_iters, processed=processed, ab=ab, alpha_unscale=alpha_unscale))
 	
 }
 	
