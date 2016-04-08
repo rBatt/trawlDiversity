@@ -4,12 +4,14 @@
 \alias{process_msomStatic}
 \title{Process Output from msomStatic (annual)}
 \usage{
-process_msomStatic(reg_out, save_mem = TRUE)
+process_msomStatic(reg_out, save_mem = TRUE, obs_yrs)
 }
 \arguments{
 \item{reg_out}{A list with length equal to number of years in a region, with each element containing output from run_msom}
 
 \item{save_mem}{Save memory be deleting intermediate steps as function progresses; default TRUE (only reason for FALSE is for debugging)}
+
+\item{obs_yrs}{Optional vector of integers of calendar years used to process richness from observed data; used to subset years of MSOM analysis}
 }
 \description{
 Processes a list structured as run_msom output (level 2) within a year (level 1) to be used to summarize diversity. Note that this function then only processes 1 region at a time, so it expects a list whose length is equal to the number of years for a region. Currently, intended to work with Stan model.
