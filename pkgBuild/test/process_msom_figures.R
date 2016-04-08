@@ -46,8 +46,8 @@ for(reg_num in 1:length(p)){
 
 
 	# ---- Figure 6 ----
-	Figures <- plot_col_vs_unobsSpp(t_prn, Figures)
-	dev.off()
+	# Figures <- plot_col_vs_unobsSpp(t_prn, Figures)
+	# dev.off()
 
 
 	# ---- Figure 7 ----
