@@ -43,7 +43,7 @@ process_msomStatic <- function(reg_out, save_mem=TRUE, obs_yrs){
 	# = Subset MSOM Output to Years in Full Data Set =
 	# ================================================
 	if(!missing(obs_yrs)){
-		yr_match_msomSub <- info_yrs %in% rd_yr
+		yr_match_msomSub <- info_yrs %in% obs_yrs
 		out <- out[yr_match_msomSub]
 		inputData <- inputData[yr_match_msomSub]
 		info <- info[yr_match_msomSub]
@@ -129,7 +129,7 @@ process_msomStatic <- function(reg_out, save_mem=TRUE, obs_yrs){
 	
 	param_iters <- list()
 	for(i in 1:length(out)){
-		param_iters[[i]] <- data.table(reg=reg, year=rd_yr[i], get_iters(out[[i]], pars_trace, lang))
+		param_iters[[i]] <- data.table(reg=reg, year=info_yrs[i], get_iters(out[[i]], pars_trace, lang))
 	}
 	param_iters <- rbindlist(param_iters)
 	
@@ -225,7 +225,7 @@ process_msomStatic <- function(reg_out, save_mem=TRUE, obs_yrs){
 	}
 	
 	# create processed object
-	processed <- data.table(reg = reg, year=rd_yr, Omega=Omega_mean, reg_rich=reg_rich, unobs_rich=unobs_rich)
+	processed <- data.table(reg = reg, year=info_yrs, Omega=Omega_mean, reg_rich=reg_rich, unobs_rich=unobs_rich)
 	# processed <- merge(processed, colonization$n_cep, by="year", all=TRUE)
 	# processed <- merge(processed, bt[,list(bt_ann=mean(bt)), by="year"], by="year", all=TRUE)
 	
