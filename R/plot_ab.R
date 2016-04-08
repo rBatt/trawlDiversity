@@ -31,8 +31,14 @@ plot_ab <- function(X, t_spp, plt_img=TRUE, plt_pts=TRUE, ...){
 	fin <- par("fin")[2]
 	fac <- 0.01*fin^3/2
 	
-	mu <- X[,list(mu=mean(value)),by="year"]
-	if(plt_pts){
+	nX <- names(X)
+	has_full_dist <- "value" %in% nX
+	if(has_full_dist){
+		mu <- X[,list(mu=mean(value)),by="year"]
+	}else{
+		mu <- X[,list(mu=mean(value_mu)),by="year"] # the aggregation shouldn't actually be necessary
+	}
+	if(plt_pts & has_full_dist){
 		plot(X[,year], X[,value], col=adjustcolor('gray', fac), cex=0.5, pch=21, bg=adjustcolor('white',fac), ...)
 		mu[,lines(year, mu, lwd=2, col='gray')]
 	}else{
