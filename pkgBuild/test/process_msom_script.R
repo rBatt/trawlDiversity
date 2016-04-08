@@ -69,6 +69,8 @@ reg_file <- c(
 
 p <- list()
 for(i in 1:length(reg_file)){
+	cat(i)
+	
 	load(paste0("trawlDiversity/pkgBuild/results/", reg_file[i]))
 	
 	reg_results_ind <- which(sapply(rm_out, function(x)!is.null(x)))
