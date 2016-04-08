@@ -1,4 +1,6 @@
 
+# nohup R CMD BATCH -cwd --no-save trawlDiversity/pkgBuild/test/process_msom_script.R process_msom_script.Rout &
+
 library("rstan")
 library("trawlDiversity")
 library("rbLib")
@@ -82,6 +84,11 @@ for(i in 1:length(reg_file)){
 	msom_yrs <- p[[i]]$processed[,sort(una(year))]
 	p_obs <- process_obsRich(X=t_X, msom_yrs=msom_yrs)
 	p[[i]] <- c(p[[i]],p_obs)
+	
+	t_proc <- p[[i]]$processed
+	t_proc <- merge(t_proc, p_obs$colonization$n_cep, by="year", all=TRUE)
+	t_proc <- merge(t_proc, p_obs$bt[,list(bt_ann=mean(bt,na.rm=TRUE)), by="year"], by="year", all=TRUE)
+	p[[i]]$processed <- t_proc
 	
 	rm(list="rm_out")
 	gc()
