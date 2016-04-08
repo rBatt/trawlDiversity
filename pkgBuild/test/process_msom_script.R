@@ -8,7 +8,8 @@ library("maps")
 setwd("~/Documents/School&Work/pinskyPost/trawl")
 
 reg_file <- c(
-	"msomStatic_norv_1yr_ebs_jags_6kIter_50nZ_start2016-03-22_r1.RData", # ebs 6k iter -- converged, mostly
+	"msomStatic_norv_1yr_ebs_jags_12kIter_50nZ_start2016-04-04_r1.RData", # ebs
+	# "msomStatic_norv_1yr_ebs_jags_6kIter_50nZ_start2016-03-22_r1.RData", # ebs 6k iter -- converged, mostly
 	# "msomStatic_norv_1yr_ebs_jags_6kIter_89nZ_start2016-03-13_r1.RData", # ebs 6k iter
 	# "msomStatic_norv_1yr_ebs_jags_start2016-03-10_16-44-44_r1.RData", # ebs 6k iter, converged
 	
@@ -18,7 +19,8 @@ reg_file <- c(
 	# "msomStatic_norv_1yr_ai_jags_start2016-03-11_16-01-45_r2.RData", #ai 6k iter, didn't converge
 	# "msomStatic_norv_1yr_ai_jags_start2016-03-06_19-10-49_r2.RData", # ai 30k iter, didn't converge
 	
-	"msomStatic_norv_1yr_goa_jags_12kIter_50nZ_start2016-03-23_r3.RData", # goa 12k iter --- converged
+	"msomStatic_norv_1yr_goa_jags_12kIter_50nZ_start2016-04-05_r3.RData", # goa 12k iter
+	# "msomStatic_norv_1yr_goa_jags_12kIter_50nZ_start2016-03-23_r3.RData", # goa 12k iter --- converged
 	# "msomStatic_norv_1yr_goa_jags_60kIter_62nZ_start2016-03-15_r3.RData", # goa 60k iter, not converged by improving
 	# "msomStatic_norv_1yr_goa_jags_start2016-03-11_17-55-00_r3.RData", # goa 6k iter, didn't converge
 	# "msomStatic_norv_1yr_goa_jags_start2016-03-07_06-21-58_r3.RData", # goa 30k iter, didn't converge
@@ -46,8 +48,8 @@ reg_file <- c(
 	# "msomStatic_norv_1yr_sa_jags_start2016-03-12_04-26-53_r7.RData", # sa, 6k iter, almost converged, but too few n0 spp
 	# "msomStatic_norv_1yr_sa_jags_start2016-03-06_16-15-08_r7.RData", # sa, 30k iter, very nearly converged, but too few n0 spp
 	
-	
-	"msomStatic_norv_1yr_neus_jags_12kIter_50nZ_start2016-03-24_r8.RData", # neus, 10k iter -- pretty good convergence, some posterior correlation, e.g.,between Omega and alpha1
+	"msomStatic_norv_1yr_neus_jags_12kIter_50nZ_start2016-04-04_r8.RData", # neus 12k iter
+	# "msomStatic_norv_1yr_neus_jags_12kIter_50nZ_start2016-03-24_r8.RData", # neus, 10k iter -- pretty good convergence, some posterior correlation, e.g.,between Omega and alpha1
 	# "msomStatic_norv_1yr_neus_jags_10kIter_230nZ_start2016-03-19_r8.RData", # neus, 10k iter, mostly converged, some years too few n0 spp
 	# "msomStatic_norv_1yr_neus_jags_start2016-03-12_06-01-10_r8.RData", # neus, 6k iter, mostly converged, but too few n0 spp
 	
@@ -74,6 +76,12 @@ for(i in 1:length(reg_file)){
 	
 	
 	p[[i]] <- process_msomStatic(rm_out)
+	
+	t_reg <- p[[i]]$processed[,una(reg)]
+	t_X <- data_all[reg==t_reg]
+	msom_yrs <- p[[i]]$processed[,sort(una(year))]
+	p_obs <- process_obsRich(X=t_X, msom_yrs=msom_yrs)
+	p[[i]] <- c(p[[i]],p_obs)
 	
 	rm(list="rm_out")
 	gc()
