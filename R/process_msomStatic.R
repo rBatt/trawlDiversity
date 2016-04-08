@@ -225,7 +225,7 @@ process_msomStatic <- function(reg_out, save_mem=TRUE, obs_yrs){
 	}
 	
 	# create processed object
-	processed <- data.table(reg = reg, year=info_yrs, Omega=Omega_mean, reg_rich=reg_rich, unobs_rich=unobs_rich)
+	processed <- data.table(reg = reg, year=info_yrs, Omega=Omega_mean, reg_rich=reg_rich)
 	# processed <- merge(processed, colonization$n_cep, by="year", all=TRUE)
 	# processed <- merge(processed, bt[,list(bt_ann=mean(bt)), by="year"], by="year", all=TRUE)
 	
