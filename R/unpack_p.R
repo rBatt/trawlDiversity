@@ -15,6 +15,7 @@ unpack_p <- function(p_rn){
 	colonization <<- p_rn$colonization
 	param_iters <<- p_rn$param_iters
 	ab <<- p_rn$ab
+	naive_rich <<- p_rn$naive_rich
 
 	reg <<- processed[,una(reg)]
 	lang <<- "JAGS"
@@ -27,7 +28,7 @@ unpack_p <- function(p_rn){
 
 	naive_rich <<- naive_rich[,naive_rich, keyby='year']
 	reg_rich <<- processed[,reg_rich, keyby='year']
-	bt_ann <<- bt[,list(bt_ann=mean(bt)), keyby='year']
+	bt_ann <<- bt[,list(bt_ann=mean(bt, na.rm=TRUE)), keyby='year']
 
 	n_pars <<- length(pars_trace)
 	n_yrs <<- param_iters[,lu(year)]
