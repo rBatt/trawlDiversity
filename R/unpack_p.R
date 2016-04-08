@@ -25,7 +25,7 @@ unpack_p <- function(p_rn){
 		pars_trace <<- c("Omega","alpha_mu[1]", "alpha_mu[2]", "alpha_mu[3]", "alpha_mu[4]", "alpha_mu[5]", "beta_mu")
 	}
 
-	naive_rich <<- processed[,naive_rich, keyby='year']
+	naive_rich <<- naive_rich[,naive_rich, keyby='year']
 	reg_rich <<- processed[,reg_rich, keyby='year']
 	bt_ann <<- bt[,list(bt_ann=mean(bt)), keyby='year']
 
