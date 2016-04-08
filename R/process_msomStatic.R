@@ -138,7 +138,6 @@ process_msomStatic <- function(reg_out, save_mem=TRUE, obs_yrs){
 	# Only for observed species (i.e., parameters that I can tie to a Latin name)
 	ab_all <- mapply(get_ab, inputData, out, info_yrs, SIMPLIFY=FALSE)
 	ab <- rbindlist(ab_all)
-	ab <- ab[,list(value_mu=mean(value), value_sd=sd(value)),by=c("parameter","par","ab_ind","spp_id","spp","year")]
 	
 	# ---- Unscale Alpha ----
 	# ---- Makes [alpha_unscale] ----
@@ -160,6 +159,7 @@ process_msomStatic <- function(reg_out, save_mem=TRUE, obs_yrs){
 	scaling[,year:=as.numeric(sapply(info, function(x)x["year"]))]
 	ab2 <- merge(ab, scaling, by="year")
 	alpha_unscale <- ab2[par=="alpha", unscale_ab(.SD),by=c("spp","spp_id","year")]
+	ab <- ab[,list(value_mu=mean(value), value_sd=sd(value)),by=c("parameter","par","ab_ind","spp_id","spp","year")]
 	rm(list="ab2")
 	
 	
