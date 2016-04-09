@@ -24,54 +24,37 @@ for(reg_num in 1:length(p)){
 	# ===========
 
 	# ---- Figure 1 ----
-	Figures <- plot_rich_bt_ts(t_prn, Figures)
-	dev.off()
+	Figures <- plot_rich_bt_ts(t_prn, Figures, FUN="pdf")
 
 	# ---- Figure 2 ----
-	Figures <- plot_rich_bt_scatter(t_prn, Figures)
-	dev.off()
+	Figures <- plot_rich_bt_scatter(t_prn, Figures, FUN="pdf")
 
 	# ---- Figure 3 ----
-	Figures <- plot_btemp_map(t_prn, Figures)
-	dev.off()
+	Figures <- plot_btemp_map(t_prn, Figures, FUN="pdf")
 	
 	# ---- Figure 4 ----
-	Figures <- plot_traceplot(t_prn, Figures)
-	dev.off()
-
+	Figures <- plot_traceplot(t_prn, Figures, FUN="pdf")
 
 	# ---- Figure 5 ----
-	Figures <- plot_post_corr(t_prn, Figures, yr=1)
-	dev.off()
-
+	Figures <- plot_post_corr(t_prn, Figures, yr=1, FUN="pdf")
 
 	# ---- Figure 6 ----
-	# Figures <- plot_col_vs_unobsSpp(t_prn, Figures)
-	# dev.off()
-
+	# Figures <- plot_col_vs_unobsSpp(t_prn, Figures, FUN="pdf")
 
 	# ---- Figure 7 ----
 	# ---- Number of Colonizations per Stratum ----	
-	Figures <- plot_colExt_perStrat(t_prn, Figures)
-	dev.off()
+	Figures <- plot_colExt_perStrat(t_prn, Figures, FUN="pdf")
 
 	# ---- Figure 8 ----
 	# ---- Plot Information and Identity of Colonizers, Leavers, etc ----
-	Figures <- plot_ce_wrap(t_prn, Figures, spp_cat="col", width.max=12, height.max=18, max_spp_columns=12)
-	dev.off()
-	Figures <- plot_ce_wrap(t_prn, Figures, spp_cat="ext", width.max=12, height.max=18, max_spp_columns=12)
-	dev.off()
-	Figures <- plot_ce_wrap(t_prn, Figures, spp_cat="both", width.max=12, height.max=18, max_spp_columns=12)
-	dev.off()
-	
-	
+	Figures <- plot_ce_wrap(t_prn, Figures, spp_cat="col", width.max=12, height.max=18, max_spp_columns=12, FUN="pdf")
+	Figures <- plot_ce_wrap(t_prn, Figures, spp_cat="ext", width.max=12, height.max=18, max_spp_columns=12, FUN="pdf")
+	Figures <- plot_ce_wrap(t_prn, Figures, spp_cat="both", width.max=12, height.max=18, max_spp_columns=12, FUN="pdf")
 	
 	# ---- Figure 9:  ----
 	# ---- Plot Number of Colonizers, Leavers, and Plot Temp Rank ----
-	Figures <- plot_rank_temp(t_prn, Figures)
-	dev.off()
+	Figures <- plot_rank_temp(t_prn, Figures, FUN="pdf")
 	
-	# graphics.off()
 }
 
 # ==========================
@@ -101,20 +84,27 @@ plot_Figures <- function(x, FUN, ...){
 # }
 
 
-# do region 1 figures
 for(i in 1:length(p)){
-	td <- tempdir()
 	od <- getwd()
-	setwd(td)
 	
 	fig_names <- c()
+	td <- c()
 	for(f in 1:length(Figures[[i]])){
-		fig_names[f] <- plot_Figures(Figures[[i]][[f]], "pdf")
+		f_l <- Figures[[reg]][[f]][["fig_loc"]]
+		if(!is.null(f_l)){
+			fig_names[f] <- f_l
+			td[f] <- od
+		}else{
+			td[f] <- tempdir()
+			setwd(td[f])
+			fig_names[f] <- plot_Figures(Figures[[i]][[f]], "pdf")
+			setwd(od)
+		}
 	}
-	ins <- file.path(td, fig_names) #list.files(td, pattern="*.pdf", full.names=TRUE, include.dirs=TRUE)
+	ins <- file.path(td, fig_names) 
 	i_reg <- p[[i]]$rd[,una(reg)]
 	save_name <- paste0(od, "/trawlDiversity/pkgBuild/figures/new_processed_msom_figures_", i_reg, ".pdf")
-	combine_pdf(ins, shQuote(save_name, "cmd"))
+	combine_pdf(shQuote(ins, "cmd"), shQuote(save_name, "cmd"))
 	
 	setwd(od)
 }
