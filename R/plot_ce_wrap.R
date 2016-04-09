@@ -64,7 +64,7 @@ plot_ce_wrap <- function(prn, Figures, spp_cat=c("col","ext","both","neither"), 
 	}
 	
 	if(!"max_spp_columns"%in%names(list(...))){
-		max_spp_columns <- formals(plot_ce_setup$max_spp_columns)
+		max_spp_columns <- formals(plot_ce_setup)$max_spp_columns
 	}else{
 		max_spp_columns <- list(...)$max_spp_columns
 	}
