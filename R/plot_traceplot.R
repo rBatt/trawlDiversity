@@ -15,20 +15,27 @@
 #' There are several functions that are run through the process_msom_figures script. Richness and temperature plots are \code{\link{plot_btemp_map}}, \code{\link{plot_rich_bt_scatter}}, and \code{\link{plot_rich_bt_ts}}. Figures for colonization, extinction, and the species and places associated with those processes are \code{\link{plot_ce_wrap}}, \code{\link{plot_col_vs_unobsSpp}}, \code{\link{plot_colExt_perStrat}}, and \code{\link{plot_rank_temp}}. Figures for diagnostics are \code{\link{plot_traceplot}} and \code{\link{plot_post_corr}}.
 #' 
 #' @export
-plot_traceplot <- function(prn, Figures){
+plot_traceplot <- function(prn, Figures, FUN="dev.new",  ...){
 	unpack_p(prn)
 	
 	if(missing(Figures)){
 		Figures <- list()
 	}
 	
+	fig_num <- "Figure4"
+	
 	fig4_name <- paste0("traceplot_", reg, ".png")
 	f4_mfrow <- c(n_pars, n_yrs)
 	f4_height <- 5
 	f4_width <- f4_mfrow[2]*f4_height/f4_mfrow[1]
 	fig4_dim <- c(f4_width, f4_height)
+	
+	Figures[[reg]][[fig_num]][["figure"]] <- list()
+	Figures[[reg]][[fig_num]][["name"]] <- fig4_name
+	Figures[[reg]][[fig_num]][["dim"]] <- fig4_dim
+	
+	Figures[[reg]][[fig_num]] <- plot_device(Figures[[reg]][[fig_num]], FUN, ...)
 
-	dev.new(width=f4_width, height=f4_height)
 	par(mfrow=f4_mfrow, oma=c(1,1, 1,0.1), mar=c(0.5,0.5,0.1,0.1), mgp=c(0.25,0.1,0), tcl=-0.1, cex=1, ps=6)
 	
 	for(h in 1:length(pars_trace)){
@@ -42,9 +49,12 @@ plot_traceplot <- function(prn, Figures){
 		}
 	}
 	
-	Figures[[reg]][['Figure4']][["figure"]] <- recordPlot()
-	Figures[[reg]][['Figure4']][["name"]] <- fig4_name
-	Figures[[reg]][['Figure4']][["dim"]] <- fig4_dim
+	if(is.null(Figures[[reg]][[fig_num]][["fig_loc"]])){
+		Figures[[reg]][[fig_num]][["figure"]] <- recordPlot()
+	}else{
+		Figures[[reg]][[fig_num]][["figure"]] <- NULL
+		dev.off()
+	}
 	
 	return(Figures)
 }

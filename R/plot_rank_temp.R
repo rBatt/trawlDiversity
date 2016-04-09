@@ -15,7 +15,7 @@
 #' There are several functions that are run through the process_msom_figures script. Richness and temperature plots are \code{\link{plot_btemp_map}}, \code{\link{plot_rich_bt_scatter}}, and \code{\link{plot_rich_bt_ts}}. Figures for colonization, extinction, and the species and places associated with those processes are \code{\link{plot_ce_wrap}}, \code{\link{plot_col_vs_unobsSpp}}, \code{\link{plot_colExt_perStrat}}, and \code{\link{plot_rank_temp}}. Figures for diagnostics are \code{\link{plot_traceplot}} and \code{\link{plot_post_corr}}.
 #' 
 #' @export
-plot_rank_temp <- function(prn, Figures){
+plot_rank_temp <- function(prn, Figures, FUN="dev.new", ...){
 	requireNamespace("beanplot", quietly=TRUE)
 	
 	unpack_p(prn)
@@ -24,6 +24,7 @@ plot_rank_temp <- function(prn, Figures){
 		Figures <- list()
 	}
 	
+	fig_num <- "Figure9"
 	
 	tr <- rank_temp(rd)
 	tr2 <- tr[[2]]
@@ -33,7 +34,13 @@ plot_rank_temp <- function(prn, Figures){
 	tr2[!spp%in%spp_ext & !spp%in%spp_col, status:="neither"]
 	
 	f_dim <- c(3.5, 6)
-	dev.new(width=f_dim[1], height=f_dim[2])
+	
+	Figures[[reg]][[fig_num]][["figure"]] <- list()
+	Figures[[reg]][[fig_num]][["name"]] <- paste0("nCat_tRank_", reg, ".png")
+	Figures[[reg]][[fig_num]][["dim"]] <- f_dim
+	
+	Figures[[reg]][[fig_num]] <- plot_device(Figures[[reg]][[fig_num]], FUN, ...)
+	
 	par(mfrow=c(2,1), mar=c(2,2,1,0.1), mgp=c(1,0.1,0), tcl=-0.1, cex=1, ps=8)
 	tr2[,j={
 		nc <- sum(status=="colonizer")
@@ -63,10 +70,12 @@ plot_rank_temp <- function(prn, Figures){
 	
 	tr2[,j={beanplot(bt_mean_rank~status, ylab="Species Temperature Rank", main=reg, border=bLine, col=beanCol, ll=0.01, beanlinewd=1.5);NULL}] 
 	
-	
-	Figures[[reg]][['Figure9']][["figure"]] <- recordPlot()
-	Figures[[reg]][['Figure9']][["name"]] <- paste0("nCat_tRank", reg, ".png")
-	Figures[[reg]][['Figure9']][["dim"]] <- f_dim
+	if(is.null(Figures[[reg]][[fig_num]][["fig_loc"]])){
+		Figures[[reg]][[fig_num]][["figure"]] <- recordPlot()
+	}else{
+		Figures[[reg]][[fig_num]][["figure"]] <- NULL
+		dev.off()
+	}
 	
 	return(Figures)
 }

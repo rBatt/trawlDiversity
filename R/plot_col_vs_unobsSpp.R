@@ -18,25 +18,35 @@
 #' 
 #' @export
 
-plot_col_vs_unobsSpp <- function(prn, Figures){
+plot_col_vs_unobsSpp <- function(prn, Figures, FUN="dev.new", ...){
 	unpack_p(prn)
 	
 	if(missing(Figures)){
 		Figures <- list()
 	}
 	
+	fig_num <- "Figure6"
+	
 	fig6_name <- paste0("Colonization_UnobsSpp_", reg, ".png")
 	fig6_dim <- c(3.5, 3.5)
 	
-	dev.new(fig6_dim[1], fig6_dim[2])
+	Figures[[reg]][[fig_num]][["figure"]] <- list()
+	Figures[[reg]][[fig_num]][["name"]] <- fig6_name
+	Figures[[reg]][[fig_num]][["dim"]] <- fig6_dim
+	
+	Figures[[reg]][[fig_num]] <- plot_device(Figures[[reg]][[fig_num]], FUN, ...)
+	
 	par(mar=c(1.75,1.75,0.2,0.2), cex=1, ps=8, mgp=c(0.85,0.1,0), tcl=-0.1)
 	processed[,plot(unobs_rich[-length(unobs_rich)], n_col[-1], xlab="Unobserved species present last year", ylab="Species colonizing this year")]
 	mtext(reg, side=3)
 	abline(a=0, b=1)
 	
-	Figures[[reg]][['Figure6']][["figure"]] <- recordPlot()
-	Figures[[reg]][['Figure6']][["name"]] <- fig6_name
-	Figures[[reg]][['Figure6']][["dim"]] <- fig6_dim
+	if(is.null(Figures[[reg]][[fig_num]][["fig_loc"]])){
+		Figures[[reg]][[fig_num]][["figure"]] <- recordPlot()
+	}else{
+		Figures[[reg]][[fig_num]][["figure"]] <- NULL
+		dev.off()
+	}
 	
 	return(Figures)
 }

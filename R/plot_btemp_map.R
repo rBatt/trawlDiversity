@@ -15,12 +15,14 @@
 #' There are several functions that are run through the process_msom_figures script. Richness and temperature plots are \code{\link{plot_btemp_map}}, \code{\link{plot_rich_bt_scatter}}, and \code{\link{plot_rich_bt_ts}}. Figures for colonization, extinction, and the species and places associated with those processes are \code{\link{plot_ce_wrap}}, \code{\link{plot_col_vs_unobsSpp}}, \code{\link{plot_colExt_perStrat}}, and \code{\link{plot_rank_temp}}. Figures for diagnostics are \code{\link{plot_traceplot}} and \code{\link{plot_post_corr}}.
 #' 
 #' @export
-plot_btemp_map <- function(prn, Figures){
+plot_btemp_map <- function(prn, Figures, FUN="dev.new", ...){
 	unpack_p(prn)
 	
 	if(missing(Figures)){
 		Figures <- list()
 	}
+	
+	fig_num <- "Figure3"
 	
 	fig3_name <- paste0("btempMap_", reg, ".png")
 	f3_mfrow <- auto.mfrow(n_yrs)
@@ -28,7 +30,12 @@ plot_btemp_map <- function(prn, Figures){
 	f3_width <- f3_mfrow[2]*f3_height/f3_mfrow[1]
 	fig3_dim <- c(f3_width, f3_height)
 	
-	dev.new(width=f3_width, height=f3_height)
+	Figures[[reg]][[fig_num]][["figure"]] <- list()
+	Figures[[reg]][[fig_num]][["name"]] <- fig3_name
+	Figures[[reg]][[fig_num]][["dim"]] <- fig3_dim
+	
+	Figures[[reg]][[fig_num]] <- plot_device(Figures[[reg]][[fig_num]], FUN, ...)
+	
 	par(mfrow=f3_mfrow, oma=c(0.1,0.1, 1,0.1), mar=c(1,1,0.1,0.1), mgp=c(0.75,0.1,0), tcl=-0.15, cex=1, ps=8)
 	
 	yrs2loop <- bt[,sort(una(year))]
@@ -49,9 +56,14 @@ plot_btemp_map <- function(prn, Figures){
 # 	}, by="year"]
 	mtext(paste(reg, "Bottom Temperature"), outer=TRUE, side=3, line=0.25, font=2)
 	
-	Figures[[reg]][['Figure3']][["figure"]] <- recordPlot()
-	Figures[[reg]][['Figure3']][["name"]] <- fig3_name
-	Figures[[reg]][['Figure3']][["dim"]] <- fig3_dim
+	if(is.null(Figures[[reg]][[fig_num]][["fig_loc"]])){
+		Figures[[reg]][[fig_num]][["figure"]] <- recordPlot()
+	}else{
+		Figures[[reg]][[fig_num]][["figure"]] <- NULL
+		dev.off()
+	}
+	
+
 	
 	return(Figures)
 }

@@ -16,23 +16,32 @@
 #' There are several functions that are run through the process_msom_figures script. Richness and temperature plots are \code{\link{plot_btemp_map}}, \code{\link{plot_rich_bt_scatter}}, and \code{\link{plot_rich_bt_ts}}. Figures for colonization, extinction, and the species and places associated with those processes are \code{\link{plot_ce_wrap}}, \code{\link{plot_col_vs_unobsSpp}}, \code{\link{plot_colExt_perStrat}}, and \code{\link{plot_rank_temp}}. Figures for diagnostics are \code{\link{plot_traceplot}} and \code{\link{plot_post_corr}}.
 #' 
 #' @export
-plot_post_corr <- function(prn, Figures, yr=1){
+plot_post_corr <- function(prn, Figures, yr=1, FUN="dev.new", ...){
 	unpack_p(prn)
 	
 	if(missing(Figures)){
 		Figures <- list()
 	}
 	
+	fig_num <- "Figure5"
+	
 	fig5_name <- paste0("posteriorCorrelation_", reg, ".png")
 	fig5_dim <- c(7, 7)
 	
-	dev.new(fig5_dim[1], fig5_dim[2])
+	Figures[[reg]][[fig_num]][["figure"]] <- list()
+	Figures[[reg]][[fig_num]][["name"]] <- fig5_name
+	Figures[[reg]][[fig_num]][["dim"]] <- fig5_dim
+	
+	Figures[[reg]][[fig_num]] <- plot_device(Figures[[reg]][[fig_num]], FUN, ...)
 	
 	pairs(param_iters[year==param_iters[,una(year)][yr], eval(s2c(pars_trace))])
 	
-	Figures[[reg]][['Figure5']][["figure"]] <- recordPlot()
-	Figures[[reg]][['Figure5']][["name"]] <- fig5_name
-	Figures[[reg]][['Figure5']][["dim"]] <- fig5_dim
+	if(is.null(Figures[[reg]][[fig_num]][["fig_loc"]])){
+		Figures[[reg]][[fig_num]][["figure"]] <- recordPlot()
+	}else{
+		Figures[[reg]][[fig_num]][["figure"]] <- NULL
+		dev.off()
+	}
 	
 	return(Figures)
 }
