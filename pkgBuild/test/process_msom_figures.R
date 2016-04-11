@@ -78,6 +78,8 @@ plot_Figures <- function(x, FUN, ...){
 }
 
 
+save(Figures, "trawlDiversity/pkgBuild/figures/Figures.RData")
+
 #
 # for(i in 1:length(p)){
 # 	plot_Figures(Figures[[i]][[1]], "dev.new")
