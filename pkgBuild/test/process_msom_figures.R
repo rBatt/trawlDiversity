@@ -78,7 +78,7 @@ plot_Figures <- function(x, FUN, ...){
 }
 
 
-save(Figures, "trawlDiversity/pkgBuild/figures/Figures.RData")
+save(Figures, file="trawlDiversity/pkgBuild/figures/Figures.RData")
 
 #
 # for(i in 1:length(p)){
@@ -92,7 +92,7 @@ for(i in 1:length(p)){
 	fig_names <- c()
 	td <- c()
 	for(f in 1:length(Figures[[i]])){
-		f_l <- Figures[[reg]][[f]][["fig_loc"]]
+		f_l <- Figures[[i]][[f]][["fig_loc"]]
 		if(!is.null(f_l)){
 			fig_names[f] <- f_l
 			td[f] <- od
