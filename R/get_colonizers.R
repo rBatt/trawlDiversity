@@ -35,15 +35,18 @@ get_colonizers <- function(d){
 	col_ext <- apply(tbl>0, 1, diff) # for each species, get the presence/absence (>0 logic) sequential difference (col/ext)
 	col_ext_dt <- data.table(reshape2::melt(col_ext, varnames=c("year","spp")), key=c("year","spp")) # turn the table into a data.table
 	col_ext_dt[,spp:=as.character(spp)] # make spp a character, not factor
+	col_ext_dt[,col:=as.integer(value==1)]
+	col_ext_dt[,ext:=as.integer(value==-1)]
+	col_ext_dt[,value:=NULL]
 	
 	# ---- make extinction events occur in the year before the species is absent ----
 	# done so that extinctions can be associated with a (last known) place (stratum)
 	years <- d[,sort(una(year))] # all the unique years, in order
-	ext_year <- years[match(col_ext_dt[value==-1, year], years) - 1] # the year vector for extinctions
-	ext_spp <- col_ext_dt[value==-1, spp] # the species vector for extinctions
-	col_ext_dt[value==-1, value:=0] # swap the old extinction year to 0
-	col_ext_dt <- rbind(data.table(year=years[1], spp=d[,sort(una(spp))], value=0), col_ext_dt) # add 1st yr b/c new ext timing
-	col_ext_dt[paste0(spp,year)%in%paste0(ext_spp,ext_year), value:=-1] # change in the extinctions to previous year
+	ext_year <- years[match(col_ext_dt[ext==1, year], years) - 1] # the year vector for extinctions
+	ext_spp <- col_ext_dt[ext==1, spp] # the species vector for extinctions
+	col_ext_dt[ext==1, ext:=0] # swap the old extinction year to 0
+	col_ext_dt <- rbind(data.table(year=years[1], spp=d[,sort(una(spp))], col=0, ext=0), col_ext_dt) # add 1st yr b/c new ext timing
+	col_ext_dt[paste0(spp,year)%in%paste0(ext_spp,ext_year), ext:=1] # change in the extinctions to previous year
 	
 	# ---- make lon, lat, and depth consistent w/in a stratum-year, instead of just w/in a haulid ----
 	# doing this makes things consistent in the long term
@@ -57,16 +60,17 @@ get_colonizers <- function(d){
 	d <- merge(d, d_lld, by=c('stratum'))
 	
 	# ---- Tally up annual colonizations, extinctions, and no-changes ----
-	n_cep <- col_ext_dt[,list(n_col=sum(value==1), n_ext=sum(value==-1), n_pers=sum(value==0)), by="year"]
+	n_cep <- col_ext_dt[,list(n_col=sum(col), n_ext=sum(ext), n_pers=sum(col!=1 & ext!=1)), by="year"]
 	
 	d_new <- merge(d, col_ext_dt, by=c("year","spp"), all=TRUE)
-	setnames(d_new, "value", "col_ext")
+	# setnames(d_new, "value", "col_ext")
 
 	get_ce <- function(cet, ce=c('col','ext')){
-		ce <- c(col=1, ext=-1)[match.arg(ce)]
+		# ce0 <- ce
+		ce <- match.arg(ce) #c(col=1, ext=-1)[match.arg(ce)]
 		cet <- copy(cet)
 
-		ce_tbl <- cet[,table(year, stratum,spp,col_ext)>0][,,,as.character(ce)]
+		ce_tbl <- cet[,table(year, stratum,spp,eval(s2c(ce))[[1]])>0][,,,as.character(1)]
 		ce_dt <- data.table(reshape2::melt(ce_tbl, value.name="col_logic"))
 		ce_dt[,c("stratum","spp"):=list(as.character(stratum),as.character(spp))]
 		setkey(ce_dt, year, stratum, spp)
@@ -84,7 +88,7 @@ get_colonizers <- function(d){
 	
 		n_spp_ce_weighted_tot <- n_spp_ce_weighted[,list(lon=mean(lon), lat=mean(lat), depth=mean(depth), n_spp_col_weighted=sum(n_spp_col_weighted)/una(yrs_sampled)),by=c("stratum")]
 		
-		if(ce == -1){
+		if(ce == "ext"){
 			setnames(ce_dt, c("n_spp_col", "n_strat_col", "n_spp_col_weighted"),  c("n_spp_ext", "n_strat_ext", "n_spp_ext_weighted"))
 			setnames(n_spp_ce_weighted, "n_spp_col_weighted", "n_spp_ext_weighted")
 			setnames(n_spp_ce_weighted_tot, "n_spp_col_weighted", "n_spp_ext_weighted")
