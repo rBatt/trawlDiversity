@@ -34,8 +34,8 @@ unpack_p <- function(p_rn){
 	n_yrs <<- param_iters[,lu(year)]
 	n_spp <<- rd[,lu(spp)]
 	
-	spp_col <<- colonization[[1]][value==1, una(spp)]
-	spp_ext <<- colonization[[1]][value==-1, una(spp)]
+	spp_col <<- colonization[[1]][col==1, una(spp)]
+	spp_ext <<- colonization[[1]][ext==1, una(spp)]
 	spp_col_only <<- spp_col[!spp_col %in% spp_ext]
 	spp_ext_only <<- spp_ext[!spp_ext %in% spp_col]
 	spp_col_and_ext <<- spp_col[spp_col%in%spp_ext]
