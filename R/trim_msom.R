@@ -145,6 +145,13 @@ trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tol
 		X.t <- X.t[!spp%in%bad_spp_goa,]
 	}
 	
+	if(reg == "gmex"){
+		bad_spp_gmex <- c(
+			"Ophiolepis elegans" # "from 1982-1988, Ophiolepis elegans probably was identified only to the order level of Ophiuroidea" -- Jeff Rester, email to rbatt and mpinsky 2016-04-18
+			) 
+		X.t <- X.t[!spp%in%bad_spp_gmex,]
+	}
+	
 	
 	if(reg == "sa"){
 		bad_spp_sa <- c(
