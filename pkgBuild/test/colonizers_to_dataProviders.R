@@ -38,6 +38,44 @@ setkey(col_only, reg, year_firstColonization, spp)
 
 col_only[,lu(spp), by="reg"]
 
+full_ci <- list()
+
+regs <- col_only[,una(reg)]
+colonize_refs <- list()
+for(r in 1:length(regs)){
+	t_reg <- regs[r]
+	t_clean <- switch(t_reg,
+		ebs = clean.ebs,
+		ai = clean.ai,
+		goa = clean.goa,
+		wctri = clean.wctri,
+		wcann = clean.wcann,
+		gmex = clean.gmex,
+		sa = clean.sa,
+		neus = clean.neus, 
+		shelf = clean.shelf,
+		newf = clean.newf
+	)
+	
+	t_spp <- col_info[reg==t_reg, una(spp)]
+	n_yr <- t_clean[,lu(year)]
+	bad_flag <- t_clean[,flag%in%c("badJWM","bad","avoid","egg")&!is.na(flag)]
+	t_ci <- t_clean[spp%in%t_spp & !bad_flag, list(reg=una(reg), ref=paste(una(ref), collapse=", "), full_firstYear=min(year), full_lastYear=max(year), full_propYear=lu(year)/n_yr), by=c("spp")]
+	
+	full_ci[[r]] <- t_ci
+	
+	t_cr <- t_clean[spp%in%t_spp & !bad_flag, list(spp, ref, flag, reg)]
+	setkey(t_cr, ref, spp, flag, reg)
+	t_cr <- unique(t_cr)
+	colonize_refs[[r]] <- t_cr
+	
+}
+colonize_refs <- rbindlist(colonize_refs)
+colonize_refs[,reg:=NULL]
+setkey(colonize_refs, ref, spp, flag)
+colonize_refs <- unique(colonize_refs)
+save(colonize_refs, file="trawlDiversity/pkgBuild/spp_check/colonize_refs.RData")
+
 
 # ========
 # = Save =
