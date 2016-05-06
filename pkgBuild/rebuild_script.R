@@ -30,6 +30,19 @@ reg_depthStratum <- c(
 	"newf" = 500
 )
 
+reg_tolFraction <- c(
+	"ebs" = 0,
+	"ai" = 0.15,
+	"goa" = 0,
+	"wctri" = 0.15, 
+	"wcann" = 0.15, 
+	"gmex" = 0.15, 
+	"sa" = 0.15, 
+	"neus" = 0.15, 
+	"shelf" = 0.15, 
+	"newf" = 0.15
+)
+
 sus_reg <- list()
 data_all_list <- list()
 
@@ -39,7 +52,7 @@ data_all_list <- list()
 poss_regs <- c("ebs", "ai", "goa", "wctri", "wcann", "gmex", "sa", "neus", "shelf", "newf")
 for(r in 1:length(poss_regs)){
 	t_reg <- poss_regs[r]
-	t_dat <- trim_msom(t_reg, gridSize=0.5, depthStratum=reg_depthStratum[t_reg], tolFraction=0.15, grid_stratum=TRUE, plot=FALSE, cull_show_up=FALSE)
+	t_dat <- trim_msom(t_reg, gridSize=0.5, depthStratum=reg_depthStratum[t_reg], tolFraction=reg_tolFraction[t_reg], grid_stratum=TRUE, plot=FALSE, cull_show_up=FALSE)
 	sus_reg[[r]] <- get_show_up_spp(t_dat, n_yrs_start=2, n_yrs_remain=5, n_yrs_miss_after=0)
 	
 	if(!show_up_choice){
