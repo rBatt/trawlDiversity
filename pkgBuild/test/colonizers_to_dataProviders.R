@@ -74,12 +74,43 @@ colonize_refs <- rbindlist(colonize_refs)
 colonize_refs[,reg:=NULL]
 setkey(colonize_refs, ref, spp, flag)
 colonize_refs <- unique(colonize_refs)
-save(colonize_refs, file="trawlDiversity/pkgBuild/spp_check/colonize_refs.RData")
+
+coliz_extinc_full <- rbindlist(full_ci)
+setkey(coliz_extinc_full, reg, spp)
+
+# ---- colonization only from full data set ----
+setkey(col_only, reg, spp)
+col_only_full <- coliz_extinc_full[col_only]
+col_only_full[,full_propYear:=round(full_propYear, 2)]
+setnames(col_only_full, c("ref","year_firstColonization"), c("orig_tax_id", "subset_firstYear"))
+setcolorder(col_only_full, c("reg","spp","orig_tax_id", "common", "subset_firstYear", "full_firstYear","full_lastYear","full_propYear"))
+
+
+# ---- colonization or extinction from full data set ----
+setkey(col_info, reg, spp)
+col_ext_full <- coliz_extinc_full[col_info]
+col_ext_full[,full_propYear:=round(full_propYear, 2)]
+setnames(col_ext_full, c("ref","year_firstColonization","year_lastExtinction"), c("orig_tax_id", "subset_firstYear","subset_lastYear"))
+setcolorder(col_ext_full, c("reg","spp","orig_tax_id", "common", "subset_firstYear", "subset_lastYear", "full_firstYear","full_lastYear","full_propYear"))
+
+
 
 
 # ========
 # = Save =
 # ========
+save(colonize_refs, file="trawlDiversity/pkgBuild/spp_check/colonize_refs.RData")
+
+col_ext_full[,j={
+	fn <- paste0("trawlDiversity/pkgBuild/spp_check/", una(reg), "_full_col_or_ext_check.csv")
+	write.csv(.SD[,list(spp, orig_tax_id, common, full_firstYear, full_lastYear, full_propYear)], file=fn, row.names=FALSE)
+},by="reg"]
+
+col_only_full[,j={
+	fn <- paste0("trawlDiversity/pkgBuild/spp_check/", una(reg), "_full_colonizers_check.csv")
+	write.csv(.SD[,list(spp, orig_tax_id, common, full_firstYear, full_lastYear, full_propYear)], file=fn, row.names=FALSE)
+},by="reg"]
+
 save(col_only, file="trawlDiversity/pkgBuild/spp_check/col_only.RData")
 
 col_only[,j={
