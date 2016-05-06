@@ -35,9 +35,17 @@ trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tol
 	# sa doesn't change at all between 100 and 500
 	# newf loses about 80 strata going from 500 to 100 and gets gaps in coverage (recommend 500)
 	
+	if(reg == "shelf"){ # have to do this here b/c trimming drops
+		
+	}
 	
 	# use default trimming
-	X.t <- trawlTrim(reg)
+	if(reg == "shelf"){
+		X.t <- trawlTrim(reg, c.add=c("CODE"))
+	}else{
+		X.t <- trawlTrim(reg)
+	}
+	
 	
 	
 	if(grid_stratum){
@@ -127,8 +135,12 @@ trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tol
 		)
 		X.t <- X.t[!spp%in%bad_spp_ebs,]
 	}
+	
+	bad_spp_ai_goa <- c("Lethasterias nanimensis", "Elassochirus tenuimanus", "Sebastes variabilis", "Sebastes ciliatus", "Lepidopsetta bilineata", "Lepidopsetta polyxystra")
+	
 	if(reg == "ai"){
 		bad_spp_ai <- c(
+			bad_spp_ai_goa,
 			"Paragorgia arborea", # coral, shows up in 3rd year at ~15% strata
 			"Lepidopsetta polyxystra", # flatfish, shows up in 1997 for 80% strata (also in ebs)
 			"Pteraster militaris", # seastar, show sup at 40% in 1994
@@ -138,7 +150,8 @@ trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tol
 	}
 	if(reg == "goa"){
 		bad_spp_goa <- c(
-			"Sebastes aleutianus", # shows up at 45% in 2007 and stays high
+			bad_spp_ai_goa,
+			"Sebastes aleutianus", # shows up at 45% in 2007 and stays high (previously grouped w/ "Sebastes melanostictus")
 			"Lepidopsetta bilineata", # rock sole, shows up at 60% in 1996 and stays pretty high
 			"Lepidopsetta polyxystra" # rock sole/ flatfish that shows up at ~50% in 1996 and stays high
 		)
@@ -170,6 +183,13 @@ trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tol
 	if(reg == "newf"){
 		bad_spp_newf <- c("Thalarctos maritimus")
 		X.t <- X.t[!spp%in%bad_spp_newf,]
+	}
+	if(reg == "shelf"){
+		bad_spp_shelf <- c("Strongylocentrotus droebachiensis","Cucumaria frondosa") # see email from Don Clark on May 3, 2016
+		bad_ref_shelf <- X.t[CODE>=1E3, una(ref)] # see email from Don Clark on May 3, 2016
+		X.t <- X.t[!ref%in%bad_ref_shelf,]
+		X.t <- X.t[!spp%in%bad_spp_shelf,]
+		X.t[,CODE:=NULL] # delete this column
 	}
 	
 	if(cull_show_up){
