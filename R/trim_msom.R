@@ -139,17 +139,22 @@ trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tol
 	bad_spp_ai_goa <- c("Lethasterias nanimensis", "Elassochirus tenuimanus", "Sebastes variabilis", "Sebastes ciliatus", "Lepidopsetta bilineata", "Lepidopsetta polyxystra")
 	
 	if(reg == "ai"){
+		man_remove_ai <- c("Aphrocallistes vastus", "Aplidium soldatovi", "Ceramaster japonicus", "Ceramaster patagonicus", "Chlamys albida", "Chrysaora melanaster", "Clathrina blanca", "Crossaster papposus", "Cucumaria fallax", "Diplopteraster multipes", "Elassochirus cavimanus", "Fanellia compressa", "Geodia lendenfeldi", "Halichondria panicea", "Halichondria sitiens", "Halocynthia aurantium", "Henricia aspera", "Henricia leviuscula", "Hippasteria phrygiana", "Homaxinella amphispicula", "Isodictya rigida", "Lebbeus groenlandicus", "Leptasterias coei", "Muriceides nigra", "Mycale loveni", "Ophiura sarsii", "Pagurus brandti", "Pagurus confragosus", "Pagurus trigonocheirus", "Plakina tanaga", "Pododesmus macrochisma", "Porella compressa", "Pseudarchaster parelii", "Pteraster marsippus", "Pteraster tesselatus", "Sebastes melanostictus", "Stegophiura ponderosa", "Strongylocentrotus polyacanthus", "Styela rustica", "Suberites ficus", "")
 		bad_spp_ai <- c(
+			man_remove_ai,
 			bad_spp_ai_goa,
 			"Paragorgia arborea", # coral, shows up in 3rd year at ~15% strata
 			"Lepidopsetta polyxystra", # flatfish, shows up in 1997 for 80% strata (also in ebs)
 			"Pteraster militaris", # seastar, show sup at 40% in 1994
 			"Ophiopholis aculeata" # sea star, shows up in 1994 at ~35%
 		)
+		
 		X.t <- X.t[!spp%in%bad_spp_ai,]
 	}
 	if(reg == "goa"){
+		man_remove_goa <- c("Actinauge verrilli", "Alcyonidium pedunculatum", "Aphrodita negligens", "Asterias amurensis", "Buccinum plectrum", "Buccinum scalariforme", "Ceramaster japonicus", "Ceramaster patagonicus", "Cheiraster dawsoni", "Chrysaora melanaster", "Clathrina blanca", "Crossaster borealis", "Crossaster papposus", "Diplopteraster multipes", "Dipsacaster borealis", "Elassochirus cavimanus", "Elassochirus gilli", "Evasterias troscheli", "Fanellia compressa", "Halichondria panicea", "Halichondria sitiens", "Halipteris willemoesi", "Halocynthia dumosa", "Halocynthia igaboja", "Henricia leviuscula", "Hyas lyratus", "Laqueus californianus", "Metridium farcimen", "Mycale loveni", "Myxilla incrustans", "Neoesperiopsis infundibula", "Neptunea amianta", "Ophiopholis aculeata", "Ophiura sarsii", "Orthasterias koehleri", "Pagurus capillatus", "Pagurus confragosus", "Pagurus kennerlyi", "Pagurus trigonocheirus", "Phacellophora camtschatica", "Pododesmus macrochisma", "Pseudarchaster parelii", "Pseudostichopus mollis", "Pteraster militaris", "Pteraster tesselatus", "Ptilosarcus gurneyi", "Pyrulofusus harpa", "Sebastes melanostictus", "Solaster dawsoni", "Solaster endeca", "Stegophiura ponderosa", "Strongylocentrotus polyacanthus", "Styela rustica", "Suberites domuncula", "Suberites ficus", "Synallactes challengeri", "Terebratalia transversa", "")
 		bad_spp_goa <- c(
+			man_remove_goa,
 			bad_spp_ai_goa,
 			"Sebastes aleutianus", # shows up at 45% in 2007 and stays high (previously grouped w/ "Sebastes melanostictus")
 			"Lepidopsetta bilineata", # rock sole, shows up at 60% in 1996 and stays pretty high
@@ -158,10 +163,30 @@ trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tol
 		X.t <- X.t[!spp%in%bad_spp_goa,]
 	}
 	
+	if(reg == "wctri"){
+		man_remove_wctri <- c("Apostichopus leukothele", "Brisaster latifrons", "Lepidopsetta bilineata", "Liponema brevicorne", "Metridium farcimen", "Sardinops sagax", "Stylasterias forreri", "Tritonia diomedea", "")
+		bad_spp_wctri <- c(
+			man_remove_wctri,
+			""
+		) 
+		X.t <- X.t[!spp%in%bad_spp_wctri,]
+	}
+	
+	if(reg == "wcann"){
+		man_remove_wcann <- c("")
+		bad_spp_wcann <- c(
+			man_remove_wcann,
+			""
+		) 
+		X.t <- X.t[!spp%in%bad_spp_wcann,]
+	}
+	
 	if(reg == "gmex"){
+		man_remove_gmex <- c("Astropecten cingulatus", "Astropecten duplicatus", "Aurelia aurita", "Etropus cyclosquamus", "Luidia clathrata", "Ogcocephalus declivirostris", "Pareques iwamotoi", "Pitar cordatus", "Reilla mulleri", "")
 		bad_spp_gmex <- c(
+			man_remove_gmex,
 			"Ophiolepis elegans" # "from 1982-1988, Ophiolepis elegans probably was identified only to the order level of Ophiuroidea" -- Jeff Rester, email to rbatt and mpinsky 2016-04-18
-			) 
+		) 
 		X.t <- X.t[!spp%in%bad_spp_gmex,]
 	}
 	
@@ -197,6 +222,10 @@ trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tol
 		bad_spp <- show_up_spp[(reg)==o_reg,una(spp)]
 		X.t <- X.t[!spp%in%bad_spp,]
 	}
+	
+	
+	# manually removed species (eye-balled and based on confidence guides)
+	
 	
 	
 	# ---- Deal with consistent strata ----
