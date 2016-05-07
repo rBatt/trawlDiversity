@@ -2,17 +2,7 @@
 # run on amphiprion: 
 # nohup R CMD BATCH -cwd --no-save trawlDiversity/pkgBuild/test/msom_source_script.R &
 
-# nohup R CMD BATCH -cwd --no-save trawlDiversity/pkgBuild/test/msom_source_script.R msom_source_script_AllRegs_annual_jags_noCulling_r9-10.Rout &
-
-
-# amphiprion process id's
-# ebs: 2616
-# ai & goa: 2705
-# wctri & wcann: 2795
-# gmex & sa: 2884
-# neus: 2973
-# shelf & newf: 3063
-
+# nohup R CMD BATCH -cwd --no-save trawlDiversity/pkgBuild/test/msom_source_script.R msom_source_script_AllRegs_annual_jags_sppChecked_r1.Rout &
 
 
 # ========
@@ -79,12 +69,12 @@ if(lang_used=="Stan"){
 # = Loop and Run MSOM =
 # =====================
 # for(r in 1:length(regs)){
-# for(r in 1:1){ # ebs
+for(r in 1:1){ # ebs
 # for(r in 2:3){ # ai & goa
 # for(r in 4:5){ # wctri & wcann
 # for(r in 6:7){ # gmex & sa
 # for(r in 8:8){ # neus
-for(r in 9:10){ # shelf and newf
+# for(r in 9:10){ # shelf and newf
 
 	rm_out <- vector("list", length(regs)) # yes, this reset the contents of the list. Saving all regions together is too big
 	
