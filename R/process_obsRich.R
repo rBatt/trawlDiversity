@@ -25,6 +25,18 @@ process_obsRich <- function(X, msom_yrs){
 	# naive_rich
 	naive_rich <- rd[,list(naive_rich=lu(spp)), keyby=c("year")]
 	
+	# beta diversity
+	bd_methods <- c("hellinger","jaccard", "sorensen", "ochiai")[1]
+	qbd <- function(m, t_mat){beta_div_quick(t_mat, method=m)}
+	bd_wide <- rd[,j={
+		Y_tbl <- as.matrix(table(stratum, spp))
+		Y <- matrix(pmin(1, Y_tbl), ncol=ncol(Y_tbl))
+		l_out <- lapply(bd_methods, qbd, t_mat=Y)
+		names(l_out) <- bd_methods
+		l_out
+	},by="year"]
+	beta_div_obs <- data.table:::melt.data.table(bd_wide, id.vars=c("year"), variable.name="method", value.name="beta_div_obs")
+	
 	# colonization
 	colonization <- get_colonizers(d=rd)
 	
@@ -38,7 +50,7 @@ process_obsRich <- function(X, msom_yrs){
 	bt <- bt_depth
 	
 	
-	output <- list(rd_yr=rd_yr, rd=rd, naive_rich=naive_rich, colonization=colonization, bt=bt)
+	output <- list(rd_yr=rd_yr, rd=rd, naive_rich=naive_rich, colonization=colonization, bt=bt, beta_div_obs=beta_div_obs)
 	
 	return(output)
 	
