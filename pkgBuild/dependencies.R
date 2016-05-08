@@ -13,6 +13,8 @@ update_dependencies <- function(){
 	
 	devtools::use_package("vegan", type="Suggests")
 	
+	devtools::use_package("ade4", type="Suggests")
+	
 	devtools::use_package("zoo", type="Suggests")
 	
 }

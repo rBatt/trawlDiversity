@@ -20,6 +20,7 @@ Suggests:
     R2jags,
     rstan,
     vegan,
-    zoo
+    zoo,
+    ade4
 Imports:
     rbLib
