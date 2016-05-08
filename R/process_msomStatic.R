@@ -140,7 +140,8 @@ process_msomStatic <- function(reg_out, save_mem=TRUE, obs_yrs){
 		X_obs <- lapply(inputData, function(x)x$X)
 	}
 	
-	# ---- Richness in the Region ----
+	# ---- Richness and Beta Diversity in the Region ----
+	# NOTE: Beta diversity not calculated for Stan at the moment; but it could be
 	Omega_iter <- param_iters[,list(year,Omega)] #lapply(out, get_iters, pars="Omega", lang="JAGS")
 	Omega_mean <- Omega_iter[,mean(Omega), by="year"][,V1] #sapply(Omega_iter, function(x)x[,mean(Omega)])
 	# naive_rich <- sapply(inputData, function(x)x$N)
@@ -155,14 +156,31 @@ process_msomStatic <- function(reg_out, save_mem=TRUE, obs_yrs){
 		z_spp <- function(x){gsub("Z\\[[0-9]+\\,([0-9]+)\\]$", "\\1", x)}
 		z_j <- function(x){gsub("Z\\[([0-9]+)\\,[0-9]+\\]$", "\\1", x)}
 		reg_rich <- rep(NA, length(out))
+		bd_list <- list()
 		for(i in 1:length(out)){
+			
+			# ---- Get Z Iters ----
 			t_Z_big <- get_iters(out[[i]], pars="Z", lang="JAGS")
 			t_Z_big[,iter:=(1:nrow(t_Z_big))]
 				
 			t_Z_big_long <- data.table:::melt.data.table(t_Z_big, id.vars=c("iter","chain"))
 			t_Z_big_long[, c("sppID","jID"):=list(z_spp((variable)), z_j((variable))), by=c("variable")]
 			if(save_mem){rm(list="t_Z_big")}
+				
+			# ---- Get Beta Diversity ----
+			bd_methods <- c("hellinger","jaccard", "sorensen", "ochiai")[1]
+			qbd <- function(m, t_mat){beta_div_quick(t_mat, method=m)}
+			bd_full <- t_Z_big_long[, j={
+				t_mat <- matrix(value, ncol=lu(sppID))
+				l_out <- lapply(bd_methods, qbd, t_mat=t_mat)
+				names(l_out) <- bd_methods
+				l_out
+			}, by="iter"]
+			bd_full_long <- data.table:::melt.data.table(bd_full, id.vars="iter", variable.name="method", value.name="beta_div")
+			bd_list[[i]] <- bd_full_long[, list(year=info_yrs[i], beta_div_mu=mean(beta_div), beta_div_sd=sd(beta_div)), by="method"]
+			if(save_mem){rm(list=c("bd_full","bd_full_long"))}
 			
+			# ---- Get Richness ----
 			mu_site_Z <- t_Z_big_long[,j={ list(mu_site_Z = max(value)) }, by=c("iter","chain","sppID")]
 			reg_rich_iter <- mu_site_Z[, j={list(reg_rich = sum(mu_site_Z))}, by=c("iter","chain")]
 			reg_rich[i] <- reg_rich_iter[,mean(reg_rich)]
@@ -175,8 +193,11 @@ process_msomStatic <- function(reg_out, save_mem=TRUE, obs_yrs){
 	# create processed object
 	processed <- data.table(reg = reg, year=info_yrs, Omega=Omega_mean, reg_rich=reg_rich)
 	
-
-	return(list(param_iters=param_iters, processed=processed, ab=ab, alpha_unscale=alpha_unscale))
+	# create beta_div object
+	beta_div <- rbindlist(bd_list)
+	
+	# return
+	return(list(param_iters=param_iters, processed=processed, ab=ab, alpha_unscale=alpha_unscale, beta_div=beta_div))
 	
 }
 	
