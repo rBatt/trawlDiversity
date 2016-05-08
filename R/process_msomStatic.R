@@ -35,8 +35,6 @@ process_msomStatic <- function(reg_out, save_mem=TRUE, obs_yrs){
 	# ---- Makes [rd] ----
 	info_yrs <- sapply(info, function(x)as.integer(x['year']))
 	sub_reg <- reg
-	# rd <- data_all[year %in% info_yrs & sub_reg==(reg)] # data_all is an object associated with the trawlDiversity package!
-	# rd_yr <- rd[,sort(unique(year))]
 	
 	
 	# ================================================
@@ -48,10 +46,7 @@ process_msomStatic <- function(reg_out, save_mem=TRUE, obs_yrs){
 		inputData <- inputData[yr_match_msomSub]
 		info <- info[yr_match_msomSub]
 		info_yrs <- info_yrs[yr_match_msomSub]
-	
-		# stopifnot(all(info_yrs==rd_yr))
 	}
-
 	
 	
 	# ======================================
@@ -67,53 +62,6 @@ process_msomStatic <- function(reg_out, save_mem=TRUE, obs_yrs){
 		}
 	}
 	
-	
-
-	
-	
-	# ================================================
-	# = Get Colonization Patterns from Observations =
-	# ================================================
-	# ---- Makes [colonization] ----
-	# colonization <- get_colonizers(d=rd)
-	
-	
-	# ==============
-	# = Covariates =
-	# ==============
-	# strat2lld <- function(x){
-	# 	s <- strsplit(x, split=" ")
-	# 	lon <- sapply(s, function(x)x[1])
-	# 	lat <- sapply(s, function(x)x[2])
-	# 	depth_interval <- sapply(s, function(x)x[3])
-	# 	data.table(lon=as.numeric(lon), lat=as.numeric(lat), depth_interval=as.numeric(depth_interval))
-	# }
-	#
-	# # ---- Bottom Temperature ----
-	# # ---- Makes [bt] ----
-	# get_bt <- function(id){
-	# 	(id$U[,"bt"]*id$scaling["btemp.sd"]) + id$scaling["btemp.mu"]
-	# }
-	# bt0 <- lapply(inputData, get_bt)
-	# bt2dt <- function(x,y)data.table(stratum=names(x), bt=x, year=y)
-	# bt <- rbindlist(mapply(bt2dt, bt0, info_yrs, SIMPLIFY=FALSE))
-	#
-	# bt[,c("lon","lat","depth_interval"):=strat2lld(stratum)]
-	# bt[,bt_col:=zCol(256, bt)]
-	#
-	# # ---- Depth ----
-	# # ---- Adds to [bt] ----
-	# get_depth <- function(id){
-	# 	(id$U[,"depth"]*id$scaling["depth.sd"]) + id$scaling["depth.mu"]
-	# }
-	# depth0 <- lapply(inputData, get_depth)
-	# depth2dt <- function(x,y)data.table(stratum=names(x), depth=x, year=y)
-	# depth <- rbindlist(mapply(depth2dt, depth0, info_yrs, SIMPLIFY=FALSE))
-	#
-	# depth[,c("lon","lat","depth_interval"):=strat2lld(stratum)]
-	# depth[,depth_col:=zCol(256, depth)]
-	#
-	# bt <- merge(bt, depth, by=c("stratum","lon","year","lat","depth_interval"), all=TRUE)
 	
 	
 	# ====================================================
@@ -226,8 +174,6 @@ process_msomStatic <- function(reg_out, save_mem=TRUE, obs_yrs){
 	
 	# create processed object
 	processed <- data.table(reg = reg, year=info_yrs, Omega=Omega_mean, reg_rich=reg_rich)
-	# processed <- merge(processed, colonization$n_cep, by="year", all=TRUE)
-	# processed <- merge(processed, bt[,list(bt_ann=mean(bt)), by="year"], by="year", all=TRUE)
 	
 
 	return(list(param_iters=param_iters, processed=processed, ab=ab, alpha_unscale=alpha_unscale))
