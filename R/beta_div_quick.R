@@ -22,7 +22,7 @@ beta_div_quick <- function(Y, method=c("hellinger", "jaccard","sorensen","ochiai
 	
 	BD.group1 <- function(Y, method){
 		# if(method=="hellinger") Y = decostand(Y, "hellinger")
-		Y <- decostand(Y, "hellinger")
+		Y <- vegan::decostand(Y, "hellinger")
 		s <- scale(Y, center=TRUE, scale=FALSE)^2   # eq. 1
 		SStotal <- sum(s)          # eq. 2
 		BDtotal <- SStotal/(n-1)   # eq. 3
@@ -31,9 +31,9 @@ beta_div_quick <- function(Y, method=c("hellinger", "jaccard","sorensen","ochiai
 
 	BD.group2 <- function(Y, method){
 		D <- switch(method,
-			jaccard = dist.binary(Y, method=1),
-			sorensen = dist.binary(Y, method=5),
-			ochiai = dist.binary(Y, method=7)
+			jaccard = ade4::dist.binary(Y, method=1),
+			sorensen = ade4::dist.binary(Y, method=5),
+			ochiai = ade4::dist.binary(Y, method=7)
 		)
 		SStotal <- sum(D^2)/n      # eq. 8
 		BDtotal <- SStotal/(n-1)   # eq. 3
