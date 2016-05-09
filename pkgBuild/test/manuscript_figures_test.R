@@ -7,16 +7,6 @@ setwd("~/Documents/School&Work/pinskyPost/trawl/")
 load("trawlDiversity/pkgBuild/results/processedMsom/p.RData")
 
 
-tp <- p[[12]]
-
-beta_trend <- tp$ab[par=="beta",j={
-	list(n=nrow(.SD), beta_trend=timeSlope(year, value_mu))
-},by=c("spp")]
-
-beta_comAvg <- tp$ab[par=="beta",j={
-	list(beta_comAvg=mean(value_mu))
-},by="year"]
-
 # ====================
 # = Richness Figures =
 # ====================
@@ -128,20 +118,42 @@ detect_dt[,j={
 # ---- Time Series of Species Detectability ----
 dev.new()
 par(mfrow=c(3,3))
-detect_dt[,j={
-	xlim <- range(year)
-	ylim <- range(plogis(value_mu))
+regs <- detect_dt[,una(reg)]
+for(r in 1:length(regs)){
+	t_reg <- regs[r]
+	t_dt <- detect_dt[reg==t_reg]
 	
-	us <- una(spp)
-	for(s in 1:lu(spp)){
-		xy <- .SD[spp==us[s], list(year, detectability=plogis(value_mu))]
+	xlim <- range(t_dt[,year])
+	ylim <- range(plogis(t_dt[,value_mu]))
+	
+	us <- una(t_dt[,spp])
+	t_col <- adjustcolor("black", alpha=0.25)
+	for(s in 1:lu(us)){
+		xy <- t_dt[spp==us[s], list(year, detectability=plogis(value_mu))]
 		if(s==1){
-			plot(xy, xlim=xlim, ylim=ylim, type="l", lwd=0.5, main=una(reg))
+			plot(xy, xlim=xlim, ylim=ylim, type="l", lwd=0.5, main=t_reg, col=t_col)
 		}else{
-			lines(xy, lwd=0.5)
+			lines(xy, lwd=0.5, col=t_col)
 		}
 	}
-}, by=c("reg")]
+	
+}
+
+#
+# detect_dt[,j={
+# 	xlim <- range(year)
+# 	ylim <- range(plogis(value_mu))
+#
+# 	us <- una(spp)
+# 	for(s in 1:lu(spp)){
+# 		xy <- .SD[spp==us[s], list(year, detectability=plogis(value_mu))]
+# 		if(s==1){
+# 			plot(xy, xlim=xlim, ylim=ylim, type="l", lwd=0.5, main=una(reg))
+# 		}else{
+# 			lines(xy, lwd=0.5)
+# 		}
+# 	}
+# }, by=c("reg")]
 
 # ---- Density Plots of Species-Specific Trends in Detectability ----
 dev.new()
