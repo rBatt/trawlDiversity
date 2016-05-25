@@ -10,7 +10,8 @@ library("maps")
 setwd("~/Documents/School&Work/pinskyPost/trawl")
 
 reg_file <- c(
-	"msomStatic_norv_1yr_ebs_jags_12kIter_50nZ_start2016-04-04_r1.RData", # ebs 12k iter, converged
+		"msomStatic_norv_1yr_ebs_jags_12kIter_50nZ_start2016-05-07_r1.RData",
+	# "msomStatic_norv_1yr_ebs_jags_12kIter_50nZ_start2016-04-04_r1.RData", # ebs 12k iter, converged
 	# "msomStatic_norv_1yr_ebs_jags_6kIter_50nZ_start2016-03-22_r1.RData", # ebs 6k iter -- converged, mostly
 	# "msomStatic_norv_1yr_ebs_jags_6kIter_89nZ_start2016-03-13_r1.RData", # ebs 6k iter
 	# "msomStatic_norv_1yr_ebs_jags_start2016-03-10_16-44-44_r1.RData", # ebs 6k iter, converged
