@@ -341,8 +341,8 @@ propStrat[,j={
 
 # ---- richness time series with sparklines for colonizer/ leaver proportion strata ----
 # data
-spp_master <- merge(detect_ce_dt, propStrat, all=TRUE)
-comm_master <- merge(beta_div_dt, processed_dt, all=TRUE)
+spp_master <- merge(detect_ce_dt, propStrat, all=TRUE) # species-specific data
+comm_master <- merge(beta_div_dt, processed_dt, all=TRUE) # community-level data
 
 
 # define characteristics related to colonization-extinction "stretches"
@@ -377,6 +377,7 @@ event_stretches <- function(X){
 	# For any stretches to exist, the full series will have all(c(0,1)%in%una(present)) 
 	has_stretches <- all(c(0,1)%in%una(present))
 	
+	# If the current species does not have both presences and absenences, just reutrn 0's
 	if(!has_stretches){
 		return(list(stretch_id=stretch_id, hybrid_part=hybrid_part))
 	}
@@ -442,19 +443,12 @@ event_stretches <- function(X){
 	
 }
 
-detect_ce_dt[reg=="ai" & spp =="Lethotremus muticus", data.table(present, as.data.table(event_stretches(.SD)))]
-detect_ce_dt[reg=="ai",event_stretches(.SD), by="spp"]
+# testing function a bit
+# detect_ce_dt[reg=="ai" & spp =="Lethotremus muticus", data.table(present, as.data.table(event_stretches(.SD)))]
+# detect_ce_dt[reg=="ai" & spp =="Anoplopoma fimbria", data.table(as.data.table(event_stretches(.SD))),by="spp"]
+# detect_ce_dt[reg=="ai",event_stretches(.SD), by="spp"]
 
-detect_ce_dt[,j={
-	
-	
-	cbind(year, present, col, now_ext, ext_dist_sign, stretch_id, hybrid_part)
-
-	
-},by=c("reg","spp")]
-
-
-
+stretches <- detect_ce_dt[,data.table(year, present, col, now_ext, ext_dist_sign, as.data.table(event_stretches(.SD))), keyby=c("reg","spp")]
 
 
 # setup figure
