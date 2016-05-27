@@ -168,8 +168,8 @@ detect_dt[,j={
 # ---- Time Series of Species Detectability ----
 dev.new()
 par(mfrow=c(3,3))
-for(r in 1:length(regs)){
-	t_reg <- regs[r]
+for(r in 1:length(regs[regs!="wcann"])){
+	t_reg <- regs[regs!="wcann"][r]
 	t_dt <- detect_dt[reg==t_reg]
 	
 	xlim <- range(t_dt[,year])
@@ -256,8 +256,8 @@ propStrat[,j={
 # ---- Time Series of Proportion of Strata Occupied by Each Species ----
 dev.new()
 par(mfrow=c(3,3))
-for(r in 1:length(regs)){
-	t_reg <- regs[r]
+for(r in 1:length(regs[regs!="wcann"])){
+	t_reg <- regs[regs!="wcann"][r]
 	t_dt <- propStrat[reg==t_reg]
 	
 	xlim <- range(t_dt[,year])
