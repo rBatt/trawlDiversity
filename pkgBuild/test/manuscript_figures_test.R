@@ -448,35 +448,101 @@ event_stretches <- function(X){
 # detect_ce_dt[reg=="ai" & spp =="Anoplopoma fimbria", data.table(as.data.table(event_stretches(.SD))),by="spp"]
 # detect_ce_dt[reg=="ai",event_stretches(.SD), by="spp"]
 
-stretches <- detect_ce_dt[,data.table(year, present, col, now_ext, ext_dist_sign, as.data.table(event_stretches(.SD))), keyby=c("reg","spp")]
+stretches <- spp_master[,data.table(year, present, propStrata, col, now_ext, consec_yrs, ext_dist_sign, as.data.table(event_stretches(.SD))), keyby=c("reg","spp")]
+# stretches[,event_year:=(year+ext_dist_sign)*c(1,NA)[1L+(ext_dist_sign==0|is.na(ext_dist_sign))],by="reg"]
+# stretches[,event_year:=(year+ext_dist_sign)*c(1,NA)[1L+(is.na(ext_dist_sign))],by="reg"]
+# stretches[,event_year:=(year+ext_dist_sign),by="reg"]
+
+stretches[stretch_id==-1 | hybrid_part==2, stretch_type:="pre_ext"]
+stretches[stretch_id==-2 | hybrid_part==1, stretch_type:="post_col"]
+
+stretches[!is.na(stretch_type),event_year:=c(post_col=min(year), pre_ext=max(year))[stretch_type[1]],by=c("reg","spp","stretch_type", "stretch_id", "hybrid_part")]
+
+blah1 <- stretches[!is.na(stretch_type), list(col=paste(col,collapse=" "),year=paste(year,collapse=" "), event_year=paste(event_year, collapse=" "), pres_seq=paste(present, collapse=" "), max_consec=lu(consec_yrs)) ,by=c("reg","spp","stretch_type", "stretch_id", "hybrid_part")]
+blah1[max_consec <6 & max_consec>3]
+blah1[col==1]
+
+# Stretch ID Key:
+#  -1 is extinction only
+#  -2 is colonization only
+#  1 is hybrid
+# Hybrid Part Key:
+#  1 is post-colonization
+#  2 is pre-extinction
 
 
 # setup figure
-dev.new()
-par(mfrow=c(3,3))
+dev.new(width=6.8, height=6.8)
+par(mfrow=c(3,3), mar=c(1,1,0.5,0.1), oma=c(0.1,0.1,0.1,0.1), cex=1, ps=6)
+
+# rr <- 
 
 # loop through each region
+u_regs <- stretches[,una(reg)]
+for(r in 1:length(u_regs)){
+	t_stretches <- stretches[reg==u_regs[r]]
+	setorder(t_stretches, year)
+	# t_stretches[stretch_id==-1 | hybrid_part==2,table(event_year)] # number of spp-years leading into each year's extinctions
+	# t_stretches[stretch_id==-2 | hybrid_part==1,table(event_year)] # number of spp-years following each year's colonizations
 
-	# plot richness time series
-
-	# loop through each richness year
+		# plot richness time series
+		plot(t_stretches[,list(richness=sum(present)),keyby="year"], type='l', main=u_regs[r]) # use msom?
 	
-		# skip first year
-		# identify species that colonize or left
+		# t_stretches[propStrata!=0,propStrata:=(propStrata-min(propStrata)), by=c("spp")]
+		t_stretches[propStrata!=0,propStrata:=(propStrata-min(propStrata)), by=c("spp","stretch_id","hybrid_part")]
+		t_stretches[,propStrata:=propStrata/max(propStrata), by="spp"]
+		spark_scale <- t_stretches[,sum(present),by="year"][,diff(range(V1))/10]
+		t_stretches[,propStrata:=propStrata*spark_scale]
+	
+		# loop through each richness year
+		u_ev_yrs <- sort(t_stretches[,una(event_year, na.rm=TRUE)])
+		for(y in 1:length(u_ev_yrs)){
+			t_ev_yr <- u_ev_yrs[y]
+			ty_stretches <- t_stretches[event_year==t_ev_yr]
+			t_r <- t_stretches[year==t_ev_yr,sum(present)] # or could use msom
+	
+			# rescale proportion by species
+			# ty_stretches[,propStrata:=(propStrata-min(propStrata[propStrata!=0])+sd(propStrata[propStrata!=0])), by="spp"]
+			# ty_stretches[,propStrata:=(propStrata-min(propStrata[propStrata!=0])), by="spp"]
+			# ty_stretches[,propStrata:=propStrata/max(propStrata), by="spp"]
+	
+			t_plot <- ty_stretches[,j={
+				t_plot <- .SD[,list(year,propStrata)]
+				# t_plot <- rbind(data.table(year=event_year[1], propStrata=0), t_plot)
+				t_plot[,propStrata:=propStrata+t_r]
+				setorder(t_plot, year)
 		
-		# get time-to-event distances for every species
-		# subset event distance vectors to region bounded by 0 distance with current at center
-		# split subsetted distance into maximum prior and leading into current
-		# split subsetted distance into current leading into maximum after
+				coloD <- c("blue","red")[(stretch_id==-1 | hybrid_part==2)+1L]
+				colo <- adjustcolor(coloD, 0.25)
 		
-		# define viable leaver species as those having prior maximum distance of at least 2
-		# define 
+				# lines(t_plot, col=colo)
+				pyr <- t_plot[,year-t_ev_yr] # t_plot[,year - min(year)]
+				pyr <- pyr/20#max(abs(pyr))*2.5
+				pyr <- pyr + t_ev_yr #t_plot[,min(year)]
+				t_plot[,pyr:=pyr]
+				# t_plot[,segments(x0=pyr[1],x1=tail(pyr,1), y0=t_r-1E-2, y1=t_r-1E-2, lwd=0.25)]
+				# t_plot[,lines(pyr, propStrata, col=colo)]
+				
+				# t_plot[lines(pyr, propStrata, col=colo)]
+				# lines(t_plot, col=colo)
 		
-		# for each colonizer
+				t_plot[,list(year=year, pyr=pyr, propStrata=propStrata, colo=colo, coloD=(coloD))]
+		
+			},by=c("spp","stretch_id","hybrid_part")]
+	
+			# mu_plot <- t_plot[,list(propStrata=mean(propStrata), .N),by=c("year","colo","coloD")]
+			# mu_plot[,lines(year, propStrata, col=colo),by=c("colo")]
 			
+			mu_plot <- t_plot[,list(propStrata=mean(propStrata), .N),by=c("pyr","colo","coloD")]
+			setorder(mu_plot, pyr, coloD)
+			ucd <- mu_plot[,unique(coloD)]
+			for(st in 1:length(ucd)){
+				mu_plot[coloD==ucd[st],lines(pyr, propStrata, col=coloD, lwd=0.5)]
+			}
 			
-		# for each leaver
-
+			mu_plot[,segments(x0=pyr[1],x1=tail(pyr,1), y0=t_r-1E-2, y1=t_r-1E-2, lwd=0.5)]
+		}
+}
 
 
 		
@@ -490,7 +556,7 @@ detect_ce_dt[ext_dist!=0, plot(ext_dist, detect_mu, main="Detectability vs Time 
 detect_ce_dt[ext_dist!=0, abline(lm(detect_mu ~ ext_dist), col="blue")]
 detect_ce_dt[ext_dist!=0, summary(lm(detect_mu ~ ext_dist))] # significant, 0.04 R2 tho
 
-detect_ce_dt[ext_dist!=0, plot(cumm_yrs_pres, detect_mu, main="Detectability vs Cummulative 'Years' Present")]
+detect_ce_dt[ext_dist!=0, plot(cumm_yrs_pres, detect_mu, main="Detectability vs Cumulative 'Years' Present")]
 detect_ce_dt[ext_dist!=0, abline(lm(detect_mu ~ cumm_yrs_pres), col="blue")]
 detect_ce_dt[ext_dist!=0, summary(lm(detect_mu ~ cumm_yrs_pres))] # R2 0.04
 
