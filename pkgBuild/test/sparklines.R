@@ -59,7 +59,7 @@ sparklines <- function(x, y, x_pt, y_pt, y_align=c("bot","top","mid", "left", "r
 		v_pt <- switch(type, x=x_pt, y=y_pt)
 		
 		if(scale_xy){
-			vn <- v/max(abs(v)) * scale_fac(type)
+			vn <- (v-min(v))/max(abs((v-min(v)))) * scale_fac(type)
 		}else{
 			vn <- v
 		}
