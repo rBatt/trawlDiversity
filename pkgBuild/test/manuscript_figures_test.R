@@ -474,7 +474,7 @@ blah1[col==1]
 # setup figure
 dev.new(width=6.8, height=7)
 # par(mfrow=c(3,3), mar=c(1,1,0.5,0.1), oma=c(0.1,0.1,0.1,0.1), cex=1, ps=6)
-par(mar=c(1,1,0.5,0.1), oma=c(0.1,0.1,0.1,0.1), cex=1, ps=6, mgp=c(1, 0.5, 0), tcl=-0.1)
+par(mar=c(1.5,1.5,0.5,0.1), oma=c(0.1,0.1,0.1,0.1), cex=1, ps=6, mgp=c(0.5, 0.1, 0), tcl=-0.1)
 
 u_regs <- stretches[,una(reg)]
 
