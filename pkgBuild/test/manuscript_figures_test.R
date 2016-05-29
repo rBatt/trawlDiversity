@@ -472,8 +472,36 @@ blah1[col==1]
 
 
 # setup figure
-dev.new(width=6.8, height=6.8)
-par(mfrow=c(3,3), mar=c(1,1,0.5,0.1), oma=c(0.1,0.1,0.1,0.1), cex=1, ps=6)
+dev.new(width=6.8, height=7)
+# par(mfrow=c(3,3), mar=c(1,1,0.5,0.1), oma=c(0.1,0.1,0.1,0.1), cex=1, ps=6)
+par(mar=c(1,1,0.5,0.1), oma=c(0.1,0.1,0.1,0.1), cex=1, ps=6, mgp=c(1, 0.5, 0), tcl=-0.1)
+
+u_regs <- stretches[,una(reg)]
+
+# lay_mat <- matrix(0, ncol=8, nrow=5)
+# lay_mat[1,] <- which(u_regs=="ebs") # ebs
+# lay_mat[2,] <- which(u_regs=="shelf") # shelf
+# lay_mat[3,] <- which(u_regs=="neus") # neus
+# lay_mat[4,1:4] <- which(u_regs=="sa")
+# lay_mat[4,5:8] <- which(u_regs=="gmex")
+# lay_mat[5,1:2] <- which(u_regs=="ai")
+# lay_mat[5,3:4] <- which(u_regs=="goa")
+# lay_mat[5,5:6] <- which(u_regs=="newf")
+# lay_mat[5,7:8] <- which(u_regs=="wctri")
+
+lay_mat <- matrix(0, ncol=12, nrow=4)
+lay_mat[1,1:8] <- which(u_regs=="ebs") # ebs
+lay_mat[1,9:12] <- which(u_regs=="ai")
+lay_mat[2,1:8] <- which(u_regs=="shelf") # shelf
+lay_mat[2,9:12] <- which(u_regs=="goa")
+lay_mat[3,1:8] <- which(u_regs=="neus") # neus
+lay_mat[3,9:12] <- which(u_regs=="wctri")
+lay_mat[4,1:4] <- which(u_regs=="sa")
+lay_mat[4,5:8] <- which(u_regs=="gmex")
+lay_mat[4,9:12] <- which(u_regs=="newf")
+
+
+layout(lay_mat)
 
 # rr <- 
 
@@ -486,13 +514,17 @@ for(r in 1:length(u_regs)){
 	# t_stretches[stretch_id==-2 | hybrid_part==1,table(event_year)] # number of spp-years following each year's colonizations
 
 		# plot richness time series
-		plot(t_stretches[,list(richness=sum(present)),keyby="year"], type='l', main=u_regs[r]) # use msom?
+		plt_stretch <- t_stretches[,list(richness=sum(present)),keyby="year"]
+		c1 <- mean(par("cin"))/par("pin")
+		ylim <- plt_stretch[,range(richness)+c(-c1[2],c1[2])*diff(par()$usr[3:4])*c(0.1,0.5)]
+		xlim <- plt_stretch[,range(year)+c(-c1[1],c1[1])*diff(par()$usr[1:2])*0.15]
+		plot(plt_stretch, type='l', main=u_regs[r], ylim=ylim, xlim=xlim) # use msom?
 	
 		# t_stretches[propStrata!=0,propStrata:=(propStrata-min(propStrata)), by=c("spp")]
-		t_stretches[propStrata!=0,propStrata:=(propStrata-min(propStrata)), by=c("spp","stretch_id","hybrid_part")]
-		t_stretches[,propStrata:=propStrata/max(propStrata), by="spp"]
-		spark_scale <- t_stretches[,sum(present),by="year"][,diff(range(V1))/10]
-		t_stretches[,propStrata:=propStrata*spark_scale]
+		# t_stretches[propStrata!=0,propStrata:=(propStrata-min(propStrata)), by=c("spp","stretch_id","hybrid_part")]
+		# t_stretches[,propStrata:=propStrata/max(propStrata), by="spp"]
+		# spark_scale <- t_stretches[,sum(present),by="year"][,diff(range(V1))/10]
+		# t_stretches[,propStrata:=propStrata*spark_scale]
 	
 		# loop through each richness year
 		u_ev_yrs <- sort(t_stretches[,una(event_year, na.rm=TRUE)])
@@ -503,44 +535,61 @@ for(r in 1:length(u_regs)){
 	
 			# rescale proportion by species
 			# ty_stretches[,propStrata:=(propStrata-min(propStrata[propStrata!=0])+sd(propStrata[propStrata!=0])), by="spp"]
-			# ty_stretches[,propStrata:=(propStrata-min(propStrata[propStrata!=0])), by="spp"]
-			# ty_stretches[,propStrata:=propStrata/max(propStrata), by="spp"]
+			ty_stretches[,propStrata:=(propStrata-min(propStrata)), by="spp"]
+			ty_stretches[,propStrata:=propStrata/max(propStrata), by="spp"]
 	
 			t_plot <- ty_stretches[,j={
 				t_plot <- .SD[,list(year,propStrata)]
 				# t_plot <- rbind(data.table(year=event_year[1], propStrata=0), t_plot)
-				t_plot[,propStrata:=propStrata+t_r]
+				# t_plot[,propStrata:=propStrata+t_r]
 				setorder(t_plot, year)
 		
 				coloD <- c("blue","red")[(stretch_id==-1 | hybrid_part==2)+1L]
 				colo <- adjustcolor(coloD, 0.25)
 		
 				# lines(t_plot, col=colo)
-				pyr <- t_plot[,year-t_ev_yr] # t_plot[,year - min(year)]
-				pyr <- pyr/20#max(abs(pyr))*2.5
-				pyr <- pyr + t_ev_yr #t_plot[,min(year)]
-				t_plot[,pyr:=pyr]
+				# pyr <- t_plot[,year-t_ev_yr] # t_plot[,year - min(year)]
+				# pyr <- pyr/20#max(abs(pyr))*2.5
+				# pyr <- pyr + t_ev_yr #t_plot[,min(year)]
+				# t_plot[,pyr:=pyr]
 				# t_plot[,segments(x0=pyr[1],x1=tail(pyr,1), y0=t_r-1E-2, y1=t_r-1E-2, lwd=0.25)]
 				# t_plot[,lines(pyr, propStrata, col=colo)]
 				
 				# t_plot[lines(pyr, propStrata, col=colo)]
 				# lines(t_plot, col=colo)
 		
-				t_plot[,list(year=year, pyr=pyr, propStrata=propStrata, colo=colo, coloD=(coloD))]
+				t_plot[,list(year=year, propStrata=propStrata, stretch_type=stretch_type, colo=colo, coloD=(coloD))]
 		
 			},by=c("spp","stretch_id","hybrid_part")]
 	
 			# mu_plot <- t_plot[,list(propStrata=mean(propStrata), .N),by=c("year","colo","coloD")]
 			# mu_plot[,lines(year, propStrata, col=colo),by=c("colo")]
 			
-			mu_plot <- t_plot[,list(propStrata=mean(propStrata), .N),by=c("pyr","colo","coloD")]
-			setorder(mu_plot, pyr, coloD)
-			ucd <- mu_plot[,unique(coloD)]
-			for(st in 1:length(ucd)){
-				mu_plot[coloD==ucd[st],lines(pyr, propStrata, col=coloD, lwd=0.5)]
+			mu_plot <- t_plot[,list(propStrata=mean(propStrata[is.finite(propStrata)]), .N),by=c("year","colo","coloD", "stretch_type")]
+			setorder(mu_plot, year, coloD)
+			ust <- mu_plot[,unique(stretch_type)]
+			for(st in 1:length(ust)){
+				x <- mu_plot[stretch_type==ust[st],year]
+				y <- mu_plot[stretch_type==ust[st],propStrata]
+				if(length(x)>=3 & sum(is.finite(y))>=3){
+					if(sum(is.finite(y))>=4){
+						y <- fitted(loess(y~x, data.frame(x,y))) # spline(x, y, n=length(x))$y 
+					}
+					y_align <- c(pre_ext="right", post_col="left")[ust[st]]
+					x_align <- c(pre_ext="right", post_col="left")[ust[st]]
+					col <- mu_plot[stretch_type==ust[st],unique(coloD)]
+					ax_sides <- list(pre_ext=c(1,2),post_col=c(1,4))[[ust[st]]]
+					acol <- mu_plot[stretch_type==ust[st],unique(colo)]
+					x_cex <- 0.75 #t_stretches[,1/lu(year)*10]
+					y_cex <- x_cex
+				
+					sparklines(x, y, x_pt=t_ev_yr, y_pt=t_r, x_align=x_align, y_align=y_align, col=col, ax_sides=ax_sides, lwd=0.75, awd=0.5, acol=acol, x_cex=x_cex, y_cex=y_cex)
+					
+				}
+			
 			}
 			
-			mu_plot[,segments(x0=pyr[1],x1=tail(pyr,1), y0=t_r-1E-2, y1=t_r-1E-2, lwd=0.5)]
+			# mu_plot[,segments(x0=pyr[1],x1=tail(pyr,1), y0=t_r-1E-2, y1=t_r-1E-2, lwd=0.5)]
 		}
 }
 
@@ -570,10 +619,6 @@ detect_ce_dt[ext_dist!=0, abline(lm(detect_mu ~ yrs_since_1st), col="blue")]
 detect_ce_dt[ext_dist!=0, summary(lm(detect_mu ~ yrs_since_1st))] # R2 0.03
 
 detect_ce_dt[ext_dist!=0, predict(lm(detect_mu ~ yrs_since_1st), newdata=data.frame(yrs_since_1st=range(yrs_since_1st)))]
-
-pred_range(mod){
-	mr <- lapply(mod$model, range)
-}
 
 
 
