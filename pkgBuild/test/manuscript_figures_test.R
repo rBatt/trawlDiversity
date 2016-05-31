@@ -536,40 +536,198 @@ for(r in 1:length(u_regs)){
 # = Regressions of propStrata x Detection x Richness x BetaDiversity =
 # ====================================================================
 # ---- propStrata vs Detectability ----
-
+dev.new()
+par(mfrow=c(3,3))
+spp_master[,j={plot(propStrata,plogis(detect_mu), main=reg[1]);abline(a=0,b=1,col='blue')},by="reg"]
 
 
 # ---- propStrata vs Year from Extinction/ Colonization ----
+# dev.new()
+# par(mfrow=c(3,3))
+# spp_master[!is.na(stretch_type), plot(ext_dist_sign, propStrata, main=reg[1]), by="reg"]
 
+dev.new()
+par(mfrow=c(3,3))
+spp_master[!is.na(stretch_type), j={
+	tp <- .SD[,list(ext_dist_sign=ext_dist_sign,propStrata=propStrata-min(propStrata)),by="spp"]
+	tp <- tp[,list(ext_dist_sign=ext_dist_sign,propStrata=propStrata/max(propStrata)),by="spp"]
+	tp[stretch_length>3,plot(ext_dist_sign, propStrata, main=reg[1])]
+}, by="reg"]
 
 
 # ---- Beta Diversity vs Richness ----
+dev.new()
+par(mfrow=c(3,3))
+comm_master[,plot(beta_div_obs,reg_rich,main=reg[1]),by="reg"]
+
+
+dev.new()
+par(mfrow=c(3,3))
+comm_master[,plot(diff(beta_div_obs),diff(reg_rich),main=reg[1]),by="reg"]
+
+
+dev.new()
+par(mfrow=c(3,3))
+comm_master[,j={ccf(beta_div_obs,reg_rich,main=reg[1]);NULL},by="reg"]
+
+dev.new()
+par(mfrow=c(3,3))
+comm_master[,j={ccf(diff(beta_div_obs),diff(reg_rich),main=reg[1]);NULL},by="reg"]
+
+
+# =======================================================
+# = Colonization, Extinction, Richness Maps and Scatter =
+# =======================================================
+
+mapDat <- list()
+stratDat <- list()
+r = 1
+for(r in 1:length(p)){
+
+	pt1 <- trawlAgg(
+		p[[r]]$rd,
+		bioFun=meanna, envFun=meanna,
+		envCols=c("btemp","depth","stemp","lon","lat"),
+		bio_lvl="spp",time_lvl="year",space_lvl="stratum",
+		metaCols=c("reg"),meta.action="unique1"	
+	)
+
+	pt2 <- pt1[,j={
+		avgRich <- .SD[,lu(spp),by="time_lvl"][,meanna(V1)]
+		sdRich <- .SD[,lu(spp),by="time_lvl"][,sd(V1, na.rm=TRUE)]
+		avgBtemp <- .SD[,meanna(btemp),by="time_lvl"][,meanna(V1)]
+		sdBtemp <- .SD[,meanna(btemp),by="time_lvl"][,sd(V1, na.rm=TRUE)]
+		data.table(avgRich=avgRich, sdRich=sdRich, avgBtemp=avgBtemp, sdBtemp=sdBtemp)
+	},by=c("reg","stratum")]
+
+
+	to_merge <- c(p[[r]]$colonization[c("n_spp_col_weighted_tot","n_spp_ext_weighted_tot","n_cep")])
+	mapDat[[r]] <- merge(to_merge[["n_spp_col_weighted_tot"]], to_merge[["n_spp_ext_weighted_tot"]], by=c("stratum","lon","lat","depth"),all=TRUE)
+	mapDat[[r]] <- merge(mapDat[[r]], pt2, by="stratum",all=TRUE)
+}
+
+mapDat <- rbindlist(mapDat)[reg!="wcann"]
+
+mapDim <- mapDat[,list(r_lon=diff(range(lon)),r_lat=diff(range(lat))),by="reg"]
+mapDim[,c("lon_scale","lat_scale"):=list(r_lon/min(r_lon), r_lat/min(r_lat))]
+mapDim[,ll_ratio:=r_lon/r_lat]
 
 
 
-#
-#
-# # ==================
-# # = exploring fast =
-# # ==================
-# detect_ce_dt[ext_dist!=0, plot(ext_dist, detect_mu, main="Detectability vs Time to Absence")]
-# detect_ce_dt[ext_dist!=0, abline(lm(detect_mu ~ ext_dist), col="blue")]
-# detect_ce_dt[ext_dist!=0, summary(lm(detect_mu ~ ext_dist))] # significant, 0.04 R2 tho
-#
-# detect_ce_dt[ext_dist!=0, plot(cumm_yrs_pres, detect_mu, main="Detectability vs Cumulative 'Years' Present")]
-# detect_ce_dt[ext_dist!=0, abline(lm(detect_mu ~ cumm_yrs_pres), col="blue")]
-# detect_ce_dt[ext_dist!=0, summary(lm(detect_mu ~ cumm_yrs_pres))] # R2 0.04
-#
-# # ---- winner ----
-# detect_ce_dt[ext_dist!=0, plot(consec_yrs, detect_mu, main="Detectability vs Consecutive 'Years' Present")]
-# detect_ce_dt[ext_dist!=0, abline(lm(detect_mu ~ consec_yrs), col="blue")]
-# detect_ce_dt[ext_dist!=0, summary(lm(detect_mu ~ consec_yrs))] # R2 0.06
-#
-# detect_ce_dt[ext_dist!=0, plot(yrs_since_1st, detect_mu, main="Detectability vs 'Years' Since First Present")]
-# detect_ce_dt[ext_dist!=0, abline(lm(detect_mu ~ yrs_since_1st), col="blue")]
-# detect_ce_dt[ext_dist!=0, summary(lm(detect_mu ~ yrs_since_1st))] # R2 0.03
-#
-# detect_ce_dt[ext_dist!=0, predict(lm(detect_mu ~ yrs_since_1st), newdata=data.frame(yrs_since_1st=range(yrs_since_1st)))]
+lay_grid <- matrix(1:84, nrow=6, ncol=14)
+# squares <- list(
+# 	ebs = c(1,2,8,9,15,16,22,23), # c(1,23)
+# 	ai = c(3,10,17,24), # c(3,24)
+# 	goa = c(18,24,25,31,37,38,45), # c(18,44)
+# 	wctri = c(4:7), # c(4,7)
+# 	gmex = c(27,28,34,35,41), # c(28,41)
+# 	sa = c(12:14,19), # c(13,19)
+# 	neus = c(26,27,32:33,39,40), # c(27,39)
+# 	shelf = c(32,38,39,45,46,52,53), # c(38,53)
+# 	newf = c(43,50:53,57:60) # c(43,60)
+# )
+squares <- list(
+	ebs = c(1,26),
+	ai = c(6,42),
+	goa = c(3,41),
+	wctri = c(45,48),
+	gmex = c(53,66),
+	sa = c(70,84), # should really be c(70,77), ... just made it bigger to fill in gap and b/c it's a square
+	neus = c(67,81),
+	shelf = c(31,44),
+	newf = c(49,64)
+)
+squares_ind <- lapply(squares, function(x)arrayInd(which(lay_grid%in%x),.dim=dim(lay_grid)))
+map_layout <- array(NA, dim(lay_grid))
+for(i in 1:length(squares_ind)){
+	map_layout[squares_ind[[i]]] <- i
+}
+map_layout[is.na(map_layout)] <- 0
+
+# square_size <- mapDat[reg=="sa",diff(range(lat))/2]
+# map_yrange <- lapply(squares_ind, function(x)(diff(range(x[,1]))+1)*square_size)
+# map_xrange <- lapply(squares_ind, function(x)(diff(range(x[,2]))+1)*square_size)
+# map_lat_ranges <- lapply(mapDat[,unique(reg)], function(x)mapDat[reg==x,range(lat)])
+# map_lon_ranges <- lapply(mapDat[,unique(reg)], function(x)mapDat[reg==x,range(lon)])
+# map_ylims <- mapply(function(yr, ylr)mean(ylr)+(c(-1,1)*yr/2), yr=map_yrange, ylr=map_lat_ranges)
+# map_xlims <- mapply(function(yr, ylr)mean(ylr)+(c(-1,1)*yr/2), yr=map_xrange, ylr=map_lon_ranges)
+
+# dev.new()
+# mapDat[,plot(lon, lat, col=as.factor(reg))]
+# abline(v=map_xlims, col=rep(mapDat[,as.factor(unique(reg))],each=2))
+# abline(h=map_ylims, col=rep(mapDat[,as.factor(unique(reg))],each=2))
+
+dev.new(height=3, width=7)
+par(mar=c(1.5,1.5,0.5,0.5), mgp=c(0.75,0.1,0), tcl=-0.1,ps=8, cex=1)
+layout(map_layout)
+u_regs <- mapDat[,unique(reg)]
+for(r in 1:lu(u_regs)){
+	# mapDat[reg==u_regs[r], plot(lon,lat, col=as.factor(u_regs)[r], bty='l', xlim=map_xlims[,r], ylim=map_ylims[,r])]
+	mapDat[reg==u_regs[r], plot(lon,lat, col=as.factor(u_regs)[r], bty='l')]
+	map(add=TRUE)
+}
+
+# ===============
+# = ebs_poly <-
+# dput(locator()) =
+# ===============
+
+
+
+# ---- Richness Map ----
+dev.new(height=3, width=7)
+par(mar=c(1.5,1.5,0.5,0.5), mgp=c(0.75,0.1,0), tcl=-0.1,ps=8, cex=1, oma=c(0.5,0.5,1,0.1))
+layout(map_layout)
+u_regs <- mapDat[,unique(reg)]
+for(r in 1:lu(u_regs)){
+	# mapDat[reg==u_regs[r], plot(lon,lat, col=as.factor(u_regs)[r], bty='l', xlim=map_xlims[,r], ylim=map_ylims[,r])]
+	mapDat[reg==u_regs[r], plot_space(lon,lat, avgRich, bty='l')]
+	map(add=TRUE, fill=TRUE, col="white")
+}
+mtext("Average Richness", side=3, outer=TRUE, font=2, line=0)
+
+
+
+# ---- Colonization Map ----
+dev.new(height=3, width=7)
+par(mar=c(1.5,1.5,0.5,0.5), mgp=c(0.75,0.1,0), tcl=-0.1,ps=8, cex=1, oma=c(0.5,0.5,1,0.1))
+layout(map_layout)
+u_regs <- mapDat[,unique(reg)]
+for(r in 1:lu(u_regs)){
+	# mapDat[reg==u_regs[r], plot(lon,lat, col=as.factor(u_regs)[r], bty='l', xlim=map_xlims[,r], ylim=map_ylims[,r])]
+	mapDat[reg==u_regs[r], plot_space(lon,lat, n_spp_col_weighted, bty='l')]
+	map(add=TRUE, fill=TRUE, col="white")
+}
+mtext("Colonization Rate", side=3, outer=TRUE, font=2, line=0)
+
+
+
+
+# ---- Colonizations per Species Map ----
+dev.new(height=3, width=7)
+par(mar=c(1.5,1.5,0.5,0.5), mgp=c(0.75,0.1,0), tcl=-0.1,ps=8, cex=1, oma=c(0.5,0.5,1,0.1))
+layout(map_layout)
+u_regs <- mapDat[,unique(reg)]
+for(r in 1:lu(u_regs)){
+	# mapDat[reg==u_regs[r], plot(lon,lat, col=as.factor(u_regs)[r], bty='l', xlim=map_xlims[,r], ylim=map_ylims[,r])]
+	mapDat[reg==u_regs[r], plot_space(lon,lat, n_spp_col_weighted/avgRich, bty='l')]
+	map(add=TRUE, fill=TRUE, col="white")
+}
+mtext("Colonizations per Species", side=3, outer=TRUE, font=2, line=0)
+
+
+
+# ---- Richness Variability ----
+dev.new(height=3, width=7)
+par(mar=c(1.5,1.5,0.5,0.5), mgp=c(0.75,0.1,0), tcl=-0.1,ps=8, cex=1, oma=c(0.5,0.5,1,0.1))
+layout(map_layout)
+u_regs <- mapDat[,unique(reg)]
+for(r in 1:lu(u_regs)){
+	# mapDat[reg==u_regs[r], plot(lon,lat, col=as.factor(u_regs)[r], bty='l', xlim=map_xlims[,r], ylim=map_ylims[,r])]
+	mapDat[reg==u_regs[r], plot_space(lon,lat, sdRich, bty='l')]
+	map(add=TRUE, fill=TRUE, col="white")
+}
+mtext("Richness Variability", side=3, outer=TRUE, font=2, line=0)
 
 
 
