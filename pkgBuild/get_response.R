@@ -1,30 +1,75 @@
-alpha_unscale<-p[[1]]$alpha_unscale
 
-n_grid <- 20
+get_response <- function(p, n_grid=20){
+	alpha_unscale<-p$alpha_unscale
+	alpha_unscale <- alpha_unscale[,.SD[sample(1:nrow(.SD),20)],by=c("spp","year")]
+	nIter <- alpha_unscale[,.N,by=c("spp","year")][,una(N)]
 
-d_vals <- bt[,seq(min(depth), max(depth), length.out=n_grid)]
-b_vals <- bt[,seq(min(bt), max(bt), length.out=n_grid)]
-vals <- expand.grid(b=b_vals, d=d_vals)
+	bt <- p$bt
 
-pred_resp <- function(b, d, alpha){
-	a <- matrix(alpha, nrow=5)
-	x <- as.matrix(cbind(1, b, b^2, d, d^2))
-	x%*%a
+	# n_grid <- 20
+
+	d_vals <- bt[,seq(min(depth), max(depth), length.out=n_grid)]
+	b_vals <- bt[,seq(min(bt, na.rm=TRUE), max(bt, na.rm=TRUE), length.out=n_grid)]
+	vals <- expand.grid(b=b_vals, d=d_vals)
+
+	pred_resp <- function(b, d, alpha){
+		a <- matrix(alpha, nrow=5)
+		x <- as.matrix(cbind(1, b, b^2, d, d^2))
+		x%*%a
+	}
+
+	pr <- pred_resp(vals[,"b"], vals[,"d"], t(alpha_unscale[,list(a1,a2,a3,a4,a5)]))
+
+	ac <- as.character
+	spp_year0 <- alpha_unscale[,paste(spp,year),by=c("spp","year")]
+	spp_year <- spp_year0[,V1]
+	dn <- list(btemp=ac(b_vals),depth=ac(d_vals),iter=NULL, sppYear=spp_year)
+
+	pr2 <- array(pr, dim=c(n_grid, n_grid, nIter, ncol(pr)/nIter), dimnames=dn)
+	pr3 <- apply(pr2, c(1,2,4), mean)
+
+	spp_3 <- spp_year0[,spp]
+	year_3 <- spp_year0[,year]
+	
+	return(list(responses=pr3, spp=spp_3, year=year_3))
 }
 
-pr <- pred_resp(vals[,"b"], vals[,"d"], t(alpha_unscale[,list(a1,a2,a3,a4,a5)]))
+# alpha_unscale<-p[[1]]$alpha_unscale
+# alpha_unscale <- alpha_unscale[,.SD[sample(1:nrow(.SD),20)],by=c("spp","year")]
+# nIter <- alpha_unscale[,.N,by=c("spp","year")][,una(N)]
+#
+bt <- p[[9]]$bt
+#
+# n_grid <- 20
+#
+# d_vals <- bt[,seq(min(depth), max(depth), length.out=n_grid)]
+# b_vals <- bt[,seq(min(bt, na.rm=TRUE), max(bt, na.rm=TRUE), length.out=n_grid)]
+# vals <- expand.grid(b=b_vals, d=d_vals)
+#
+# pred_resp <- function(b, d, alpha){
+# 	a <- matrix(alpha, nrow=5)
+# 	x <- as.matrix(cbind(1, b, b^2, d, d^2))
+# 	x%*%a
+# }
+#
+# pr <- pred_resp(vals[,"b"], vals[,"d"], t(alpha_unscale[,list(a1,a2,a3,a4,a5)]))
+#
+# ac <- as.character
+# spp_year0 <- alpha_unscale[,paste(spp,year),by=c("spp","year")]
+# spp_year <- spp_year0[,V1]
+# dn <- list(btemp=ac(b_vals),depth=ac(d_vals),iter=NULL, sppYear=spp_year)
+#
+# pr2 <- array(pr, dim=c(n_grid, n_grid, nIter, ncol(pr)/nIter), dimnames=dn)
+# pr3 <- apply(pr2, c(1,2,4), mean)
+#
+#
+# spp_3 <- spp_year0[,spp]
+# year_3 <- spp_year0[,year]
 
-ac <- as.character
-spp_year0 <- alpha_unscale[,paste(spp,year),by=c("spp","year")]
-spp_year <- spp_year0[,V1]
-dn <- list(btemp=ac(b_vals),depth=ac(d_vals),iter=NULL, sppYear=spp_year)
-
-pr2 <- array(pr, dim=c(n_grid, n_grid, 800, ncol(pr)/800), dimnames=dn)
-pr3 <- apply(pr2, c(1,2,4), mean)
-
-
-spp_3 <- spp_year0[,spp]
-year_3 <- spp_year0[,year]
+resp_out <- get_response(p[[9]], 20)
+pr3 <- resp_out$responses
+spp_3 <- resp_out$spp
+year_3 <- resp_out$year
 
 u_spp <- unique(spp_3)
 
@@ -53,7 +98,7 @@ for(i in 1:length(u_spp)){
 		bt[(year)==t_yr,points(bt, depth)]
 
 	}
-	mtext("Depth (m)", side=1, outer=TRUE, line=0)
-	mtext("Temperature (C)", side=2, outer=TRUE, line=0)
+	mtext("Depth (m)", side=2, outer=TRUE, line=0)
+	mtext("Temperature (C)", side=1, outer=TRUE, line=0)
 }
 
