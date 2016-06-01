@@ -1,6 +1,10 @@
 
 library("trawlDiversity")
 library("rbLib")
+library("vegan")
+library("maps")
+library("spatstat")
+library("fields")
 
 
 setwd("~/Documents/School&Work/pinskyPost/trawl/")
@@ -560,11 +564,9 @@ dev.new()
 par(mfrow=c(3,3))
 comm_master[,plot(beta_div_obs,reg_rich,main=reg[1]),by="reg"]
 
-
 dev.new()
 par(mfrow=c(3,3))
 comm_master[,plot(diff(beta_div_obs),diff(reg_rich),main=reg[1]),by="reg"]
-
 
 dev.new()
 par(mfrow=c(3,3))
@@ -578,156 +580,120 @@ comm_master[,j={ccf(diff(beta_div_obs),diff(reg_rich),main=reg[1]);NULL},by="reg
 # =======================================================
 # = Colonization, Extinction, Richness Maps and Scatter =
 # =======================================================
+# ---- make mapDat ----
+make_mapDat <- function(p){
+	mapDat <- list()
+	for(r in 1:length(p)){
+		pt1 <- trawlAgg(
+			p[[r]]$rd,
+			bioFun=meanna, envFun=meanna,
+			envCols=c("btemp","depth","stemp","lon","lat"),
+			bio_lvl="spp",time_lvl="year",space_lvl="stratum",
+			metaCols=c("reg"),meta.action="unique1"	
+		)
+		pt2 <- pt1[,j={
+			avgRich <- .SD[,lu(spp),by="time_lvl"][,meanna(V1)]
+			sdRich <- .SD[,lu(spp),by="time_lvl"][,sd(V1, na.rm=TRUE)]
+			avgBtemp <- .SD[,meanna(btemp),by="time_lvl"][,meanna(V1)]
+			sdBtemp <- .SD[,meanna(btemp),by="time_lvl"][,sd(V1, na.rm=TRUE)]
+			data.table(avgRich=avgRich, sdRich=sdRich, avgBtemp=avgBtemp, sdBtemp=sdBtemp)
+		},by=c("reg","stratum")]
+		to_merge <- c(p[[r]]$colonization[c("n_spp_col_weighted_tot","n_spp_ext_weighted_tot","n_cep")])
+		mapDat[[r]] <- merge(to_merge[["n_spp_col_weighted_tot"]], to_merge[["n_spp_ext_weighted_tot"]], by=c("stratum","lon","lat","depth"),all=TRUE)
+		mapDat[[r]] <- merge(mapDat[[r]], pt2, by="stratum",all=TRUE)
+	}
+	mapDat <- rbindlist(mapDat)[reg!="wcann"]
+	# mapDim <- mapDat[,list(r_lon=diff(range(lon)),r_lat=diff(range(lat))),by="reg"]
+	# mapDim[,c("lon_scale","lat_scale"):=list(r_lon/min(r_lon), r_lat/min(r_lat))]
+	# mapDim[,ll_ratio:=r_lon/r_lat]
+	
+	return(mapDat)
+}
+mapDat <- make_mapDat(p)
 
-mapDat <- list()
-stratDat <- list()
-r = 1
-for(r in 1:length(p)){
 
-	pt1 <- trawlAgg(
-		p[[r]]$rd,
-		bioFun=meanna, envFun=meanna,
-		envCols=c("btemp","depth","stemp","lon","lat"),
-		bio_lvl="spp",time_lvl="year",space_lvl="stratum",
-		metaCols=c("reg"),meta.action="unique1"	
+trawl_layout <- function(){
+	lay_grid <- matrix(1:84, nrow=6, ncol=14)
+	squares <- list(
+		ebs = c(1,26),
+		ai = c(6,42),
+		goa = c(3,41),
+		wctri = c(45,48),
+		gmex = c(53,66),
+		sa = c(70,84), # should really be c(70,77), ... just made it bigger to fill in gap and b/c it's a square
+		neus = c(67,81),
+		shelf = c(31,44),
+		newf = c(49,64)
 	)
-
-	pt2 <- pt1[,j={
-		avgRich <- .SD[,lu(spp),by="time_lvl"][,meanna(V1)]
-		sdRich <- .SD[,lu(spp),by="time_lvl"][,sd(V1, na.rm=TRUE)]
-		avgBtemp <- .SD[,meanna(btemp),by="time_lvl"][,meanna(V1)]
-		sdBtemp <- .SD[,meanna(btemp),by="time_lvl"][,sd(V1, na.rm=TRUE)]
-		data.table(avgRich=avgRich, sdRich=sdRich, avgBtemp=avgBtemp, sdBtemp=sdBtemp)
-	},by=c("reg","stratum")]
-
-
-	to_merge <- c(p[[r]]$colonization[c("n_spp_col_weighted_tot","n_spp_ext_weighted_tot","n_cep")])
-	mapDat[[r]] <- merge(to_merge[["n_spp_col_weighted_tot"]], to_merge[["n_spp_ext_weighted_tot"]], by=c("stratum","lon","lat","depth"),all=TRUE)
-	mapDat[[r]] <- merge(mapDat[[r]], pt2, by="stratum",all=TRUE)
+	squares_ind <- lapply(squares, function(x)arrayInd(which(lay_grid%in%x),.dim=dim(lay_grid)))
+	map_layout <- array(NA, dim(lay_grid))
+	for(i in 1:length(squares_ind)){
+		map_layout[squares_ind[[i]]] <- i
+	}
+	map_layout[is.na(map_layout)] <- 0
+	
+	return(map_layout)
 }
+map_layout <- trawl_layout()
 
-mapDat <- rbindlist(mapDat)[reg!="wcann"]
+# ---- test map plotting ----
+# dev.new(height=3, width=7)
+# par(mar=c(1.5,1.5,0.5,0.5), mgp=c(0.75,0.1,0), tcl=-0.1,ps=8, cex=1)
+# layout(map_layout)
+# u_regs <- mapDat[,unique(reg)]
+# for(r in 1:lu(u_regs)){
+# 	# mapDat[reg==u_regs[r], plot(lon,lat, col=as.factor(u_regs)[r], bty='l', xlim=map_xlims[,r], ylim=map_ylims[,r])]
+# 	mapDat[reg==u_regs[r], plot(lon,lat, col=as.factor(u_regs)[r], bty='l')]
+# 	map(add=TRUE)
+# }
 
-mapDim <- mapDat[,list(r_lon=diff(range(lon)),r_lat=diff(range(lat))),by="reg"]
-mapDim[,c("lon_scale","lat_scale"):=list(r_lon/min(r_lon), r_lat/min(r_lat))]
-mapDim[,ll_ratio:=r_lon/r_lat]
-
-
-
-lay_grid <- matrix(1:84, nrow=6, ncol=14)
-# squares <- list(
-# 	ebs = c(1,2,8,9,15,16,22,23), # c(1,23)
-# 	ai = c(3,10,17,24), # c(3,24)
-# 	goa = c(18,24,25,31,37,38,45), # c(18,44)
-# 	wctri = c(4:7), # c(4,7)
-# 	gmex = c(27,28,34,35,41), # c(28,41)
-# 	sa = c(12:14,19), # c(13,19)
-# 	neus = c(26,27,32:33,39,40), # c(27,39)
-# 	shelf = c(32,38,39,45,46,52,53), # c(38,53)
-# 	newf = c(43,50:53,57:60) # c(43,60)
-# )
-squares <- list(
-	ebs = c(1,26),
-	ai = c(6,42),
-	goa = c(3,41),
-	wctri = c(45,48),
-	gmex = c(53,66),
-	sa = c(70,84), # should really be c(70,77), ... just made it bigger to fill in gap and b/c it's a square
-	neus = c(67,81),
-	shelf = c(31,44),
-	newf = c(49,64)
+# ---- plots ----
+map_names <- c("Average Richness", "Richness Variability", "Colonization Rate", "Colonizations per Species", "Extinction Rate", "Extinctions per Species")
+map_expr <- list(
+	bquote(avgRich),
+	bquote(sdRich),
+	bquote(n_spp_col_weighted),
+	bquote(n_spp_col_weighted/avgRich),
+	bquote(n_spp_ext_weighted),
+	bquote(n_spp_col_weighted/avgRich)
 )
-squares_ind <- lapply(squares, function(x)arrayInd(which(lay_grid%in%x),.dim=dim(lay_grid)))
-map_layout <- array(NA, dim(lay_grid))
-for(i in 1:length(squares_ind)){
-	map_layout[squares_ind[[i]]] <- i
-}
-map_layout[is.na(map_layout)] <- 0
-
-# square_size <- mapDat[reg=="sa",diff(range(lat))/2]
-# map_yrange <- lapply(squares_ind, function(x)(diff(range(x[,1]))+1)*square_size)
-# map_xrange <- lapply(squares_ind, function(x)(diff(range(x[,2]))+1)*square_size)
-# map_lat_ranges <- lapply(mapDat[,unique(reg)], function(x)mapDat[reg==x,range(lat)])
-# map_lon_ranges <- lapply(mapDat[,unique(reg)], function(x)mapDat[reg==x,range(lon)])
-# map_ylims <- mapply(function(yr, ylr)mean(ylr)+(c(-1,1)*yr/2), yr=map_yrange, ylr=map_lat_ranges)
-# map_xlims <- mapply(function(yr, ylr)mean(ylr)+(c(-1,1)*yr/2), yr=map_xrange, ylr=map_lon_ranges)
-
-# dev.new()
-# mapDat[,plot(lon, lat, col=as.factor(reg))]
-# abline(v=map_xlims, col=rep(mapDat[,as.factor(unique(reg))],each=2))
-# abline(h=map_ylims, col=rep(mapDat[,as.factor(unique(reg))],each=2))
-
-dev.new(height=3, width=7)
-par(mar=c(1.5,1.5,0.5,0.5), mgp=c(0.75,0.1,0), tcl=-0.1,ps=8, cex=1)
-layout(map_layout)
-u_regs <- mapDat[,unique(reg)]
-for(r in 1:lu(u_regs)){
-	# mapDat[reg==u_regs[r], plot(lon,lat, col=as.factor(u_regs)[r], bty='l', xlim=map_xlims[,r], ylim=map_ylims[,r])]
-	mapDat[reg==u_regs[r], plot(lon,lat, col=as.factor(u_regs)[r], bty='l')]
-	map(add=TRUE)
+for(mp in 1:length(map_names)){
+	dev.new(height=3, width=7)
+	par(mar=c(1.5,1.5,0.5,0.5), mgp=c(0.75,0.1,0), tcl=-0.1,ps=8, cex=1, oma=c(0.5,0.5,1,0.1))
+	layout(map_layout)
+	u_regs <- mapDat[,unique(reg)]
+	for(r in 1:lu(u_regs)){
+		# mapDat[reg==u_regs[r], plot(lon,lat, col=as.factor(u_regs)[r], bty='l', xlim=map_xlims[,r], ylim=map_ylims[,r])]
+		mapDat[reg==u_regs[r], plot_space(lon,lat, eval(map_expr[[mp]]), bty='l')]
+		map(add=TRUE, fill=TRUE, col="white")
+	}
+	mtext(map_names[mp], side=3, outer=TRUE, font=2, line=0)
 }
 
-# ===============
-# = ebs_poly <-
-# dput(locator()) =
-# ===============
+
+# ---- scatter ----
+dev.new()
+par(mfrow=c(3,3))
+mapDat[,plot(n_spp_col_weighted, avgRich, main=reg[1]), by="reg"]
+
+dev.new()
+par(mfrow=c(3,3))
+mapDat[,plot(n_spp_ext_weighted, avgRich, main=reg[1]), by="reg"]
 
 
 
-# ---- Richness Map ----
-dev.new(height=3, width=7)
-par(mar=c(1.5,1.5,0.5,0.5), mgp=c(0.75,0.1,0), tcl=-0.1,ps=8, cex=1, oma=c(0.5,0.5,1,0.1))
-layout(map_layout)
-u_regs <- mapDat[,unique(reg)]
-for(r in 1:lu(u_regs)){
-	# mapDat[reg==u_regs[r], plot(lon,lat, col=as.factor(u_regs)[r], bty='l', xlim=map_xlims[,r], ylim=map_ylims[,r])]
-	mapDat[reg==u_regs[r], plot_space(lon,lat, avgRich, bty='l')]
-	map(add=TRUE, fill=TRUE, col="white")
-}
-mtext("Average Richness", side=3, outer=TRUE, font=2, line=0)
+# ===================================================
+# = MSOM Parameter Response Metrics (opt, tol, max) =
+# ===================================================
+psi.opt <- function(b1,b2){-b1/(2*b2)}
+psi.tol <- function(b2){1/sqrt(-2*b2)}
+psi.max <- function(b0,b1,b2){1/(1+exp((b1^2)/(4*b2)-b0))}
 
+r = 1
+t_ua <- p[[r]]$alpha_unscale
 
+t_ua[,list(psi.opt),by=c("spp","year")]
 
-# ---- Colonization Map ----
-dev.new(height=3, width=7)
-par(mar=c(1.5,1.5,0.5,0.5), mgp=c(0.75,0.1,0), tcl=-0.1,ps=8, cex=1, oma=c(0.5,0.5,1,0.1))
-layout(map_layout)
-u_regs <- mapDat[,unique(reg)]
-for(r in 1:lu(u_regs)){
-	# mapDat[reg==u_regs[r], plot(lon,lat, col=as.factor(u_regs)[r], bty='l', xlim=map_xlims[,r], ylim=map_ylims[,r])]
-	mapDat[reg==u_regs[r], plot_space(lon,lat, n_spp_col_weighted, bty='l')]
-	map(add=TRUE, fill=TRUE, col="white")
-}
-mtext("Colonization Rate", side=3, outer=TRUE, font=2, line=0)
-
-
-
-
-# ---- Colonizations per Species Map ----
-dev.new(height=3, width=7)
-par(mar=c(1.5,1.5,0.5,0.5), mgp=c(0.75,0.1,0), tcl=-0.1,ps=8, cex=1, oma=c(0.5,0.5,1,0.1))
-layout(map_layout)
-u_regs <- mapDat[,unique(reg)]
-for(r in 1:lu(u_regs)){
-	# mapDat[reg==u_regs[r], plot(lon,lat, col=as.factor(u_regs)[r], bty='l', xlim=map_xlims[,r], ylim=map_ylims[,r])]
-	mapDat[reg==u_regs[r], plot_space(lon,lat, n_spp_col_weighted/avgRich, bty='l')]
-	map(add=TRUE, fill=TRUE, col="white")
-}
-mtext("Colonizations per Species", side=3, outer=TRUE, font=2, line=0)
-
-
-
-# ---- Richness Variability ----
-dev.new(height=3, width=7)
-par(mar=c(1.5,1.5,0.5,0.5), mgp=c(0.75,0.1,0), tcl=-0.1,ps=8, cex=1, oma=c(0.5,0.5,1,0.1))
-layout(map_layout)
-u_regs <- mapDat[,unique(reg)]
-for(r in 1:lu(u_regs)){
-	# mapDat[reg==u_regs[r], plot(lon,lat, col=as.factor(u_regs)[r], bty='l', xlim=map_xlims[,r], ylim=map_ylims[,r])]
-	mapDat[reg==u_regs[r], plot_space(lon,lat, sdRich, bty='l')]
-	map(add=TRUE, fill=TRUE, col="white")
-}
-mtext("Richness Variability", side=3, outer=TRUE, font=2, line=0)
 
 
 
