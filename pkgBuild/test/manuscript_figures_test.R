@@ -11,18 +11,64 @@ setwd("~/Documents/School&Work/pinskyPost/trawl/")
 
 load("trawlDiversity/pkgBuild/results/processedMsom/p.RData")
 
+
 # =============
 # = Functions =
 # =============
+# ---- make mapDat ----
+make_mapDat <- function(p){
+	mapDat <- list()
+	for(r in 1:length(p)){
+		pt1 <- trawlAgg(
+			p[[r]]$rd,
+			bioFun=meanna, envFun=meanna,
+			envCols=c("btemp","depth","stemp","lon","lat"),
+			bio_lvl="spp",time_lvl="year",space_lvl="stratum",
+			metaCols=c("reg"),meta.action="unique1"	
+		)
+		pt2 <- pt1[,j={
+			avgRich <- .SD[,lu(spp),by="time_lvl"][,meanna(V1)]
+			sdRich <- .SD[,lu(spp),by="time_lvl"][,sd(V1, na.rm=TRUE)]
+			avgBtemp <- .SD[,meanna(btemp),by="time_lvl"][,meanna(V1)]
+			sdBtemp <- .SD[,meanna(btemp),by="time_lvl"][,sd(V1, na.rm=TRUE)]
+			data.table(avgRich=avgRich, sdRich=sdRich, avgBtemp=avgBtemp, sdBtemp=sdBtemp)
+		},by=c("reg","stratum")]
+		to_merge <- c(p[[r]]$colonization[c("n_spp_col_weighted_tot","n_spp_ext_weighted_tot","n_cep")])
+		mapDat[[r]] <- merge(to_merge[["n_spp_col_weighted_tot"]], to_merge[["n_spp_ext_weighted_tot"]], by=c("stratum","lon","lat","depth"),all=TRUE)
+		mapDat[[r]] <- merge(mapDat[[r]], pt2, by="stratum",all=TRUE)
+	}
+	mapDat <- rbindlist(mapDat)[reg!="wcann"]
+	# mapDim <- mapDat[,list(r_lon=diff(range(lon)),r_lat=diff(range(lat))),by="reg"]
+	# mapDim[,c("lon_scale","lat_scale"):=list(r_lon/min(r_lon), r_lat/min(r_lat))]
+	# mapDim[,ll_ratio:=r_lon/r_lat]
+	
+	return(mapDat)
+}
 
-# ---- Time Metrics for Colonization/ Extinction ----
-# add more columns pertaining to how long spp has been around
 
-
-
-
-# ---- event stretches function ----
-
+# ---- Packed Map Layout ----
+trawl_layout <- function(){
+	lay_grid <- matrix(1:84, nrow=6, ncol=14)
+	squares <- list(
+		ebs = c(1,26),
+		ai = c(6,42),
+		goa = c(3,41),
+		wctri = c(45,48),
+		gmex = c(53,66),
+		sa = c(70,84), # should really be c(70,77), ... just made it bigger to fill in gap and b/c it's a square
+		neus = c(67,81),
+		shelf = c(31,44),
+		newf = c(49,64)
+	)
+	squares_ind <- lapply(squares, function(x)arrayInd(which(lay_grid%in%x),.dim=dim(lay_grid)))
+	map_layout <- array(NA, dim(lay_grid))
+	for(i in 1:length(squares_ind)){
+		map_layout[squares_ind[[i]]] <- i
+	}
+	map_layout[is.na(map_layout)] <- 0
+	
+	return(map_layout)
+}
 
 
 # ================
@@ -82,6 +128,46 @@ detect_ce_dt[,yrs_since_1st:=cumsum(c(0,1)[(cumsum(present)>=1)+1L]), by=c("reg"
 detect_ce_dt[,ext_dist:=event_distance(x=present, positions=year, event_value=1), by=c("reg", "spp")] # years (actual years, not sampling events) away from an absence
 detect_ce_dt[,ext_dist_sign:=event_distance(x=present, positions=year, event_value=1, keep_sign=TRUE), by=c("reg", "spp")]
 detect_ce_dt[,ext_dist_samp:=event_distance(x=present, event_value=1), by=c("reg", "spp")]
+
+# ---- Proportion of Strata ----
+propStrat <- list()
+for(i in 1:length(p)){
+	t_reg <- p[[i]]$processed[,una(reg)]
+	t_rd <- p[[i]]$rd
+	
+	ssy_tbl <- apply(t_rd[,table(spp, stratum, year)>0], c(1,3), sum)
+	n_strat <- t_rd[,colSums(table(stratum,year)>0)]	
+	n_strat <- t(matrix(n_strat, nrow=length(n_strat), ncol=nrow(ssy_tbl)))
+	prop_strat_tbl <- ssy_tbl/n_strat
+
+	prop_strat_dt_wide <- data.table(spp=rownames(prop_strat_tbl), as.data.table(prop_strat_tbl))
+	prop_strat_dt <- data.table:::melt.data.table(prop_strat_dt_wide, id.vars="spp", variable.name="year", value.name="propStrata")
+	prop_strat_dt[,year:=as.integer(as.character(year))]
+	
+	propStrat[[i]] <- data.table(reg=t_reg, prop_strat_dt)
+}
+propStrat <- rbindlist(propStrat)[reg!="wcann"]
+setkey(propStrat, reg, year, spp)
+
+
+# ---- Community Master Data Set ----
+comm_master <- merge(beta_div_dt, processed_dt, all=TRUE) # community-level data
+
+# ---- Species Master Data Set ----
+spp_master <- merge(detect_ce_dt, propStrat, all=TRUE) # species-specific data
+spp_master[,has_stretches:=all(c(0,1)%in%una(present)), by=c("reg","spp")]
+stretches <- spp_master[(has_stretches),data.table(year, as.data.table(event_stretches(.SD))), keyby=c("reg","spp")]
+spp_master <- merge(spp_master, stretches, all=TRUE, by=c("reg","spp","year"))
+
+spp_master[stretch_id==-1 | hybrid_part==2, stretch_type:="pre_ext"]
+spp_master[stretch_id==-2 | hybrid_part==1, stretch_type:="post_col"]
+spp_master[!is.na(stretch_type),event_year:=c(post_col=min(year), pre_ext=max(year))[stretch_type[1]],by=c("reg","spp","stretch_type", "stretch_id", "hybrid_part")]
+spp_master[!is.na(stretch_type), lu(year), by=c("reg","spp","stretch_type", "event_year")]
+spp_master[!is.na(stretch_type), stretch_length:=(lu(year)-(stretch_type=="pre_ext")), by=c("reg","spp","stretch_type", "event_year")]
+
+
+# ---- Map Data ----
+mapDat <- make_mapDat(p)
 
 
 # ====================
@@ -188,26 +274,6 @@ detect_ce_dt[,j={
 # =====================
 # = Proportion Strata =
 # =====================
-propStrat <- list()
-for(i in 1:length(p)){
-	t_reg <- p[[i]]$processed[,una(reg)]
-	t_rd <- p[[i]]$rd
-	
-	ssy_tbl <- apply(t_rd[,table(spp, stratum, year)>0], c(1,3), sum)
-	n_strat <- t_rd[,colSums(table(stratum,year)>0)]	
-	n_strat <- t(matrix(n_strat, nrow=length(n_strat), ncol=nrow(ssy_tbl)))
-	prop_strat_tbl <- ssy_tbl/n_strat
-
-	prop_strat_dt_wide <- data.table(spp=rownames(prop_strat_tbl), as.data.table(prop_strat_tbl))
-	prop_strat_dt <- data.table:::melt.data.table(prop_strat_dt_wide, id.vars="spp", variable.name="year", value.name="propStrata")
-	prop_strat_dt[,year:=as.integer(as.character(year))]
-	
-	propStrat[[i]] <- data.table(reg=t_reg, prop_strat_dt)
-}
-propStrat <- rbindlist(propStrat)[reg!="wcann"]
-setkey(propStrat, reg, year, spp)
-
-
 # ---- Time series of Community Average of Proportion Strata ----
 dev.new()
 par(mfrow=c(3,3))
@@ -309,29 +375,7 @@ propStrat[,j={
 # ====================================================================
 # = % Strat, Richness, Beta Diversity, & Detectability Relationships =
 # ====================================================================
-
 # ---- richness time series with sparklines for colonizer/ leaver proportion strata ----
-# data
-spp_master <- merge(detect_ce_dt, propStrat, all=TRUE) # species-specific data
-comm_master <- merge(beta_div_dt, processed_dt, all=TRUE) # community-level data
-
-
-# define characteristics related to colonization-extinction "stretches"
-# for any stretches to exist, the full series will have all(c(0,1)%in%una(present))
-spp_master[,has_stretches:=all(c(0,1)%in%una(present)), by=c("reg","spp")]
-
-
-stretches <- spp_master[(has_stretches),data.table(year, as.data.table(event_stretches(.SD))), keyby=c("reg","spp")]
-spp_master <- merge(spp_master, stretches, all=TRUE, by=c("reg","spp","year"))
-
-spp_master[stretch_id==-1 | hybrid_part==2, stretch_type:="pre_ext"]
-spp_master[stretch_id==-2 | hybrid_part==1, stretch_type:="post_col"]
-spp_master[!is.na(stretch_type),event_year:=c(post_col=min(year), pre_ext=max(year))[stretch_type[1]],by=c("reg","spp","stretch_type", "stretch_id", "hybrid_part")]
-spp_master[!is.na(stretch_type), lu(year), by=c("reg","spp","stretch_type", "event_year")]
-spp_master[!is.na(stretch_type), stretch_length:=(lu(year)-(stretch_type=="pre_ext")), by=c("reg","spp","stretch_type", "event_year")]
-
-
-
 # setup figure
 dev.new(width=6.8, height=7)
 # pdf("~/Desktop/richness_occupancySpark.pdf", width=6.8, height=8)
@@ -453,62 +497,6 @@ comm_master[,j={ccf(diff(beta_div_obs),diff(reg_rich),main=reg[1]);NULL},by="reg
 # =======================================================
 # = Colonization, Extinction, Richness Maps and Scatter =
 # =======================================================
-# ---- make mapDat ----
-make_mapDat <- function(p){
-	mapDat <- list()
-	for(r in 1:length(p)){
-		pt1 <- trawlAgg(
-			p[[r]]$rd,
-			bioFun=meanna, envFun=meanna,
-			envCols=c("btemp","depth","stemp","lon","lat"),
-			bio_lvl="spp",time_lvl="year",space_lvl="stratum",
-			metaCols=c("reg"),meta.action="unique1"	
-		)
-		pt2 <- pt1[,j={
-			avgRich <- .SD[,lu(spp),by="time_lvl"][,meanna(V1)]
-			sdRich <- .SD[,lu(spp),by="time_lvl"][,sd(V1, na.rm=TRUE)]
-			avgBtemp <- .SD[,meanna(btemp),by="time_lvl"][,meanna(V1)]
-			sdBtemp <- .SD[,meanna(btemp),by="time_lvl"][,sd(V1, na.rm=TRUE)]
-			data.table(avgRich=avgRich, sdRich=sdRich, avgBtemp=avgBtemp, sdBtemp=sdBtemp)
-		},by=c("reg","stratum")]
-		to_merge <- c(p[[r]]$colonization[c("n_spp_col_weighted_tot","n_spp_ext_weighted_tot","n_cep")])
-		mapDat[[r]] <- merge(to_merge[["n_spp_col_weighted_tot"]], to_merge[["n_spp_ext_weighted_tot"]], by=c("stratum","lon","lat","depth"),all=TRUE)
-		mapDat[[r]] <- merge(mapDat[[r]], pt2, by="stratum",all=TRUE)
-	}
-	mapDat <- rbindlist(mapDat)[reg!="wcann"]
-	# mapDim <- mapDat[,list(r_lon=diff(range(lon)),r_lat=diff(range(lat))),by="reg"]
-	# mapDim[,c("lon_scale","lat_scale"):=list(r_lon/min(r_lon), r_lat/min(r_lat))]
-	# mapDim[,ll_ratio:=r_lon/r_lat]
-	
-	return(mapDat)
-}
-mapDat <- make_mapDat(p)
-
-
-trawl_layout <- function(){
-	lay_grid <- matrix(1:84, nrow=6, ncol=14)
-	squares <- list(
-		ebs = c(1,26),
-		ai = c(6,42),
-		goa = c(3,41),
-		wctri = c(45,48),
-		gmex = c(53,66),
-		sa = c(70,84), # should really be c(70,77), ... just made it bigger to fill in gap and b/c it's a square
-		neus = c(67,81),
-		shelf = c(31,44),
-		newf = c(49,64)
-	)
-	squares_ind <- lapply(squares, function(x)arrayInd(which(lay_grid%in%x),.dim=dim(lay_grid)))
-	map_layout <- array(NA, dim(lay_grid))
-	for(i in 1:length(squares_ind)){
-		map_layout[squares_ind[[i]]] <- i
-	}
-	map_layout[is.na(map_layout)] <- 0
-	
-	return(map_layout)
-}
-map_layout <- trawl_layout()
-
 # ---- test map plotting ----
 # dev.new(height=3, width=7)
 # par(mar=c(1.5,1.5,0.5,0.5), mgp=c(0.75,0.1,0), tcl=-0.1,ps=8, cex=1)
@@ -528,8 +516,11 @@ map_expr <- list(
 	bquote(n_spp_col_weighted),
 	bquote(n_spp_col_weighted/avgRich),
 	bquote(n_spp_ext_weighted),
-	bquote(n_spp_col_weighted/avgRich)
+	bquote(n_spp_ext_weighted/avgRich)
 )
+
+map_layout <- trawl_layout()
+
 for(mp in 1:length(map_names)){
 	dev.new(height=3, width=7)
 	par(mar=c(1.5,1.5,0.5,0.5), mgp=c(0.75,0.1,0), tcl=-0.1,ps=8, cex=1, oma=c(0.5,0.5,1,0.1))
