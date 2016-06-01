@@ -149,6 +149,62 @@ for(i in 1:length(p)){
 propStrat <- rbindlist(propStrat)[reg!="wcann"]
 setkey(propStrat, reg, year, spp)
 
+# ---- Response Metrics ----
+if(file.exists("~/Documents/School&Work/pinskyPost/trawl/trawlDiversity/pkgBuild/results/resp_metrics.RData")){
+	load("~/Documents/School&Work/pinskyPost/trawl/trawlDiversity/pkgBuild/results/resp_metrics.RData")
+}else{
+	u_regs <- sapply(p, function(x)x$processed[,una(reg)])
+	resp_metrics <- list()
+	for(r in 1:length(p)){
+		t_reg <- u_regs[r]
+		if(t_reg == "wcann"){
+			next
+		}
+		t_ua <- p[[r]]$alpha_unscale
+		X_bt <- p[[r]]$bt
+	
+		t_resp_metrics <- t_ua[,j={
+			ty <- year[1]
+			t_resp <- get_response(.SD, X=X_bt) # msom predictions for probability present based on depth and temp
+			t_opt_resps <- t_resp[resp>=quantile(resp, 0.95, na.rm=TRUE), ] # given environment, top 5% of samples to contain the spp
+			t_opt_depth <- t_opt_resps[,median(depth)] # median of depths in 5% most likely to contain the spp
+			b0_at_od <- .SD[,a1+a4*t_opt_depth+a5*t_opt_depth^2] # intercept given depth is ~optimal depth
+			t_opt <- median(.SD[,psi.opt(a2,a3)], na.rm=TRUE) # optimal bottom temp
+			t_tol <- median(.SD[,psi.tol(a3)], na.rm=TRUE) # bottom temp tolerance
+			t_max <- median(.SD[,psi.max(a1,a2,a3)], na.rm=TRUE) # max probability present
+			data.table(bt_opt=t_opt, bt_tol=t_tol, prob_max=t_max, depth_base_opt=t_opt_depth)
+		},by=c("spp","year")]
+
+		# The idea behind btemp_atOptDepth is to find the annual bottom temperature for the strata that are at the depths typically occupied by each species
+		# First, compare all depths ever seen in each strata to the "optimal depth" values (optimal depth = median depth in top 5% of predicted occurrences for each year)
+		# Second, for each stratum, find its depth value (depths can vary among years depending on sampling location w/in stratum) closest to any optimum (there is an optimum for each year)
+		# Third, rank the strata by their smallest deviation from the optimal depth value (rank is according to its best depth in any year)
+		# Fourth, subset/extract the top 10% best strata according to their rank in step 3
+		# Fifth, in each year, calculate the mean bottom temperature in the strata identified in step 4
+		# For each species in each year, we now have the average temperature in the strata that, according to their depths, are most likely to be occupied by the species
+		# A similar idea would be to take the annual average temperature across strata every occupied by a species; however, this might not be restrictive enough to really focus in on the "best" locations. But if the above approach is too complex for a paper, maybe something along those lines would work.
+		btemp_atOptDepth <- t_resp_metrics[,j={
+			strata_devs <- X_bt[, list(bt, optDepth_dev=abs(depth-depth_base_opt)),by=c("stratum","year")] # deviations from opt depth
+			n_strat_samp <- X_bt[,ceiling(lu(stratum)*0.1)] # 10% = n strata
+			ODS <- strata_devs[,list(optDepth_dev_best=(optDepth_dev[which.min((optDepth_dev))])),by="stratum"] # smallest deviation; ODS = optimal depth strata
+			setorder(ODS, optDepth_dev_best) # order strata by their smallest deviation
+			best_strata <- ODS[1:pmin(n_strat_samp, nrow(ODS)), stratum] # select top 10% (or all, if somehow less available [shouldn't happen])
+			btemp_ODS <- strata_devs[stratum%in%best_strata,list(btemp_ODS=mean(bt, na.rm=TRUE), nODS=lu(stratum)),by="year"] # get mean bottom temperature in best strata for each year
+			btemp_ODS
+		},by="spp"]
+	
+		# merge btODS w/ response metrics, all year-spp combos
+		setkey(btemp_atOptDepth, spp,year)
+		btemp_atOptDepth <- merge(btemp_atOptDepth, btemp_atOptDepth[,CJ(spp=unique(spp),year=unique(year))], by=c("spp","year"), all=TRUE)
+		btemp_atOptDepth[is.na(nODS), nODS:=0]
+		resp_metrics[[r]] <- merge(t_resp_metrics, btemp_atOptDepth, by=c("spp","year"), all=TRUE)
+		resp_metrics[[r]][,reg:=t_reg]
+		print(r); flush.console()
+	}
+	resp_metrics <- rbindlist(resp_metrics)
+	save(resp_metrics, file="~/Documents/School&Work/pinskyPost/trawl/trawlDiversity/pkgBuild/results/resp_metrics.RData")
+}
+
 
 # ---- Community Master Data Set ----
 comm_master <- merge(beta_div_dt, processed_dt, all=TRUE) # community-level data
@@ -164,6 +220,7 @@ spp_master[stretch_id==-2 | hybrid_part==1, stretch_type:="post_col"]
 spp_master[!is.na(stretch_type),event_year:=c(post_col=min(year), pre_ext=max(year))[stretch_type[1]],by=c("reg","spp","stretch_type", "stretch_id", "hybrid_part")]
 spp_master[!is.na(stretch_type), stretch_length:=(lu(year)-(stretch_type=="pre_ext")), by=c("reg","spp","stretch_type", "event_year")]
 
+spp_master <- merge(spp_master, resp_metrics, by=c("reg","spp","year"), all=TRUE)
 
 # ---- Map Data ----
 mapDat <- make_mapDat(p)
@@ -552,10 +609,70 @@ psi.opt <- function(b1,b2){-b1/(2*b2)}
 psi.tol <- function(b2){1/sqrt(-2*b2)}
 psi.max <- function(b0,b1,b2){1/(1+exp((b1^2)/(4*b2)-b0))}
 
-r = 1
-t_ua <- p[[r]]$alpha_unscale
 
-t_ua[,list(psi.opt),by=c("spp","year")]
+
+get_response <- function(alphas, X, n_samp=NULL, n_grid=NULL){
+
+	if(!is.null(n_samp)){
+		alphas <- alphas[sample(1:nrow(alphas),n_samp)]
+		n <- n_samp
+	}else{
+		n <- nrow(alphas)
+	}
+	
+	if(!is.null(n_grid)){
+		d_vals <- X[,seq(min(depth), max(depth), length.out=n_grid)]
+		b_vals <- X[,seq(min(bt, na.rm=TRUE), max(bt, na.rm=TRUE), length.out=n_grid)]
+		vals <- expand.grid(b=b_vals, d=d_vals)
+	}else{
+		vals <- as.matrix(X[,list(b=bt,d=depth)])
+	}
+
+
+	pred_resp <- function(b, d, alphas){
+		a <- matrix(alphas, nrow=5)
+		x <- as.matrix(cbind(1, b, b^2, d, d^2))
+		x%*%a
+	}
+
+	pr <- pred_resp(vals[,"b"], vals[,"d"], t(alphas[,list(a1,a2,a3,a4,a5)]))
+	
+	if(!is.null(n_grid)){
+		dn <- list(btemp=as.character(b_vals),depth=as.character(d_vals),iter=NULL)
+		pr2 <- array(pr, dim=c(n_grid, n_grid, n), dimnames=dn)
+		pr3 <- apply(pr2, c(1,2,4), mean)
+		return(pr3)
+	}
+
+	return(data.table(X,resp=rowMeans(pr)))
+	
+}
+
+
+# In a grid of observed environmental values (temp, depth), find depth at which p(present) is highest
+	# Or, instead of grid, maybe just use all observed combinations
+
+# Add products of alpha[4:5] and 'optimal' depth to intercept (alpha[1])
+
+
+
+
+
+
+
+# dev.new()
+# par(mfrow=auto.mfrow(resp_metrics[,lu(spp)]), mar=c(1,1,0.5,0.5), cex=1, ps=8, mgp=c(1,0.1,0), tcl=-0.1, oma=c(0.1,0.1,1,0.1))
+# opt_lims <- resp_metrics[,range(bt_opt, na.rm=TRUE)]
+# resp_metrics[,plot(density(bt_opt, from=opt_lims[1], to=opt_lims[2], na.rm=TRUE), main=spp[1]),by="spp"]
+# mtext(paste(t_reg, "Optimal Bottom Temperature"), side=3, outer=TRUE, line=0)
+#
+# dev.new()
+# par(mfrow=auto.mfrow(resp_metrics[,lu(spp)]), mar=c(1,1,0.5,0.5), cex=1, ps=8, mgp=c(1,0.1,0), tcl=-0.1, oma=c(0.1,0.1,1,0.1))
+# tol_lims <- resp_metrics[,range(bt_tol, na.rm=TRUE)]
+# resp_metrics[,plot(density(bt_tol, from=tol_lims[1], to=tol_lims[2], na.rm=TRUE), main=spp[1]),by="spp"]
+# mtext(paste(t_reg, "Tolerance of Bottom Temperature"), side=3, outer=TRUE, line=0)
+
+
 
 
 
