@@ -70,6 +70,45 @@ trawl_layout <- function(){
 	return(map_layout)
 }
 
+# ---- Response Metric Functions ----
+psi.opt <- function(b1,b2){-b1/(2*b2)}
+psi.tol <- function(b2){1/sqrt(-2*b2)}
+psi.max <- function(b0,b1,b2){1/(1+exp((b1^2)/(4*b2)-b0))}
+
+get_response <- function(alphas, X, n_samp=NULL, n_grid=NULL){
+	if(!is.null(n_samp)){
+		alphas <- alphas[sample(1:nrow(alphas),n_samp)]
+		n <- n_samp
+	}else{
+		n <- nrow(alphas)
+	}
+	
+	if(!is.null(n_grid)){
+		d_vals <- X[,seq(min(depth), max(depth), length.out=n_grid)]
+		b_vals <- X[,seq(min(bt, na.rm=TRUE), max(bt, na.rm=TRUE), length.out=n_grid)]
+		vals <- expand.grid(b=b_vals, d=d_vals)
+	}else{
+		vals <- as.matrix(X[,list(b=bt,d=depth)])
+	}
+	
+	pred_resp <- function(b, d, alphas){
+		a <- matrix(alphas, nrow=5)
+		x <- as.matrix(cbind(1, b, b^2, d, d^2))
+		x%*%a
+	}
+
+	pr <- pred_resp(vals[,"b"], vals[,"d"], t(alphas[,list(a1,a2,a3,a4,a5)]))
+	
+	if(!is.null(n_grid)){
+		dn <- list(btemp=as.character(b_vals),depth=as.character(d_vals),iter=NULL)
+		pr2 <- array(pr, dim=c(n_grid, n_grid, n), dimnames=dn)
+		pr3 <- apply(pr2, c(1,2,4), mean)
+		return(pr3)
+	}
+
+	return(data.table(X,resp=rowMeans(pr)))	
+}
+
 
 # ================
 # = Data Objects =
@@ -605,71 +644,17 @@ mapDat[,plot(n_spp_ext_weighted, avgRich, main=reg[1]), by="reg"]
 # ===================================================
 # = MSOM Parameter Response Metrics (opt, tol, max) =
 # ===================================================
-psi.opt <- function(b1,b2){-b1/(2*b2)}
-psi.tol <- function(b2){1/sqrt(-2*b2)}
-psi.max <- function(b0,b1,b2){1/(1+exp((b1^2)/(4*b2)-b0))}
-
-
-
-get_response <- function(alphas, X, n_samp=NULL, n_grid=NULL){
-
-	if(!is.null(n_samp)){
-		alphas <- alphas[sample(1:nrow(alphas),n_samp)]
-		n <- n_samp
-	}else{
-		n <- nrow(alphas)
-	}
-	
-	if(!is.null(n_grid)){
-		d_vals <- X[,seq(min(depth), max(depth), length.out=n_grid)]
-		b_vals <- X[,seq(min(bt, na.rm=TRUE), max(bt, na.rm=TRUE), length.out=n_grid)]
-		vals <- expand.grid(b=b_vals, d=d_vals)
-	}else{
-		vals <- as.matrix(X[,list(b=bt,d=depth)])
-	}
-
-
-	pred_resp <- function(b, d, alphas){
-		a <- matrix(alphas, nrow=5)
-		x <- as.matrix(cbind(1, b, b^2, d, d^2))
-		x%*%a
-	}
-
-	pr <- pred_resp(vals[,"b"], vals[,"d"], t(alphas[,list(a1,a2,a3,a4,a5)]))
-	
-	if(!is.null(n_grid)){
-		dn <- list(btemp=as.character(b_vals),depth=as.character(d_vals),iter=NULL)
-		pr2 <- array(pr, dim=c(n_grid, n_grid, n), dimnames=dn)
-		pr3 <- apply(pr2, c(1,2,4), mean)
-		return(pr3)
-	}
-
-	return(data.table(X,resp=rowMeans(pr)))
-	
-}
-
-
-# In a grid of observed environmental values (temp, depth), find depth at which p(present) is highest
-	# Or, instead of grid, maybe just use all observed combinations
-
-# Add products of alpha[4:5] and 'optimal' depth to intercept (alpha[1])
-
-
-
-
-
-
-
-# dev.new()
-# par(mfrow=auto.mfrow(resp_metrics[,lu(spp)]), mar=c(1,1,0.5,0.5), cex=1, ps=8, mgp=c(1,0.1,0), tcl=-0.1, oma=c(0.1,0.1,1,0.1))
-# opt_lims <- resp_metrics[,range(bt_opt, na.rm=TRUE)]
-# resp_metrics[,plot(density(bt_opt, from=opt_lims[1], to=opt_lims[2], na.rm=TRUE), main=spp[1]),by="spp"]
+# # these graphs were originally only meant for 1 region at a time, so not too useful
+# dev.new(width=10, height=10)
+# par(mfrow=auto.mfrow(spp_master[,lu(spp)]), mar=c(0.5,0.5,0.5,0.5), cex=1, ps=6, mgp=c(0.5,0.1,0), tcl=-0.1, oma=c(0.1,0.1,1,0.1))
+# opt_lims <- spp_master[,range(bt_opt, na.rm=TRUE)]
+# spp_master[,plot(density(bt_opt, from=opt_lims[1], to=opt_lims[2], na.rm=TRUE), main=spp[1]),by="spp"]
 # mtext(paste(t_reg, "Optimal Bottom Temperature"), side=3, outer=TRUE, line=0)
 #
-# dev.new()
-# par(mfrow=auto.mfrow(resp_metrics[,lu(spp)]), mar=c(1,1,0.5,0.5), cex=1, ps=8, mgp=c(1,0.1,0), tcl=-0.1, oma=c(0.1,0.1,1,0.1))
-# tol_lims <- resp_metrics[,range(bt_tol, na.rm=TRUE)]
-# resp_metrics[,plot(density(bt_tol, from=tol_lims[1], to=tol_lims[2], na.rm=TRUE), main=spp[1]),by="spp"]
+# dev.new(width=10, height=10)
+# par(mfrow=auto.mfrow(spp_master[,lu(spp)]), mar=c(0.5,0.5,0.5,0.5), cex=1, ps=6, mgp=c(0.5,0.1,0), tcl=-0.1, oma=c(0.1,0.1,1,0.1))
+# tol_lims <- spp_master[,range(bt_tol, na.rm=TRUE)]
+# spp_master[,plot(density(bt_tol, from=tol_lims[1], to=tol_lims[2], na.rm=TRUE), main=spp[1]),by="spp"]
 # mtext(paste(t_reg, "Tolerance of Bottom Temperature"), side=3, outer=TRUE, line=0)
 
 
