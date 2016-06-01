@@ -162,7 +162,6 @@ spp_master <- merge(spp_master, stretches, all=TRUE, by=c("reg","spp","year"))
 spp_master[stretch_id==-1 | hybrid_part==2, stretch_type:="pre_ext"]
 spp_master[stretch_id==-2 | hybrid_part==1, stretch_type:="post_col"]
 spp_master[!is.na(stretch_type),event_year:=c(post_col=min(year), pre_ext=max(year))[stretch_type[1]],by=c("reg","spp","stretch_type", "stretch_id", "hybrid_part")]
-spp_master[!is.na(stretch_type), lu(year), by=c("reg","spp","stretch_type", "event_year")]
 spp_master[!is.na(stretch_type), stretch_length:=(lu(year)-(stretch_type=="pre_ext")), by=c("reg","spp","stretch_type", "event_year")]
 
 
@@ -379,7 +378,7 @@ propStrat[,j={
 # setup figure
 dev.new(width=6.8, height=7)
 # pdf("~/Desktop/richness_occupancySpark.pdf", width=6.8, height=8)
-par(mar=c(1.5,1.5,0.5,0.1), oma=c(0.1,0.1,0.1,0.1), cex=1, ps=6, mgp=c(0.5, 0.1, 0), tcl=-0.1)
+par(mar=c(1.5,1.5,0.5,0.1), oma=c(0.1,0.1,0.1,0.1), cex=1, ps=8, mgp=c(0.65, 0.1, 0), tcl=-0.1)
 
 u_regs <- spp_master[,una(reg)]
 lay_mat <- matrix(0, ncol=12, nrow=4)
@@ -403,9 +402,9 @@ for(r in 1:length(u_regs)){
 		# plot richness time series
 		plt_stretch <- t_spp_master[,list(richness=sum(present)),keyby="year"]
 		c1 <- mean(par("cin"))/par("pin")
-		ylim <- plt_stretch[,range(richness)+c(-c1[2],c1[2])*diff(par()$usr[3:4])*c(0.1,0.5)]
+		ylim <- plt_stretch[,range(richness)+c(-c1[2],c1[2])*diff(par()$usr[3:4])*c(0.5,1)]
 		xlim <- plt_stretch[,range(year)+c(-c1[1],c1[1])*diff(par()$usr[1:2])*0.15]
-		plot(plt_stretch, type='l', main=u_regs[r], ylim=ylim, xlim=xlim) # use msom?
+		plot(plt_stretch, type='l', main=u_regs[r], ylim=ylim, xlim=xlim, lwd=2) # use msom?
 	
 		# loop through each richness year
 		u_ev_yrs <- sort(t_spp_master[,una(event_year, na.rm=TRUE)])
@@ -433,8 +432,8 @@ for(r in 1:length(u_regs)){
 				x <- mu_plot[stretch_type==ust[st],year]
 				y <- mu_plot[stretch_type==ust[st],propStrata]
 				if(length(x)>=3 & sum(is.finite(y))>=3){
-					if(sum(is.finite(y))>=4){
-						y <- fitted(loess(y~x, data.frame(x,y))) # spline(x, y, n=length(x))$y 
+					if(sum(is.finite(y))>=3){
+						y <- fitted(lm(y~x, data.frame(x,y))) #fitted(loess(y~x, data.frame(x,y))) # spline(x, y, n=length(x))$y 
 					}
 					y_align <- c(pre_ext="right", post_col="left")[ust[st]]
 					x_align <- c(pre_ext="right", post_col="left")[ust[st]]
