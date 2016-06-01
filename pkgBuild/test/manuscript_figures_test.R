@@ -17,47 +17,13 @@ load("trawlDiversity/pkgBuild/results/processedMsom/p.RData")
 
 # ---- Time Metrics for Colonization/ Extinction ----
 # add more columns pertaining to how long spp has been around
-streak_length <- function(x, streak_val=1, fill_val=0){
-	rl <- rle(x)
-	rlv <- rl$values
-	streaks <- sapply(rl$lengths[rlv==streak_val & is.finite(rlv)], seq_len)	
-	
-	finite_x <- is.finite(x)
-	x[x!=streak_val | !finite_x] <- fill_val
-	x[x==streak_val & finite_x] <- Reduce(c, streaks)
-	
-	return(x)
-}
 
-event_distance <- function(x, positions=seq_along(x), event_value=1, keep_sign=FALSE){
-	# distance of each event to nearest non-event
-	
-	event_index <- which(x == event_value)
-	nonEvent_index <- seq_along(x)[-event_index]
-	
-	if(length(event_index) == 0 | length(nonEvent_index) == 0){
-		return(as(rep(NA, length(x)), class(x)))
-	}
-	
-	event_position <- positions[event_index]
-	nonEvent_position <- positions[nonEvent_index]
-	
-	# dists <- abs(outer(event_position, nonEvent_position, "-"))
-	# event_dists <- rep(0, length(x))
-	# event_dists[event_index] <- apply(dists, 1, min)
-	
-	dists_s <- outer(nonEvent_position, event_position, "-")
-	dists <- abs(dists_s)
-	event_dists <- rep(0, length(x))
-	signed_dists <- apply(dists_s, 2, function(x)x[which.min(abs(x))])
-	if(keep_sign){
-		event_dists[event_index] <- signed_dists
-	}else{
-		event_dists[event_index] <- abs(signed_dists)
-	}
-	
-	return(as(event_dists, class(x)))
-}
+
+
+
+# ---- event stretches function ----
+
+
 
 # ================
 # = Data Objects =
@@ -354,99 +320,6 @@ comm_master <- merge(beta_div_dt, processed_dt, all=TRUE) # community-level data
 # for any stretches to exist, the full series will have all(c(0,1)%in%una(present))
 spp_master[,has_stretches:=all(c(0,1)%in%una(present)), by=c("reg","spp")]
 
-event_stretches <- function(X){
-	# must have columns for present, year, now_ext, col, ext_dist_sign
-	# returns columns of stretch_id, hybrid_part
-	
-	present <- X[, present]
-	year <- X[, year]
-	now_ext <- X[, now_ext]
-	col <- X[, col]
-	ext_dist_sign <- X[, ext_dist_sign]
-
-	# For convenience, define rle of present
-	rls0 <- rle(present)
-	
-	# Output components, empty
-	# stretch_id = integer vector identifying the type and ID of stretch to which each element belongs
-	stretch_id <- rep(0, length(present)) # 0 means no stretch
-	hybrid_part <- rep(0, length(present))
-
-	# For any stretches to exist, the full series will have all(c(0,1)%in%una(present)) 
-	has_stretches <- all(c(0,1)%in%una(present))
-	
-	# If the current species does not have both presences and absenences, just reutrn 0's
-	if(!has_stretches){
-		return(list(stretch_id=stretch_id, hybrid_part=hybrid_part))
-	}
-
-	# If it has stretches, the series will be comprised of stretches taking on one or more of the following forms:
-		# extinction-only
-		# colonization-only
-		# hybrid stretch
-
-	# Define start and stop of e-only and c-only stretches
-	has_col <- any(col==1)
-	has_now_ext <- any(now_ext==1)
-	e_only_start <- (year==min(year) & present == 1) # extinction-only
-	e_only_end <- (now_ext==1 & year==min(year[now_ext==1])) # extinction-only
-	c_only_start <- (col==1 & year==max(year[col==1])) # colonization-only
-	c_only_end <- (year==max(year) & present==1) # colonization-only
-
-	# A e-only or c-only stretch exists if (any(start_logic) & any(end_logic))
-	has_eo <- any(e_only_start) & any(e_only_end)
-	has_co <- any(c_only_start) & any(c_only_end)
-
-	# The existance and number of hybrid stretches in a series is defined by:
-	n_hybrid <- sum(head(rls0$values[-1],-1)==1)
-
-	# ID for extinction-only stretch
-	if(has_eo){
-		ind <- seq_along(present)
-		eo_ind <- ind[e_only_start] : ind[e_only_end]
-		stretch_id[eo_ind] <- -1
-	}
-
-	# ID for colonization-only stretch
-	if(has_co){
-		ind <- seq_along(present)
-		co_ind <- ind[c_only_start] : ind[c_only_end]
-		stretch_id[co_ind] <- -2
-	}
-
-	# ID for hybrid stretches
-	if(n_hybrid>0){
-		rls <- rls0
-		rls$values[c(1,length(rls$values))] <- 0
-		rls$values <- rls$values * cumsum(rls$values)
-		after_hybrid <- c(0, diff(rls$values)) < 0
-		rls$lengths <- rls$lengths - as.integer(after_hybrid) # removes the now_ext==1 from non-hybrid classification
-		rls$lengths <- rls$lengths + as.integer(rls$values > 0) # adds the now_ext==1 to the hybrid classification
-		hybrid_id <- inverse.rle(rls)
-		stretch_id[hybrid_id!=0] <- hybrid_id[hybrid_id!=0]
-	
-		# A single hybrid stretch can be further subdivided into two parts:
-			# post-colonization: an initial portion of the stretch that is closer to its start than end
-			# pre-extinction: a latter portion of the stretch that is closer to its end than start
-		# Categorization as post-c or pre-e corresponds to whether the nearest absence is in the past or future:
-			# post-c: ext_dist_sign<0
-			# pre-e: ext_dist_sign>=0
-		hybrid_part[stretch_id>0 & ext_dist_sign<0] <- 1 # post-colonization (first part)
-		hybrid_part[stretch_id>0 & ext_dist_sign>=0] <- 2 # pre-extinction (second part)
-	}
-	out <- list(stretch_id=stretch_id, hybrid_part=hybrid_part)
-	
-	
-	return(out)
-	
-}
-# Stretch ID Key:
-#  -1 is extinction only
-#  -2 is colonization only
-#  1 is hybrid
-# Hybrid Part Key:
-#  1 is post-colonization
-#  2 is pre-extinction
 
 stretches <- spp_master[(has_stretches),data.table(year, as.data.table(event_stretches(.SD))), keyby=c("reg","spp")]
 spp_master <- merge(spp_master, stretches, all=TRUE, by=c("reg","spp","year"))
