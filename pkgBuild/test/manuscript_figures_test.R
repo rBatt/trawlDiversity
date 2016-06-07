@@ -286,6 +286,7 @@ comm_metrics <- spp_master[present==1,j={
 
 comm_master <- merge(beta_div_dt, processed_dt, all=TRUE) # community-level data
 comm_master <- merge(comm_master, comm_metrics, by=c("reg","year"), all=TRUE)
+comm_master <- merge(comm_master, spp_master[present==1,list(propStrata_avg=mean(propStrata)),by=c("reg","year")], by=c("reg","year"), all=TRUE)
 
 
 # ---- Map Data ----
@@ -783,7 +784,6 @@ comm_master[,j={
 # 	plot(plogis(detect_mu_avg), naive_rich, main=reg[1], col=zCol(256,year))
 # },by="reg"]
 
-
 dev.new()
 par(mfrow=c(3,3), mar=c(2,2,0.5,0.5), mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
 spp_master[,j={
@@ -791,6 +791,12 @@ spp_master[,j={
 	dt[,plot(prevalence, plogis(detect_mu_avg), main=reg[1])]
 	abline(a=0,b=1,col='blue')
 	NULL
+},by=c("reg")]
+
+dev.new()
+par(mfrow=c(3,3), mar=c(2,2,0.5,0.5), mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
+comm_master[,j={
+	plot(propStrata_avg, reg_rich, main=reg[1], col=zCol(256,year))
 },by=c("reg")]
 
 
