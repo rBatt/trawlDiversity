@@ -182,8 +182,10 @@ for(i in 1:length(p)){
 	prop_strat_dt_wide <- data.table(spp=rownames(prop_strat_tbl), as.data.table(prop_strat_tbl))
 	prop_strat_dt <- data.table:::melt.data.table(prop_strat_dt_wide, id.vars="spp", variable.name="year", value.name="propStrata")
 	prop_strat_dt[,year:=as.integer(as.character(year))]
+	prop_strat_dt <- merge(prop_strat_dt, p[[i]]$processed[,list(reg,year,bt_ann)], by=c("year"), all=TRUE)
+	setcolorder(prop_strat_dt, c("reg","year","spp","propStrata","bt_ann"))
 	
-	propStrat[[i]] <- data.table(reg=t_reg, prop_strat_dt)
+	propStrat[[i]] <- prop_strat_dt #data.table(reg=t_reg, prop_strat_dt)
 }
 propStrat <- rbindlist(propStrat)[reg!="wcann"]
 setkey(propStrat, reg, year, spp)
@@ -244,10 +246,6 @@ if(file.exists("~/Documents/School&Work/pinskyPost/trawl/trawlDiversity/pkgBuild
 	save(resp_metrics, file="~/Documents/School&Work/pinskyPost/trawl/trawlDiversity/pkgBuild/results/resp_metrics.RData")
 }
 
-
-# ---- Community Master Data Set ----
-comm_master <- merge(beta_div_dt, processed_dt, all=TRUE) # community-level data
-
 # ---- Species Master Data Set ----
 spp_master <- merge(detect_ce_dt, propStrat, all=TRUE) # species-specific data
 spp_master[,has_stretches:=all(c(0,1)%in%una(present)), by=c("reg","spp")]
@@ -260,6 +258,35 @@ spp_master[!is.na(stretch_type),event_year:=c(post_col=min(year), pre_ext=max(ye
 spp_master[!is.na(stretch_type), stretch_length:=(lu(year)-(stretch_type=="pre_ext")), by=c("reg","spp","stretch_type", "event_year")]
 
 spp_master <- merge(spp_master, resp_metrics, by=c("reg","spp","year"), all=TRUE)
+
+spp_master[,c("bt_opt_avg","bt_tol_avg","detect_mu_avg"):=list(bt_opt_avg=mean(bt_opt, na.rm=TRUE), bt_tol_avg=mean(bt_tol, na.rm=TRUE), detect_mu_avg=mean(detect_mu, na.rm=TRUE)),by=c('reg','spp')]
+
+define_ce_categ <- function(X){
+	ext <- X[,ext]
+	col <- X[,col]
+	if(all(col==0) & all(ext==0)){
+		return("neither")
+	}
+	if(all(col==0) & any(ext==1)){
+		return("leaver")
+	}
+	if(any(col==1) & all(ext==0)){
+		return("colonizer")
+	}
+	if(any(col==1) & any(ext==1)){
+		return("both")
+	}
+}
+spp_master[,ce_categ:=define_ce_categ(.SD),by=c("reg","spp")]
+
+# ---- Community Master Data Set ----
+comm_metrics <- spp_master[present==1,j={
+	lapply(.SD, mean, na.rm=TRUE)
+},by=c("reg","year"), .SDcols=c("bt_opt_avg","bt_tol_avg","detect_mu_avg","detect_mu")]
+
+comm_master <- merge(beta_div_dt, processed_dt, all=TRUE) # community-level data
+comm_master <- merge(comm_master, comm_metrics, by=c("reg","year"), all=TRUE)
+
 
 # ---- Map Data ----
 mapDat <- make_mapDat(p)
@@ -310,13 +337,18 @@ processed_dt[,j={plot(naive_rich, reg_rich, main=una(reg)); abline(a=0, b=1)},by
 # =========================
 
 # # ---- Time Series of Community Average Detectability ----
-# dev.new()
-# par(mfrow=c(3,3))
-# detect_dt[,j={
-# 	comm_detect <- .SD[,list(detctability=plogis(mean(value_mu))),by=c("year")]
-# 	plot(comm_detect, type="o", main=una(reg))
-# }, by=c("reg")]
-#
+dev.new()
+par(mfrow=c(3,3))
+comm_master[,j={
+	plot(year, detect_mu, type="o", main=una(reg))
+}, by=c("reg")]
+
+dev.new()
+par(mfrow=c(3,3))
+comm_master[,j={
+	plot(year, detect_mu_avg, type="o", main=una(reg))
+}, by=c("reg")]
+
 # # ---- Time Series of Species Detectability ----
 # dev.new()
 # par(mfrow=c(3,3))
@@ -657,9 +689,98 @@ for(mp in 1:length(map_names)){
 # spp_master[,plot(density(bt_tol, from=tol_lims[1], to=tol_lims[2], na.rm=TRUE), main=spp[1]),by="spp"]
 # mtext(paste(t_reg, "Tolerance of Bottom Temperature"), side=3, outer=TRUE, line=0)
 
+# ---- time series of thermal optimum (using that year's model only) ----
+# dev.new()
+# par(mfrow=c(3,3), mar=c(2,2,0.5,0.5), mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
+# spp_master[, plot(.SD[,list(avg_thermal_opt=mean(bt_opt, na.rm=TRUE)),by="year"],main=reg[1], type='o'), by=c("reg")]
+
+# ---- time series of thermal optimum (long-term average per species, only species present in that year) ----
+dev.new()
+par(mfrow=c(3,3), mar=c(2,2,0.5,0.5), mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
+comm_master[,plot(year, bt_opt_avg, type="o", main=reg[1]),by="reg"]
+
+# ---- difference between observed temperature and optimum, for each year, compare present & absent species ----
+dev.new()
+par(mfrow=c(3,3), mar=c(2,2,0.5,0.5), mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
+spp_master[,j={
+	# temp_dev <- .SD[, list(opt_temp_deviation=mean(bt_opt_avg - btemp_ODS, na.rm=TRUE)),keyby=c('year','present')]
+	# temp_dev[,plot(year, abs(opt_temp_deviation), col=c("red","blue")[(present+1)], main=reg[1])]
+	# temp_dev[present==1,lines(year, abs(opt_temp_deviation), col=c("red","blue")[(present+1)], main=reg[1])]
+	# temp_dev[present==0,lines(year, abs(opt_temp_deviation), col=c("red","blue")[(present+1)], main=reg[1])]
+	# .SD[,plot(year, abs(bt_opt_avg - btemp_ODS), col=factor(present))]
+	
+	# oops, but kinda interesting (below)
+	# instead of species optimum, i plotted region temperature vs temperature in the best depths (best for each spp)
+	# temp_dev <- .SD[, list(opt_temp_deviation=mean(bt_ann - btemp_ODS, na.rm=TRUE)),keyby=c('year','present')]
+	# temp_dev[,plot(year, abs(opt_temp_deviation), col=c("red","blue")[(present+1)], main=reg[1])]
+	# temp_dev[present==1,lines(year, abs(opt_temp_deviation), col=c("red","blue")[(present+1)], main=reg[1])]
+	# temp_dev[present==0,lines(year, abs(opt_temp_deviation), col=c("red","blue")[(present+1)], main=reg[1])]
+	# if(reg[1]=="ai"){legend("topleft",legend=c("present","absent"), text.col=c("blue","red"), inset=c(-0.15,-0.05))}
+	
+	temp_dev <- .SD[, list(opt_temp_deviation=mean(bt_opt_avg - bt_ann, na.rm=TRUE)),keyby=c('year','present')]
+	temp_dev[,plot(year, abs(opt_temp_deviation), col=c("red","blue")[(present+1)], main=reg[1])]
+	temp_dev[present==1,lines(year, abs(opt_temp_deviation), col=c("red","blue")[(present+1)], main=reg[1])]
+	temp_dev[present==0,lines(year, abs(opt_temp_deviation), col=c("red","blue")[(present+1)], main=reg[1])]
+	if(reg[1]=="ai"){legend("topleft",legend=c("present","absent"), text.col=c("blue","red"), inset=c(-0.15,-0.05))}
+},by=c('reg')]
+
+# ---- scatter plot of annual btemp and opt temp ----
+dev.new()
+par(mfrow=c(3,3), mar=c(2,2,0.5,0.5), mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
+spp_master[present==1, j={plot(.SD[,list(bt_ann=mean(bt_ann,na.rm=T), mean_bt_opt_avg=mean(bt_opt_avg,na.rm=T)),by='year'][,list(bt_ann,mean_bt_opt_avg)],main=reg[1]);abline(a=0,b=1)},by=c('reg')]
+
+# ---- boxplots of optimal temperature for C/E categories ----
+dev.new()
+par(mfrow=c(3,3), mar=c(2,2,0.5,0.5), mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
+spp_master[,j={
+	dt <- .SD[,list(bt_opt_avg=mean(bt_opt_avg),ce_categ=una(ce_categ)),by=c("spp")]
+	dtbp <- boxplot(bt_opt_avg~ce_categ, main=reg[1], data=dt, ylab="bt_opt_avg")
+	NULL
+},by=c("reg")]
+
+# ---- boxplots of temperature tolerance for C/E categories ----
+dev.new()
+par(mfrow=c(3,3), mar=c(2,2,0.5,0.5), mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
+spp_master[,j={
+	dt <- .SD[,list(bt_tol_avg=mean(bt_tol_avg),ce_categ=una(ce_categ)),by=c("spp")]
+	dtbp <- boxplot(bt_tol_avg~ce_categ, main=reg[1], data=dt, ylab="bt_tol_avg")
+	NULL
+},by=c("reg")]
+
+# ---- scatter plot of prevalence (% strata) vs temp tolerance ----
+# actually shows a relationship
+dev.new()
+par(mfrow=c(3,3), mar=c(2,2,0.5,0.5), mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
+spp_master[,j={
+	dt <- .SD[,list(bt_tol_avg=mean(bt_tol_avg),mean_prevalence=mean(propStrata)),by=c("spp")]
+	dt[,plot(bt_tol_avg, mean_prevalence, main=reg[1])]
+	NULL
+},by=c("reg")]
+
+# ---- scatter plot of prevalence vs deviation between thermal optimum and ODS temp ----
+dev.new()
+par(mfrow=c(3,3), mar=c(2,2,0.5,0.5), mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
+spp_master[,j={
+	dt <- .SD[,list(bt_opt_ods_dev=abs(bt_opt_avg-btemp_ODS),prevalence=(propStrata)),by=c("spp")]
+	dt[,plot(bt_opt_ods_dev, prevalence, main=reg[1])]
+	NULL
+},by=c("reg")]
 
 
+# ================================
+# = Lucky Detection and Richness =
+# ================================
+dev.new()
+par(mfrow=c(3,3), mar=c(2,2,0.5,0.5), mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
+comm_master[,j={
+	plot(plogis(detect_mu_avg), reg_rich, main=reg[1], col=zCol(256,year))
+},by="reg"]
 
+dev.new()
+par(mfrow=c(3,3), mar=c(2,2,0.5,0.5), mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
+comm_master[,j={
+	plot(plogis(detect_mu_avg), naive_rich, main=reg[1], col=zCol(256,year))
+},by="reg"]
 
 
 
