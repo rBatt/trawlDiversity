@@ -296,10 +296,10 @@ mapDat <- make_mapDat(p)
 # = Richness Figures =
 # ====================
 
-# ---- Time Series Naive Richness ----
-dev.new()
-par(mfrow=c(3,3))
-processed_dt[,j={plot(year, naive_rich, type="o", main=una(reg))},by=c("reg")]
+# # ---- Time Series Naive Richness ----
+# dev.new()
+# par(mfrow=c(3,3))
+# processed_dt[,j={plot(year, naive_rich, type="o", main=una(reg))},by=c("reg")]
 
 # ---- Time Series MSOM Richness ----
 dev.new()
@@ -636,7 +636,8 @@ spp_master[!is.na(stretch_type), j={
 # }
 
 # ---- plots ----
-map_names <- c("Average Richness", "Richness Variability", "Colonization Rate", "Colonizations per Species", "Extinction Rate", "Extinctions per Species")
+# map_names <- c("Average Richness", "Richness Variability", "Colonization Rate", "Colonizations per Species", "Extinction Rate", "Extinctions per Species")
+map_names <- c("Average Richness", "Colonizations per Species")
 map_expr <- list(
 	bquote(avgRich),
 	bquote(sdRich),
@@ -694,77 +695,77 @@ for(mp in 1:length(map_names)){
 # par(mfrow=c(3,3), mar=c(2,2,0.5,0.5), mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
 # spp_master[, plot(.SD[,list(avg_thermal_opt=mean(bt_opt, na.rm=TRUE)),by="year"],main=reg[1], type='o'), by=c("reg")]
 
-# ---- time series of thermal optimum (long-term average per species, only species present in that year) ----
-dev.new()
-par(mfrow=c(3,3), mar=c(2,2,0.5,0.5), mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
-comm_master[,plot(year, bt_opt_avg, type="o", main=reg[1]),by="reg"]
-
-# ---- difference between observed temperature and optimum, for each year, compare present & absent species ----
-dev.new()
-par(mfrow=c(3,3), mar=c(2,2,0.5,0.5), mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
-spp_master[,j={
-	# temp_dev <- .SD[, list(opt_temp_deviation=mean(bt_opt_avg - btemp_ODS, na.rm=TRUE)),keyby=c('year','present')]
-	# temp_dev[,plot(year, abs(opt_temp_deviation), col=c("red","blue")[(present+1)], main=reg[1])]
-	# temp_dev[present==1,lines(year, abs(opt_temp_deviation), col=c("red","blue")[(present+1)], main=reg[1])]
-	# temp_dev[present==0,lines(year, abs(opt_temp_deviation), col=c("red","blue")[(present+1)], main=reg[1])]
-	# .SD[,plot(year, abs(bt_opt_avg - btemp_ODS), col=factor(present))]
-	
-	# oops, but kinda interesting (below)
-	# instead of species optimum, i plotted region temperature vs temperature in the best depths (best for each spp)
-	# temp_dev <- .SD[, list(opt_temp_deviation=mean(bt_ann - btemp_ODS, na.rm=TRUE)),keyby=c('year','present')]
-	# temp_dev[,plot(year, abs(opt_temp_deviation), col=c("red","blue")[(present+1)], main=reg[1])]
-	# temp_dev[present==1,lines(year, abs(opt_temp_deviation), col=c("red","blue")[(present+1)], main=reg[1])]
-	# temp_dev[present==0,lines(year, abs(opt_temp_deviation), col=c("red","blue")[(present+1)], main=reg[1])]
-	# if(reg[1]=="ai"){legend("topleft",legend=c("present","absent"), text.col=c("blue","red"), inset=c(-0.15,-0.05))}
-	
-	temp_dev <- .SD[, list(opt_temp_deviation=mean(bt_opt_avg - bt_ann, na.rm=TRUE)),keyby=c('year','present')]
-	temp_dev[,plot(year, abs(opt_temp_deviation), col=c("red","blue")[(present+1)], main=reg[1])]
-	temp_dev[present==1,lines(year, abs(opt_temp_deviation), col=c("red","blue")[(present+1)], main=reg[1])]
-	temp_dev[present==0,lines(year, abs(opt_temp_deviation), col=c("red","blue")[(present+1)], main=reg[1])]
-	if(reg[1]=="ai"){legend("topleft",legend=c("present","absent"), text.col=c("blue","red"), inset=c(-0.15,-0.05))}
-},by=c('reg')]
-
-# ---- scatter plot of annual btemp and opt temp ----
-dev.new()
-par(mfrow=c(3,3), mar=c(2,2,0.5,0.5), mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
-spp_master[present==1, j={plot(.SD[,list(bt_ann=mean(bt_ann,na.rm=T), mean_bt_opt_avg=mean(bt_opt_avg,na.rm=T)),by='year'][,list(bt_ann,mean_bt_opt_avg)],main=reg[1]);abline(a=0,b=1)},by=c('reg')]
-
-# ---- boxplots of optimal temperature for C/E categories ----
-dev.new()
-par(mfrow=c(3,3), mar=c(2,2,0.5,0.5), mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
-spp_master[,j={
-	dt <- .SD[,list(bt_opt_avg=mean(bt_opt_avg),ce_categ=una(ce_categ)),by=c("spp")]
-	dtbp <- boxplot(bt_opt_avg~ce_categ, main=reg[1], data=dt, ylab="bt_opt_avg")
-	NULL
-},by=c("reg")]
-
-# ---- boxplots of temperature tolerance for C/E categories ----
-dev.new()
-par(mfrow=c(3,3), mar=c(2,2,0.5,0.5), mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
-spp_master[,j={
-	dt <- .SD[,list(bt_tol_avg=mean(bt_tol_avg),ce_categ=una(ce_categ)),by=c("spp")]
-	dtbp <- boxplot(bt_tol_avg~ce_categ, main=reg[1], data=dt, ylab="bt_tol_avg")
-	NULL
-},by=c("reg")]
-
-# ---- scatter plot of prevalence (% strata) vs temp tolerance ----
-# actually shows a relationship
-dev.new()
-par(mfrow=c(3,3), mar=c(2,2,0.5,0.5), mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
-spp_master[,j={
-	dt <- .SD[,list(bt_tol_avg=mean(bt_tol_avg),mean_prevalence=mean(propStrata)),by=c("spp")]
-	dt[,plot(bt_tol_avg, mean_prevalence, main=reg[1])]
-	NULL
-},by=c("reg")]
-
-# ---- scatter plot of prevalence vs deviation between thermal optimum and ODS temp ----
-dev.new()
-par(mfrow=c(3,3), mar=c(2,2,0.5,0.5), mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
-spp_master[,j={
-	dt <- .SD[,list(bt_opt_ods_dev=abs(bt_opt_avg-btemp_ODS),prevalence=(propStrata)),by=c("spp")]
-	dt[,plot(bt_opt_ods_dev, prevalence, main=reg[1])]
-	NULL
-},by=c("reg")]
+# # ---- time series of thermal optimum (long-term average per species, only species present in that year) ----
+# dev.new()
+# par(mfrow=c(3,3), mar=c(2,2,0.5,0.5), mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
+# comm_master[,plot(year, bt_opt_avg, type="o", main=reg[1]),by="reg"]
+#
+# # ---- difference between observed temperature and optimum, for each year, compare present & absent species ----
+# dev.new()
+# par(mfrow=c(3,3), mar=c(2,2,0.5,0.5), mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
+# spp_master[,j={
+# 	# temp_dev <- .SD[, list(opt_temp_deviation=mean(bt_opt_avg - btemp_ODS, na.rm=TRUE)),keyby=c('year','present')]
+# 	# temp_dev[,plot(year, abs(opt_temp_deviation), col=c("red","blue")[(present+1)], main=reg[1])]
+# 	# temp_dev[present==1,lines(year, abs(opt_temp_deviation), col=c("red","blue")[(present+1)], main=reg[1])]
+# 	# temp_dev[present==0,lines(year, abs(opt_temp_deviation), col=c("red","blue")[(present+1)], main=reg[1])]
+# 	# .SD[,plot(year, abs(bt_opt_avg - btemp_ODS), col=factor(present))]
+#
+# 	# oops, but kinda interesting (below)
+# 	# instead of species optimum, i plotted region temperature vs temperature in the best depths (best for each spp)
+# 	# temp_dev <- .SD[, list(opt_temp_deviation=mean(bt_ann - btemp_ODS, na.rm=TRUE)),keyby=c('year','present')]
+# 	# temp_dev[,plot(year, abs(opt_temp_deviation), col=c("red","blue")[(present+1)], main=reg[1])]
+# 	# temp_dev[present==1,lines(year, abs(opt_temp_deviation), col=c("red","blue")[(present+1)], main=reg[1])]
+# 	# temp_dev[present==0,lines(year, abs(opt_temp_deviation), col=c("red","blue")[(present+1)], main=reg[1])]
+# 	# if(reg[1]=="ai"){legend("topleft",legend=c("present","absent"), text.col=c("blue","red"), inset=c(-0.15,-0.05))}
+#
+# 	temp_dev <- .SD[, list(opt_temp_deviation=mean(bt_opt_avg - bt_ann, na.rm=TRUE)),keyby=c('year','present')]
+# 	temp_dev[,plot(year, abs(opt_temp_deviation), col=c("red","blue")[(present+1)], main=reg[1])]
+# 	temp_dev[present==1,lines(year, abs(opt_temp_deviation), col=c("red","blue")[(present+1)], main=reg[1])]
+# 	temp_dev[present==0,lines(year, abs(opt_temp_deviation), col=c("red","blue")[(present+1)], main=reg[1])]
+# 	if(reg[1]=="ai"){legend("topleft",legend=c("present","absent"), text.col=c("blue","red"), inset=c(-0.15,-0.05))}
+# },by=c('reg')]
+#
+# # ---- scatter plot of annual btemp and opt temp ----
+# dev.new()
+# par(mfrow=c(3,3), mar=c(2,2,0.5,0.5), mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
+# spp_master[present==1, j={plot(.SD[,list(bt_ann=mean(bt_ann,na.rm=T), mean_bt_opt_avg=mean(bt_opt_avg,na.rm=T)),by='year'][,list(bt_ann,mean_bt_opt_avg)],main=reg[1]);abline(a=0,b=1)},by=c('reg')]
+#
+# # ---- boxplots of optimal temperature for C/E categories ----
+# dev.new()
+# par(mfrow=c(3,3), mar=c(2,2,0.5,0.5), mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
+# spp_master[,j={
+# 	dt <- .SD[,list(bt_opt_avg=mean(bt_opt_avg),ce_categ=una(ce_categ)),by=c("spp")]
+# 	dtbp <- boxplot(bt_opt_avg~ce_categ, main=reg[1], data=dt, ylab="bt_opt_avg")
+# 	NULL
+# },by=c("reg")]
+#
+# # ---- boxplots of temperature tolerance for C/E categories ----
+# dev.new()
+# par(mfrow=c(3,3), mar=c(2,2,0.5,0.5), mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
+# spp_master[,j={
+# 	dt <- .SD[,list(bt_tol_avg=mean(bt_tol_avg),ce_categ=una(ce_categ)),by=c("spp")]
+# 	dtbp <- boxplot(bt_tol_avg~ce_categ, main=reg[1], data=dt, ylab="bt_tol_avg")
+# 	NULL
+# },by=c("reg")]
+#
+# # ---- scatter plot of prevalence (% strata) vs temp tolerance ----
+# # actually shows a relationship
+# dev.new()
+# par(mfrow=c(3,3), mar=c(2,2,0.5,0.5), mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
+# spp_master[,j={
+# 	dt <- .SD[,list(bt_tol_avg=mean(bt_tol_avg),mean_prevalence=mean(propStrata)),by=c("spp")]
+# 	dt[,plot(bt_tol_avg, mean_prevalence, main=reg[1])]
+# 	NULL
+# },by=c("reg")]
+#
+# # ---- scatter plot of prevalence vs deviation between thermal optimum and ODS temp ----
+# dev.new()
+# par(mfrow=c(3,3), mar=c(2,2,0.5,0.5), mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
+# spp_master[,j={
+# 	dt <- .SD[,list(bt_opt_ods_dev=abs(bt_opt_avg-btemp_ODS),prevalence=(propStrata)),by=c("spp")]
+# 	dt[,plot(bt_opt_ods_dev, prevalence, main=reg[1])]
+# 	NULL
+# },by=c("reg")]
 
 
 # ================================
@@ -776,12 +777,21 @@ comm_master[,j={
 	plot(plogis(detect_mu_avg), reg_rich, main=reg[1], col=zCol(256,year))
 },by="reg"]
 
+# dev.new()
+# par(mfrow=c(3,3), mar=c(2,2,0.5,0.5), mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
+# comm_master[,j={
+# 	plot(plogis(detect_mu_avg), naive_rich, main=reg[1], col=zCol(256,year))
+# },by="reg"]
+
+
 dev.new()
 par(mfrow=c(3,3), mar=c(2,2,0.5,0.5), mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
-comm_master[,j={
-	plot(plogis(detect_mu_avg), naive_rich, main=reg[1], col=zCol(256,year))
-},by="reg"]
-
+spp_master[,j={
+	dt <- .SD[present==1,list(detect_mu_avg=mean(detect_mu_avg, na.rm=TRUE), prevalence=(propStrata)),by=c("spp")]
+	dt[,plot(prevalence, plogis(detect_mu_avg), main=reg[1])]
+	abline(a=0,b=1,col='blue')
+	NULL
+},by=c("reg")]
 
 
 
