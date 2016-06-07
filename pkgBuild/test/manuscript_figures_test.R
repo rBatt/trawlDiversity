@@ -288,57 +288,57 @@ processed_dt[,j={plot(naive_rich, reg_rich, main=una(reg)); abline(a=0, b=1)},by
 # ==========================
 # = Beta Diversity Figures =
 # ==========================
-
-# ---- Spatial Variance Time Series Naive ----
-dev.new()
-par(mfrow=c(3,3))
-beta_div_dt[,j={plot(year, beta_div_obs, type="o", main=una(reg))}, by=c("reg")]
-
-# ---- Spatial Variance Time Series MSOM ----
-dev.new()
-par(mfrow=c(3,3))
-beta_div_dt[,j={plot(year, beta_div_mu, type="o", main=una(reg))}, by=c("reg")]
-
-# ---- Scatter Beta Diversity: Obs vs MSOM ----
-dev.new()
-par(mfrow=c(3,3))
-beta_div_dt[,j={plot(beta_div_obs, beta_div_mu, main=una(reg)); abline(a=0, b=1)},by=c("reg")]
+#
+# # ---- Spatial Variance Time Series Naive ----
+# dev.new()
+# par(mfrow=c(3,3))
+# beta_div_dt[,j={plot(year, beta_div_obs, type="o", main=una(reg))}, by=c("reg")]
+#
+# # ---- Spatial Variance Time Series MSOM ----
+# dev.new()
+# par(mfrow=c(3,3))
+# beta_div_dt[,j={plot(year, beta_div_mu, type="o", main=una(reg))}, by=c("reg")]
+#
+# # ---- Scatter Beta Diversity: Obs vs MSOM ----
+# dev.new()
+# par(mfrow=c(3,3))
+# beta_div_dt[,j={plot(beta_div_obs, beta_div_mu, main=una(reg)); abline(a=0, b=1)},by=c("reg")]
 
 
 # =========================
 # = Detectability Figures =
 # =========================
 
-# ---- Time Series of Community Average Detectability ----
-dev.new()
-par(mfrow=c(3,3))
-detect_dt[,j={
-	comm_detect <- .SD[,list(detctability=plogis(mean(value_mu))),by=c("year")]
-	plot(comm_detect, type="o", main=una(reg))
-}, by=c("reg")]
-
-# ---- Time Series of Species Detectability ----
-dev.new()
-par(mfrow=c(3,3))
-for(r in 1:length(regs[regs!="wcann"])){
-	t_reg <- regs[regs!="wcann"][r]
-	t_dt <- detect_dt[reg==t_reg]
-	
-	xlim <- range(t_dt[,year])
-	ylim <- range(plogis(t_dt[,value_mu]))
-	
-	us <- una(t_dt[,spp])
-	t_col <- adjustcolor("black", alpha=0.25)
-	for(s in 1:lu(us)){
-		xy <- t_dt[spp==us[s], list(year, detectability=plogis(value_mu))]
-		if(s==1){
-			plot(xy, xlim=xlim, ylim=ylim, type="l", lwd=0.5, main=t_reg, col=t_col)
-		}else{
-			lines(xy, lwd=0.5, col=t_col)
-		}
-	}
-	
-}
+# # ---- Time Series of Community Average Detectability ----
+# dev.new()
+# par(mfrow=c(3,3))
+# detect_dt[,j={
+# 	comm_detect <- .SD[,list(detctability=plogis(mean(value_mu))),by=c("year")]
+# 	plot(comm_detect, type="o", main=una(reg))
+# }, by=c("reg")]
+#
+# # ---- Time Series of Species Detectability ----
+# dev.new()
+# par(mfrow=c(3,3))
+# for(r in 1:length(regs[regs!="wcann"])){
+# 	t_reg <- regs[regs!="wcann"][r]
+# 	t_dt <- detect_dt[reg==t_reg]
+#
+# 	xlim <- range(t_dt[,year])
+# 	ylim <- range(plogis(t_dt[,value_mu]))
+#
+# 	us <- una(t_dt[,spp])
+# 	t_col <- adjustcolor("black", alpha=0.25)
+# 	for(s in 1:lu(us)){
+# 		xy <- t_dt[spp==us[s], list(year, detectability=plogis(value_mu))]
+# 		if(s==1){
+# 			plot(xy, xlim=xlim, ylim=ylim, type="l", lwd=0.5, main=t_reg, col=t_col)
+# 		}else{
+# 			lines(xy, lwd=0.5, col=t_col)
+# 		}
+# 	}
+#
+# }
 
 # ---- Density Plots of Species-Specific Trends in Detectability ----
 dev.new()
@@ -369,102 +369,102 @@ detect_ce_dt[,j={
 # =====================
 # = Proportion Strata =
 # =====================
-# ---- Time series of Community Average of Proportion Strata ----
-dev.new()
-par(mfrow=c(3,3))
-propStrat[,j={
-	comm_propStrat <- .SD[,list(propStrat_mu=mean(propStrata)),keyby=c("year")]
-	plot(comm_propStrat, type="o", main=una(reg))
-}, by=c("reg")]
-
-# ---- Time Series of Community Average Deviation from 50% Strata Occupied ----
-dev.new()
-par(mfrow=c(3,3))
-propStrat[,j={
-	comm_propStrat <- .SD[,list(propStrat_mu_dev50=mean(abs(propStrata - 0.5))),keyby=c("year")]
-	plot(comm_propStrat, type="o", main=una(reg))
-}, by=c("reg")]
-
-# ---- Time Series of Proportion of Strata Occupied by Each Species ----
-dev.new()
-par(mfrow=c(3,3))
-for(r in 1:length(regs[regs!="wcann"])){
-	t_reg <- regs[regs!="wcann"][r]
-	t_dt <- propStrat[reg==t_reg]
-	
-	xlim <- range(t_dt[,year])
-	ylim <- range(t_dt[,propStrata])
-	
-	us <- una(t_dt[,spp])
-	t_col <- adjustcolor("black", alpha=0.25)
-	for(s in 1:lu(us)){
-		xy <- t_dt[spp==us[s], list(year, propStrata)]
-		if(s==1){
-			plot(xy, xlim=xlim, ylim=ylim, type="l", lwd=0.5, main=t_reg, col=t_col)
-		}else{
-			lines(xy, lwd=0.5, col=t_col)
-		}
-	}
-}
-
-# ---- Density Plots of Species-Specific Trends in Proportion Strata Occupied ----
-dev.new()
-par(mfrow=c(3,3))
-propStrat[,j={
-	t_slopes <- .SD[,j={as.numeric(timeSlope(year, propStrata))},by=c("spp")]
-	
-	ps_cat <- function(x){
-		all_below <- all(x < 0.5 | is.na(x))
-		if(all_below){return("below")}
-		
-		all_above <- all(x > 0.5 | is.na(x))
-		if(all_above){return("above")}
-		
-		return("both")
-	}
-	spp_cats <- .SD[,list(spp_cat=ps_cat(propStrata)), by="spp"]
-	above_spp <- spp_cats[spp_cat=="above",una(spp)]
-	below_spp <- spp_cats[spp_cat=="below",una(spp)]
-	both_spp <- spp_cats[spp_cat=="both",una(spp)]
-	
-	d2 <- function(x){
-		if(all(is.na(x))){
-			return(list(x=NA, y=NA))
-		}else{
-			return(density(x, na.rm=TRUE))
-		}
-	}
-	
-	dens_above <- t_slopes[spp%in%above_spp, d2(V1)]
-	dens_below <- t_slopes[spp%in%below_spp, d2(V1)]
-	dens_both <- t_slopes[spp%in%both_spp, d2(V1)]
-	d_list <- list("above"=dens_above, "below"=dens_below, "both"=dens_both)
-	
-	ylim <- range(sapply(d_list, function(x)range(x$y)))
-	xlim <- range(sapply(d_list, function(x)range(x$x)))
-	
-	plot(d_list[["above"]][c("x","y")], col="red", xlim=xlim, ylim=ylim, type="l", xlab="Trend in Proportion Strata Occupied", ylab="Density", main=una(reg))
-	lines(d_list[["below"]][c("x","y")], col="blue")
-	lines(d_list[["both"]][c("x","y")], col="black")
-	abline(v=0, lty="dashed")
-	
-	if(reg[1]=="ebs"){
-		legend("topright",legend=c("spp above 50%", "spp that cross", "spp below 50%"), text.col=c("red", "black", "blue"), bty="n")
-	}
-	
-	NULL
-	
-}, by=c("reg")]
-
-# ---- Scatter Plot of Trend vs Mean Strata Occupied ----
-dev.new()
-par(mfrow=c(3,3))
-propStrat[,j={
-	t_slopes_means <- .SD[,j={list(slope=as.numeric(timeSlope(year, propStrata)), mean=mean(propStrata, na.rm=TRUE))},by=c("spp")]
-	t_slopes_means[,plot(slope, mean, main=una(reg), ylab="Species Mean % Strata", xlab="Species Slope in % Strata")]
-	abline(v=0, h=0.5, col="blue")
-	NULL
-}, by=c("reg")]
+# # ---- Time series of Community Average of Proportion Strata ----
+# dev.new()
+# par(mfrow=c(3,3))
+# propStrat[,j={
+# 	comm_propStrat <- .SD[,list(propStrat_mu=mean(propStrata)),keyby=c("year")]
+# 	plot(comm_propStrat, type="o", main=una(reg))
+# }, by=c("reg")]
+#
+# # ---- Time Series of Community Average Deviation from 50% Strata Occupied ----
+# dev.new()
+# par(mfrow=c(3,3))
+# propStrat[,j={
+# 	comm_propStrat <- .SD[,list(propStrat_mu_dev50=mean(abs(propStrata - 0.5))),keyby=c("year")]
+# 	plot(comm_propStrat, type="o", main=una(reg))
+# }, by=c("reg")]
+#
+# # ---- Time Series of Proportion of Strata Occupied by Each Species ----
+# dev.new()
+# par(mfrow=c(3,3))
+# for(r in 1:length(regs[regs!="wcann"])){
+# 	t_reg <- regs[regs!="wcann"][r]
+# 	t_dt <- propStrat[reg==t_reg]
+#
+# 	xlim <- range(t_dt[,year])
+# 	ylim <- range(t_dt[,propStrata])
+#
+# 	us <- una(t_dt[,spp])
+# 	t_col <- adjustcolor("black", alpha=0.25)
+# 	for(s in 1:lu(us)){
+# 		xy <- t_dt[spp==us[s], list(year, propStrata)]
+# 		if(s==1){
+# 			plot(xy, xlim=xlim, ylim=ylim, type="l", lwd=0.5, main=t_reg, col=t_col)
+# 		}else{
+# 			lines(xy, lwd=0.5, col=t_col)
+# 		}
+# 	}
+# }
+#
+# # ---- Density Plots of Species-Specific Trends in Proportion Strata Occupied ----
+# dev.new()
+# par(mfrow=c(3,3))
+# propStrat[,j={
+# 	t_slopes <- .SD[,j={as.numeric(timeSlope(year, propStrata))},by=c("spp")]
+#
+# 	ps_cat <- function(x){
+# 		all_below <- all(x < 0.5 | is.na(x))
+# 		if(all_below){return("below")}
+#
+# 		all_above <- all(x > 0.5 | is.na(x))
+# 		if(all_above){return("above")}
+#
+# 		return("both")
+# 	}
+# 	spp_cats <- .SD[,list(spp_cat=ps_cat(propStrata)), by="spp"]
+# 	above_spp <- spp_cats[spp_cat=="above",una(spp)]
+# 	below_spp <- spp_cats[spp_cat=="below",una(spp)]
+# 	both_spp <- spp_cats[spp_cat=="both",una(spp)]
+#
+# 	d2 <- function(x){
+# 		if(all(is.na(x))){
+# 			return(list(x=NA, y=NA))
+# 		}else{
+# 			return(density(x, na.rm=TRUE))
+# 		}
+# 	}
+#
+# 	dens_above <- t_slopes[spp%in%above_spp, d2(V1)]
+# 	dens_below <- t_slopes[spp%in%below_spp, d2(V1)]
+# 	dens_both <- t_slopes[spp%in%both_spp, d2(V1)]
+# 	d_list <- list("above"=dens_above, "below"=dens_below, "both"=dens_both)
+#
+# 	ylim <- range(sapply(d_list, function(x)range(x$y)))
+# 	xlim <- range(sapply(d_list, function(x)range(x$x)))
+#
+# 	plot(d_list[["above"]][c("x","y")], col="red", xlim=xlim, ylim=ylim, type="l", xlab="Trend in Proportion Strata Occupied", ylab="Density", main=una(reg))
+# 	lines(d_list[["below"]][c("x","y")], col="blue")
+# 	lines(d_list[["both"]][c("x","y")], col="black")
+# 	abline(v=0, lty="dashed")
+#
+# 	if(reg[1]=="ebs"){
+# 		legend("topright",legend=c("spp above 50%", "spp that cross", "spp below 50%"), text.col=c("red", "black", "blue"), bty="n")
+# 	}
+#
+# 	NULL
+#
+# }, by=c("reg")]
+#
+# # ---- Scatter Plot of Trend vs Mean Strata Occupied ----
+# dev.new()
+# par(mfrow=c(3,3))
+# propStrat[,j={
+# 	t_slopes_means <- .SD[,j={list(slope=as.numeric(timeSlope(year, propStrata)), mean=mean(propStrata, na.rm=TRUE))},by=c("spp")]
+# 	t_slopes_means[,plot(slope, mean, main=una(reg), ylab="Species Mean % Strata", xlab="Species Slope in % Strata")]
+# 	abline(v=0, h=0.5, col="blue")
+# 	NULL
+# }, by=c("reg")]
 
 
 # ====================================================================
@@ -571,22 +571,22 @@ spp_master[!is.na(stretch_type), j={
 }, by="reg"]
 
 
-# ---- Beta Diversity vs Richness ----
-dev.new()
-par(mfrow=c(3,3))
-comm_master[,plot(beta_div_obs,reg_rich,main=reg[1]),by="reg"]
-
-dev.new()
-par(mfrow=c(3,3))
-comm_master[,plot(diff(beta_div_obs),diff(reg_rich),main=reg[1]),by="reg"]
-
-dev.new()
-par(mfrow=c(3,3))
-comm_master[,j={ccf(beta_div_obs,reg_rich,main=reg[1]);NULL},by="reg"]
-
-dev.new()
-par(mfrow=c(3,3))
-comm_master[,j={ccf(diff(beta_div_obs),diff(reg_rich),main=reg[1]);NULL},by="reg"]
+# # ---- Beta Diversity vs Richness ----
+# dev.new()
+# par(mfrow=c(3,3))
+# comm_master[,plot(beta_div_obs,reg_rich,main=reg[1]),by="reg"]
+#
+# dev.new()
+# par(mfrow=c(3,3))
+# comm_master[,plot(diff(beta_div_obs),diff(reg_rich),main=reg[1]),by="reg"]
+#
+# dev.new()
+# par(mfrow=c(3,3))
+# comm_master[,j={ccf(beta_div_obs,reg_rich,main=reg[1]);NULL},by="reg"]
+#
+# dev.new()
+# par(mfrow=c(3,3))
+# comm_master[,j={ccf(diff(beta_div_obs),diff(reg_rich),main=reg[1]);NULL},by="reg"]
 
 
 # =======================================================
@@ -630,14 +630,14 @@ for(mp in 1:length(map_names)){
 }
 
 
-# ---- scatter ----
-dev.new()
-par(mfrow=c(3,3))
-mapDat[,plot(n_spp_col_weighted, avgRich, main=reg[1]), by="reg"]
-
-dev.new()
-par(mfrow=c(3,3))
-mapDat[,plot(n_spp_ext_weighted, avgRich, main=reg[1]), by="reg"]
+# # ---- scatter ----
+# dev.new()
+# par(mfrow=c(3,3))
+# mapDat[,plot(n_spp_col_weighted, avgRich, main=reg[1]), by="reg"]
+#
+# dev.new()
+# par(mfrow=c(3,3))
+# mapDat[,plot(n_spp_ext_weighted, avgRich, main=reg[1]), by="reg"]
 
 
 
