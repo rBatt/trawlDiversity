@@ -73,7 +73,7 @@ save(show_up_spp, file="trawlDiversity/data/show_up_spp.RData")
 if(show_up_choice){
 	for(r in 1:length(poss_regs)){
 		t_reg <- poss_regs[r]
-		data_all_list[[r]] <- trim_msom(t_reg, gridSize=0.5, depthStratum=reg_depthStratum[t_reg], tolFraction=0.15, grid_stratum=TRUE, plot=FALSE, cull_show_up=show_up_choice)
+		data_all_list[[r]] <- trim_msom(t_reg, gridSize=0.5, depthStratum=reg_depthStratum[t_reg], tolFraction=reg_tolFraction[t_reg], grid_stratum=TRUE, plot=FALSE, cull_show_up=show_up_choice)
 	}
 }
 data_all <- rbindlist(data_all_list, fill=TRUE)
