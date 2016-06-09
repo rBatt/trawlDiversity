@@ -800,6 +800,18 @@ comm_master[,j={
 },by=c("reg")]
 
 
+# ---- annual Kmax ----
+u_regs <- sapply(p, function(x)x$processed[,una(reg)])
+annual_Kmax <- list()
+for(r in 1:length(u_regs)){
+	annual_Kmax[[r]] <- p[[r]]$rd[,max(Kmax),by=c('stratum','year','reg')][,list(Kmax_mu=mean(V1)),by=c("reg","year")]
+}
+annual_Kmax <- rbindlist(annual_Kmax)
+annual_Kmax <- annual_Kmax[reg!='wcann']
+setkey(annual_Kmax, reg, year)
+dev.new()
+par(mfrow=c(3,3))
+annual_Kmax[,plot(year, Kmax_mu, type='o', main=reg[1]),by='reg']
 
 
 
