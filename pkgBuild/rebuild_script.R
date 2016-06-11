@@ -82,5 +82,19 @@ save(data_all, file="trawlDiversity/data/data_all.RData")
 # dev.new(); par(mfrow=c(5,2), mar=c(1.85, 1.85, 1, 0.1),mgp=c(0.5,0.1,0), tcl=-0.1, cex=1, ps=8); data_all[,plot(.SD[,list(x=una(year), y=lu(spp)),by='year'][,list(x,y)], type="o", main=una(reg)),by='reg']
 
 
+# =====================
+# = Rebuild Processed =
+# =====================
+# source("trawlDiversity/pkgBuild/test/process_msom_script.R")
+
+
+# ===============================
+# = Rebuild Manscipt Data Files =
+# ===============================
+# Includes
+# spp_master
+# comm_master
+# mapDat
+source("trawlDiversity/pkgBuild/manuscript_data.R")
 
 
