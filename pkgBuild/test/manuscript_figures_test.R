@@ -7,9 +7,8 @@ library("spatstat")
 library("fields")
 
 
-setwd("~/Documents/School&Work/pinskyPost/trawl/")
-
-load("trawlDiversity/pkgBuild/results/processedMsom/p.RData")
+# setwd("~/Documents/School&Work/pinskyPost/trawl/")
+# load("trawlDiversity/pkgBuild/results/processedMsom/p.RData")
 
 # ---- Generic ----
 regs <- comm_master[,una(reg)] #sapply(p, function(x)x$processed[,una(reg)])
