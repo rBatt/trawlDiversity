@@ -11,3 +11,95 @@
 #' 
 #' @format data.table
 "data_all"
+
+#' Master Species-Level Data
+#' 
+#' Master data set of species time series related to colonization, extinction, richness, MSOM results, and environmental values.
+#' 
+#' @details
+#' \tabular{lll}{
+#' \code{reg} \tab character \tab region code \cr
+#' \code{spp} \tab character \tab species scientific name \cr
+#' \code{year} \tab integer \tab sampling year \cr
+#' \code{detect_mu} \tab numeric \tab mean of posterior of species-specific detection parameter for the current year-model \cr
+#' \code{detect_sd} \tab numeric \tab standard deviation of posterior of species-specific detection parameter \cr
+#' \code{col} \tab integer \tab 0 or 1, 1 indicates that the species colonized the region this year (was absent in previou sampling year) \cr
+#' \code{ext} \tab integer \tab 0 or 1, 1 indicates that the species will be absent in following sampling year \cr
+#' \code{present} \tab integer \tab 0 or 1, 1 indicates that the species is present in the region in current year \cr
+#' \code{now_ext} \tab integer \tab 0 or 1, 1 indicates that the species is absent this year, but was present in previous sampling year \cr
+#' \code{cumm_yrs_pres} \tab integer \tab number of sampling years that the species has been seen up to (and including) this year \cr
+#' \code{consec_yrs_pres} \tab integer \tab number of consecutive sampling years that the species has been observed \cr
+#' \code{yrs_since_1st} \tab integer \tab number of sampling events (including current) since species was first observed \cr
+#' \code{ext_dist, ext_dist_sign, ext_dist_samp} \tab integer (possibly numeric) \tab see \code{\link{event_distance}}; \code{_samp} is sampling years elapsed, others are actual years elapsed \cr
+#' \code{propStrata} \tab numeric \tab proportion of strata that the species was observed to occupy in current sampling year \cr
+#' \code{bt_ann} \tab numeric \tab cross-stratum average of bottom temperature in current sampling year; not a species-specific value (is same for all species in that region-year) \cr
+#' \code{has_stretches} \tab logical \tab indicates whether or not this spp-year-reg is part of a stretch of presences that is flanked (on at least 1 side) by an absence \cr
+#' \code{stretch_id, hybrid_part} \tab integer \tab see \code{\link{event_stretches}} \cr
+#' \code{stretch_type} \tab character \tab "post_col" for post-colonization stretch, "pre_ext" for pre-extinction stretch \cr
+#' \code{event_year} \tab integer \tab the year of the closest absence, all years in the same stretch have the same \code{event_year} \cr
+#' \code{stretch_length} \tab integer \tab number of sampling years included in the current stretch \cr
+#' \code{bt_opt, bt_tol, prob_max} \tab numeric \tab optimum bottom temperature and bottom temperature tolerance; presence probability at optimum (see \code{\link{response_metrics}}) \cr
+#' \code{depth_base_opt} \tab numeric \tab median depth of strata that are in the top 95\% of strata ranked by estimated probabilities of occurrence for the species; needed so that \code{prob_max} can be calculated, as depth needs to be part of the intercept \cr
+#' \code{btemp_ODS} \tab numeric \tab ODS is optimal depth strata; average bottom temperature in the strata used in \code{depth_base_opt} \cr
+#' \code{nODS} \tab integer \tab number of ODS \cr
+#' \code{bt_opt_avg, bt_tol_avg, detect_mu_avg} \tab numeric \tab cross-year average of this species' (in this region) \code{bt_opt, bt_tol, detect_mu} \cr
+#' \code{ce_categ} \tab character \tab colonization/extinction category; neither means present every year, colonizer means colonized only, leaver means went extinct only, both means has both types of events \cr
+#' }
+#' 
+#' @seealso \code{\link{comm_master}}, \code{\link{mapData}}
+#' 
+#' @format data.table
+"spp_master"
+
+#' Master Community-Level Data
+#' 
+#' Master data set for community level metrics related to beta diversity, species richness, environmental values, and cross-species averages of MSOM parameters
+#' 
+#' @details
+#' Many of the columns in this data set are cross-species averages of columns by the same (or similar) name in \code{\link{spp_master}}.
+#' 
+#' \tabular{lll}{
+#' \code{reg} \tab character \tab region name \cr
+#' \code{year} \tab integer \tab year \cr
+#' \code{method} \tab character \tab method for standardization for beta diversity calculation (see \code{\link{beta_div_quick}}) \cr
+#' \code{beta_div_mu} \tab numeric \tab for each posterior iteration from MSOM Z, beta diversity is calculated; this is the average of those posterior calculations \cr
+#' \code{beta_div_sd} \tab numeric \tab standard deviation of posterior beta diversity \cr
+#' \code{Omega} \tab numeric \tab posterior average of the MSOM Omega parameter \cr
+#' \code{reg_rich} \tab numeric \tab posterior average of MSOM richness estimate \cr
+#' \code{n_col} \tab integer \tab number of observed colonizers this year (see \code{\link{get_colonizers}}) \cr
+#' \code{n_ext} \tab integer \tab number of species that were observed this year, but will not be observed next year (see \code{\link{get_colonizers}}) \cr
+#' \code{n_pers} \tab integer \tab number of species present this year that are also present in adjacent sampling years (i.e., = richness - (n_col+n_ext)) (see \code{\link{get_colonizers}}) \cr
+#' \code{bt_ann} \tab numeric \tab cross-stratum average bottom temperature for current year (same as in \code{\link{spp_master}}) \cr
+#' \code{naive_rich} \tab numeric \tab observed species richness \cr
+#' \code{bt_opt_avg, bt_tol_avg, detect_mu_avg, detect_mu} \tab numeric \tab cross-species average of column by same name in \code{\link{spp_master}} \cr
+#' \code{propStrata_avg} \tab numeric \tab cross species average of \code{propStrata} in \code{\link{spp_master}} \cr
+#' }
+#' 
+#' @seealso \code{\link{spp_master}}, \code{\link{mapData}}
+"comm_master"
+
+#' Data for Maps
+#' 
+#' Spatial information related to colonization, extinction, richness, depth, and bottom temperature; does not contain any explicit temporal information
+#' 
+#' @details
+#' Meant for making maps. Other processed data sets emphasize the temporal dimension. This data set collapses time, and emphasizes 2D spatial information.
+#' 
+#' \tabular{lll}{
+#' \code{stratum} \tab character \tab sampling stratum, redefined via \code{\link{trim_msom}} in \code{\link{get_data_all}} (and therefore in \code{\link{data_all}}) \cr
+#' \code{lon} \tab numeric \tab longitude in degrees East (such that negative values are in the Western hemisphere) \cr
+#' \code{lat} \tab numeric \tab latitude \cr
+#' \code{depth} \tab numeric \tab depth in meters; in each year hauls in the stratum are averaged, then this value is the cross-year average of those annual depths \cr
+#' \code{n_spp_col_weighted, n_spp_ext_weighted} \tab numeric \tab total colonizers per stratum colonized (# species colonizing this stratum / # of strata colonized by each species) in this stratum, averaged across years; similar for ext= extinction \cr
+#' \code{reg} \tab character \tab region \cr
+#' \code{avgRich, sdRich} \tab numeric \tab cross-year average (standard deviation) richness in this stratum, based on naive richness (not MSOM estimate) \cr
+#' \code{avgBtemp, sdBtemp} \tab numeric \tab cross-year average (standard deviation) of bottom temperature in this stratum \cr
+#' }
+#' 
+#' @seealso \code{\link{spp_master}}, \code{\link{comm_master}}
+"mapDat"
+
+
+
+
+
