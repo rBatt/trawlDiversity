@@ -10,6 +10,14 @@ pretty_col <- c('#e41a1c','#377eb8','#4daf4a','#984ea3','#ff7f00','navy','#a6562
 names(pretty_col) <- names(pretty_reg)
 
 
+# ==================
+# = Handy Function =
+# ==================
+qpng <- function(name, width=3.5, height=3.5, res=200, location="~/Desktop"){
+	png(file.path(location,name), width=width, height=height, units='in', res=res)
+}
+
+
 # ===================================
 # = Manuscript Main Text Candidates =
 # ===================================
@@ -66,9 +74,52 @@ dev.off()
 
 
 
+# ===================================
+# = Manuscript Supplemental Figures =
+# ===================================
+# ---- Figure S1: Naive-MSOM Scatter ----
+# png("~/Desktop/FigureS1_naive_msom_scatter.png", width=3.5, height=3.5, units='in', res=200)
+qpng("FigureS1_naive_msom_scatter.png")
+par(mfrow=c(3,3), mar=c(1.25,1.0,0.5,0.1), oma=c(0.35,0.5,0.1,0.1), mgp=c(0.25,0.1,0), tcl=-0.1, ps=8, cex=1)
+comm_master[,j={
+	plot(naive_rich, reg_rich, main=pretty_reg[una(reg)], type='p', xlab="", ylab="", cex.main=1)
+	abline(a=0, b=1)
+}, by='reg']
+mtext("MSOM Richness", side=2, line=-0.2, outer=TRUE)
+mtext("Naive Richness", side=1, line=-0.5, outer=TRUE)
+dev.off()
+
+# ---- Figure S2: Number of Species in Each C/E Category ----
+categ_table <- t(spp_master[!duplicated(paste(reg,ce_categ,spp)), table(reg, ce_categ)])[c(4,1,2,3),]
+colnames(categ_table) <- pretty_reg[colnames(categ_table)]
+colnames(categ_table) <- gsub("^(.*) (.*)$", "\\1\n\\2", colnames(categ_table))
+# dev.new(width=5, height=3.5)
+qpng("FigureS2_categ_barplot.png", width=5)
+par(cex=1, mar=c(3,2,1,0.1), ps=8)
+bp <- barplot(categ_table, beside=T, legend=T, names.arg=rep("",ncol(categ_table)), args.legend=list(bty='n'))
+text(colMeans(bp)-1, -11, labels=colnames(categ_table), srt=45, xpd=TRUE)
+dev.off()
+
+# ---- Figure S3: Colonization/ Extinction Time Series ----
+# dev.new(width=3.5, height=3.5)
+# png("~/Desktop/FigureS2_col_ext_ts.png", width=3.5, height=3.5, units='in', res=200)
+qpng("FigureS3_col_ext_ts.png")
+par(mfrow=c(3,3), mar=c(1.25,1.0,0.5,0.1), oma=c(0.35,0.5,0.1,0.1), mgp=c(0.25,0.1,0), tcl=-0.1, ps=8, cex=1)
+comm_master[,j={
+	ylim=range(c(n_col,n_ext));
+	plot(year, n_col, main=pretty_reg[una(reg)], type='l', col='blue', ylim=ylim, xlab="", ylab="", cex.main=1)
+	lines(year, n_ext, col='red')
+}, by='reg']
+mtext("Colonizations or Extinctions", side=2, line=-0.2, outer=TRUE)
+mtext("Year", side=1, line=-0.5, outer=TRUE)
+dev.off()
 
 
 
+
+# ===============================
+# = ***Select*** Backup Figures =
+# ===============================
 # ---- prevalence vs time to absence (panel per region, non-average) ----
 dev.new(width=3.5, height=3.5)
 par(mfrow=c(3,3), mar=c(0.75,0.75,0.25,0.25), oma=c(0.75,0.75,0.1,0.1), cex=1, ps=8, mgp=c(0.05,0.01,0), tcl=-0.1, ylbias=0.35)
