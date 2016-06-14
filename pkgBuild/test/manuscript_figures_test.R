@@ -575,35 +575,4 @@ spp_master[,j={
 },by='reg']
 
 
-# ===================================
-# = Manuscript Main Text Candidates =
-# ===================================
-# ---- richness vs detectability in 1 panel ----
-dev.new(width=3.5, height=3.5)
-par(mar=c(1.75,1.5,0.25,0.25),mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
-comm_master[,plot(plogis(detect_mu_avg), reg_rich, col=pretty_col[reg], xlab="Detectability", ylab="Estimated Richness")]
-comm_master[,lines(plogis(detect_mu_avg),fitted(lm(reg_rich~plogis(detect_mu_avg)))),by='reg']
-comm_master[,legend("topright",ncol=2,legend=pretty_reg[una(reg)],text.col=pretty_col[una(reg)], inset=c(-0.02, -0.02), bty='n')]
 
-# ---- richness time series in 1 panel ----
-dev.new(width=3.5, height=5)
-par(mar=c(1.75,1.5,0.25,0.25),mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
-comm_master[,plot(year, reg_rich, col=pretty_col[reg], xlab="Year", ylab="Estimated Richness", pch=20)]
-comm_master[,lines(year, reg_rich, lwd=0.5, col=adjustcolor(pretty_col[reg], 0.5)),by='reg']
-comm_master[,lines(year,fitted(lm(reg_rich~year))),by='reg']
-comm_master[,legend("topleft",ncol=1,legend=pretty_reg[una(reg)],text.col=pretty_col[una(reg)], inset=c(-0.085,-0.01))]
-
-
-# ---- colonization rate map ----
-map_layout <- trawl_layout()
-dev.new(height=3, width=7)
-par(mar=c(1.5,1.5,0.5,0.5), mgp=c(0.75,0.1,0), tcl=-0.1,ps=8, cex=1, oma=c(0.5,0.5,1,0.1))
-layout(map_layout)
-u_regs <- mapDat[,unique(reg)]
-for(r in 1:lu(u_regs)){
-	mapDat[reg==u_regs[r], plot_space(lon,lat, n_spp_col_weighted/avgRich, bty='l', xlab="", ylab="")]
-	map(add=TRUE, fill=TRUE, col="white")
-}
-mtext(bquote(Specific~Colonization~Rate~(C~~y^-1~spp^-1)), side=3, outer=TRUE, font=2, line=-0.5)
-mtext(bquote(Longitude~(phantom()*degree*E)), side=1, line=-0.4, outer=TRUE)
-mtext(bquote(Latitude~(phantom()*degree*N)), side=2, line=-0.75, outer=TRUE)
