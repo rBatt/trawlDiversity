@@ -84,6 +84,46 @@ for(i in 1:length(p)){
 propStrat <- rbindlist(propStrat)[reg!="wcann"]
 setkey(propStrat, reg, year, spp)
 
+
+# ---- Proportion of Tows ----
+propTows <- list()
+for(i in 1:length(p)){
+	t_reg <- p[[i]]$processed[,una(reg)]
+	t_rd <- p[[i]]$rd
+	
+	ssky_tbl <- apply(t_rd[,table(spp, stratum, K, year)>0], c(1,2,4), sum)
+	n_tows_sy <- t_rd[,apply(table(stratum,year,K)>0,1:2,sum)]
+	n_tows_y <- colSums(n_tows_sy)
+	spp_tows <- ssky_tbl
+	spp_tows[] <- rep(n_tows_sy, each=nrow(spp_tows))
+	prop_tow_ssy <- ssky_tbl/spp_tows
+	
+	prop_tow_tot <- apply(prop_tow_ssy, c(1,3), mean)
+	prop_tow_occ <- apply(prop_tow_ssy, c(1,3), function(x)mean(x[x>0])) # function(x)sum(x[x>0])/max(1, sum(x>0))
+	prop_tow_occ_multi <- apply(prop_tow_ssy*(spp_tows>1), c(1,3), function(x)mean(x[x>0]))
+	
+	tbl2dt <- function(tbl, name){
+		tbl_dt_wide <- data.table(spp=rownames(tbl), as.data.table(tbl))
+		tbl_dt <- data.table:::melt.data.table(tbl_dt_wide, id.vars="spp", variable.name="year", value.name=name)
+		tbl_dt[,year:=as.integer(as.character(year))]
+		tbl_dt[,reg:=t_reg]
+		return(tbl_dt)
+	}
+	
+	propTow_tot <- tbl2dt(prop_tow_tot, "propTow_tot")
+	propTow_occ <- tbl2dt(prop_tow_occ, "propTow_occ")
+	propTow_occMulti <- tbl2dt(prop_tow_occ_multi, "propTow_occMulti")
+	
+	propTow <- merge(propTow_tot,propTow_occ, by=c("reg","year","spp"), all=TRUE)
+	propTow <- merge(propTow,propTow_occMulti, by=c("reg","year","spp"), all=TRUE)
+	setcolorder(propTow, c("reg","year","spp","propTow_tot","propTow_occ","propTow_occMulti"))
+	
+	propTows[[i]] <- propTow #data.table(reg=t_reg, prop_strat_dt)
+}
+propTows <- rbindlist(propTows)[reg!="wcann"]
+setkey(propTows, reg, year, spp)
+
+
 # ---- Response Metrics ----
 if(file.exists("~/Documents/School&Work/pinskyPost/trawl/trawlDiversity/pkgBuild/results/resp_metrics.RData")){
 	load("~/Documents/School&Work/pinskyPost/trawl/trawlDiversity/pkgBuild/results/resp_metrics.RData")
@@ -176,6 +216,8 @@ define_ce_categ <- function(X){
 	}
 }
 spp_master[,ce_categ:=define_ce_categ(.SD),by=c("reg","spp")]
+
+spp_master <- merge(spp_master, propTows, by=c("reg","spp","year"), all=TRUE)
 
 # ---- Community Master Data Set ----
 comm_metrics <- spp_master[present==1,j={
