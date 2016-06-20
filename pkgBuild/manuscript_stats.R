@@ -107,3 +107,31 @@ coef(prev_prox_mod)$reg
 spp_master[ce_categ!='neither' & propStrata!=0,min(propStrata),by=c("spp","reg")][,summary(V1)]
 spp_master[ce_categ!='neither' & propStrata!=0,min(propStrata),by=c("spp","reg")][,ecdf(V1)(0.07)]
 
+
+# ======================
+# = Spatial Statistics =
+# ======================
+
+
+# ==========================
+# = Within-site prevalence =
+# ==========================
+ # ---- variation among species vs among years ----
+ prevSY_dat <- spp_master[present==1, list(reg=reg, spp=spp, year=as.character(year), propTow_occ=propTow_occ)]
+(prevSY_mod <- lmer(propTow_occ ~ (1|reg/spp) + (1|reg:year), data=prevSY_dat))
+summary(prevSY_mod)
+omega2(prevSY_mod)
+(re_sd <- c(Residual_stddev=summary(prevSY_mod)$sigma, sapply(summary(prevSY_mod)$varcor, attr, which="stddev")))
+ 
+ # ---- maybe correlate within-site prevalence with biomass, as supplemental? ----
+ 
+ # ---- correlated within-site prevalence with detectability (for Discussion) ----
+ 
+ # ---- correlation between within-site prevalence and species richness ----
+(wsprev_rich_mod <- lmer(reg_rich ~ propTow_occ_avg + (propTow_occ_avg | reg) ,data=comm_master))
+summary(wsprev_rich_mod)
+Anova(wsprev_rich_mod)
+omega2(wsprev_rich_mod)
+
+
+
