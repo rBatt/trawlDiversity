@@ -67,8 +67,8 @@ dev.off()
 # pdf("~/Desktop/Figure4_rich_detect.pdf", width=3.5, height=3.5)
 png("~/Desktop/Figure4_rich_detect.png", width=3.5, height=3.5, units='in', res=200)
 par(mar=c(1.75,1.5,0.25,0.25),mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
-comm_master[,plot(plogis(detect_mu_avg), reg_rich, col=adjustcolor(pretty_col[reg],0.5), xlab="Detectability", ylab="Estimated Richness", pch=16)]
-comm_master[,lines(plogis(detect_mu_avg),fitted(lm(reg_rich~plogis(detect_mu_avg)))),by='reg']
+comm_master[,plot((propTow_occ_avg), reg_rich, col=adjustcolor(pretty_col[reg],0.5), xlab="Proportion of Samples in Occupied Sites", ylab="Estimated Richness", pch=16)]
+comm_master[,lines((propTow_occ_avg),fitted(lm(reg_rich~propTow_occ_avg))),by='reg']
 comm_master[,legend("topright",ncol=2,legend=pretty_reg[una(reg)],text.col=pretty_col[una(reg)], inset=c(-0.02, -0.02), bty='n')]
 dev.off()
 
