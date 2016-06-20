@@ -98,9 +98,9 @@ for(i in 1:length(p)){
 	spp_tows[] <- rep(n_tows_sy, each=nrow(spp_tows))
 	prop_tow_ssy <- ssky_tbl/spp_tows
 	
-	prop_tow_tot <- apply(prop_tow_ssy, c(1,3), mean)
-	prop_tow_occ <- apply(prop_tow_ssy, c(1,3), function(x)mean(x[x>0])) # function(x)sum(x[x>0])/max(1, sum(x>0))
-	prop_tow_occ_multi <- apply(prop_tow_ssy*(spp_tows>1), c(1,3), function(x)mean(x[x>0]))
+	prop_tow_tot <- apply(prop_tow_ssy, c(1,3), mean, na.rm=TRUE)
+	prop_tow_occ <- apply(prop_tow_ssy, c(1,3), function(x)mean(x[x>0], na.rm=TRUE)) # function(x)sum(x[x>0])/max(1, sum(x>0))
+	prop_tow_occ_multi <- apply(prop_tow_ssy*(spp_tows>1), c(1,3), function(x)mean(x[x>0], na.rm=TRUE))
 	
 	tbl2dt <- function(tbl, name){
 		tbl_dt_wide <- data.table(spp=rownames(tbl), as.data.table(tbl))
@@ -117,6 +117,7 @@ for(i in 1:length(p)){
 	propTow <- merge(propTow_tot,propTow_occ, by=c("reg","year","spp"), all=TRUE)
 	propTow <- merge(propTow,propTow_occMulti, by=c("reg","year","spp"), all=TRUE)
 	setcolorder(propTow, c("reg","year","spp","propTow_tot","propTow_occ","propTow_occMulti"))
+	propTow[,c("propTow_tot_avg","propTow_occ_avg","propTow_occMulti_avg"):=lapply(list(propTow_tot,propTow_occ,propTow_occMulti), meanna, na.rm=TRUE), by=c("reg","spp")]
 	
 	propTows[[i]] <- propTow #data.table(reg=t_reg, prop_strat_dt)
 }
@@ -224,9 +225,14 @@ comm_metrics <- spp_master[present==1,j={
 	lapply(.SD, mean, na.rm=TRUE)
 },by=c("reg","year"), .SDcols=c("bt_opt_avg","bt_tol_avg","detect_mu_avg","detect_mu")]
 
+comm_tows <- spp_master[present==1,j={
+	lapply(.SD, mean, na.rm=TRUE)
+},by=c("reg","year"), .SDcols=c("propTow_tot","propTow_occ","propTow_occMulti","propTow_tot_avg", "propTow_occ_avg", "propTow_occMulti_avg")]
+
 comm_master <- merge(beta_div_dt, processed_dt, all=TRUE) # community-level data
 comm_master <- merge(comm_master, comm_metrics, by=c("reg","year"), all=TRUE)
 comm_master <- merge(comm_master, spp_master[present==1,list(propStrata_avg=mean(propStrata)),by=c("reg","year")], by=c("reg","year"), all=TRUE)
+comm_master <- merge(comm_master, comm_tows, by=c("reg","year"), all=TRUE)
 
 # ---- Map Data ----
 mapDat <- make_mapDat(p)
