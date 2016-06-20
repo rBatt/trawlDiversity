@@ -33,16 +33,27 @@ comm_master[,legend("topleft",ncol=1,legend=pretty_reg[una(reg)],text.col=pretty
 dev.off()
 
 # ---- prevalence vs time to absence ----
-# dev.new(width=3.5, height=3.5)
+# dev.new(width=3.5, height=6)
 # pdf("~/Desktop/Figure2_prevalence_absenceTime.pdf", width=3.5, height=3.5)
-png("~/Desktop/Figure2_prevalence_absenceTime.png", width=3.5, height=3.5, units='in', res=200)
-avg_prev_abs <- spp_master[!is.na(ext_dist_sign) & ext_dist_sign!=0,list(prevalence=mean(propStrata)),by=c("reg","ext_dist_sign","stretch_type")]
-par(mar=c(1.5,1.5,0.25,0.25), oma=c(0.1,0.1,0.1,0.1), cex=1, ps=8, mgp=c(0.75,0.1,0), tcl=-0.1, ylbias=0.35)
-avg_prev_abs[,plot(ext_dist_sign, prevalence, col=adjustcolor(pretty_col[(reg)], 0.5), pch=16, xlab="Years until extinction", ylab="Prevalence")]
-avg_prev_abs[,j={
-	lines(ext_dist_sign, fitted(lm(prevalence~ext_dist_sign)), col=pretty_col[(reg[1])], lwd=1.5)
-},by=c('reg',"stretch_type")]
-comm_master[,legend("topleft",ncol=2,legend=pretty_reg[una(reg)],text.col=pretty_col[una(reg)], inset=c(-0.075, -0.02), bty='n')]
+png("~/Desktop/Figure2_prevalence_absenceTime.png", width=3.5, height=6, units='in', res=200)
+avg_prev_abs <- spp_master[!is.na(ext_dist) & ext_dist!=0,list(prevalence=mean(propStrata)),by=c("reg","ext_dist","stretch_type")]
+par(mfrow=c(2,1), mar=c(1.5,1.5,0.25,0.25), oma=c(0.1,0.1,0.1,0.1), cex=1, ps=8, mgp=c(0.75,0.1,0), tcl=-0.1, ylbias=0.35)
+for(st in 1:2){
+	t_st <- c("pre_ext","post_col")[st]
+	t_xlab <- c("Years until extinction", "Years after colonization")[st]
+	t_panel <- c("A","B")[st]
+	leg_log <- c(TRUE, FALSE)[st]
+	
+	avg_prev_abs[stretch_type==t_st,plot(ext_dist, prevalence, col=adjustcolor(pretty_col[(reg)], 0.5), pch=16, xlab=t_xlab, ylab="Prevalence")]
+	avg_prev_abs[stretch_type==t_st,j={
+		lines(ext_dist, fitted(lm(prevalence~ext_dist)), col=pretty_col[(reg[1])], lwd=1.5)
+	},by=c('reg')]
+	
+	legend("topleft", legend=t_panel, inset=c(-0.075, -0.03), bty='n', text.font=2)
+	if(leg_log){
+		comm_master[,legend("topright",ncol=1,legend=pretty_reg[una(reg)],text.col=pretty_col[una(reg)], inset=c(-0.02, -0.03), bty='n', x.intersp=1, y.intersp=0.65)]
+	}	
+}
 dev.off()
 
 # ---- colonization rate map ----
