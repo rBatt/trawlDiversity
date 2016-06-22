@@ -1,9 +1,9 @@
-library("trawlDiversity")
 library("rbLib")
 library("vegan")
 library("maps")
 library("spatstat")
 library("fields")
+library("trawlDiversity")
 
 setwd("~/Documents/School&Work/pinskyPost/trawl/")
 
@@ -236,6 +236,111 @@ comm_master <- merge(comm_master, comm_tows, by=c("reg","year"), all=TRUE)
 
 # ---- Map Data ----
 mapDat <- make_mapDat(p)
+
+# ---- Function to help outline a region ----
+regOutline <- function(X){
+	dev.new()
+	outlines <- list()
+
+	rs <- X[,una(reg)]
+	nr <- length(rs)
+	for(r in 1:nr){
+		td <- X[reg==rs[r]]
+		rast <- raster(xmn=td[,min(lon)-1], xmx=td[,max(lon)+1], ymn=td[,min(lat)-1], ymx=td[,max(lat)+1], res=c(0.5,0.5))
+		td[,plot(rasterize(cbind(x=lon,y=lat), rast))]
+		td[,points(lon, lat, cex=2)]
+		map(add=TRUE, fill=F)
+		to <- locator(type='o', pch=20, col='blue')
+		outlines[[r]] <- data.table(reg=rs[r], lonP=to$x, latP=to$y)
+	}
+	
+	return(rbindlist(outlines))
+}
+
+
+# ---- make window polygon for ppp ----
+make_owin <- function(X, outlines){
+	rs <- X[,una(reg)]
+	nr <- length(rs)
+	X_owin <- list()
+	
+	for(r in 1:nr){
+		td <- X[reg==rs[r]]
+		o <- outlines[reg==rs[r], list(x=lonP, y=latP)]
+		o_r <- outlines[reg==rs[r], list(x=rev(lonP), y=rev(latP))]
+	
+		xr <- td[,range(c(lon,o[,x]))]
+		yr <- td[,range(c(lat,o[,y]))]
+		ow_exp1 <- bquote(owin(xr, yr, poly=o)) # use when I correctly traced outline counterclockwise
+		ow_exp2 <- bquote(owin(xr, yr, poly=o_r)) # reversed (use if traced outline in wrong direction)
+	
+		X_owin[[rs[r]]] <- tryCatch(td[, eval(ow_exp1)], error=function(cond)td[, eval(ow_exp2)])
+	}
+	
+	return(X_owin)
+}
+
+mapOwin <- make_owin(mapDat, outlines)
+
+plot(mapOwin[[1]])
+
+
+# ---- do autocorrelation ----
+for(r in 1:nr){
+	dev.new(width=5, height=7)
+	par(mfrow=c(3,2))
+	
+	td <- X[reg==rs[r]]
+	
+	locs <- simplify2array(ll2km(td[,lon], td[,lat]))[,2:1]
+	nn <- knearneigh(locs, k=8)
+	nb <- knn2nb(nn)
+	
+	# KNN
+	ks <- 1:15
+	t_mt <- c()
+	for(k in ks){
+		nn <- knearneigh(locs, k=k)
+		nb <- knn2nb(nn)
+		t_mt[k] <- moran.test(td[,n_spp_col_weighted], nb2listw(nb))$estimate[1]
+	}
+	plot(ks, t_mt, type='o', main="Sensitivity to # Neighbors", xlab="K Neighbors", ylab="Moran's I")
+	nn <- knearneigh(locs, k=which.max(t_mt))
+	nb <- knn2nb(nn)
+	if(which.max(t_mt)<=2){
+		plot(1, type='n', xaxt='n', yaxt='n', ylab='', xlab='')
+	}else{
+	  correlo <- sp.correlogram(nb, td[,n_spp_col_weighted], order = min(which.max(t_mt), 8), method = "I", style = "B")
+		plot(correlo)
+	}
+
+	
+	# Distance Neighbors
+	n_dists <- 20
+	dists <- seq(100, 300, length.out=n_dists)
+	t_mt <- c()
+	for(k in 1:n_dists){
+		nb <- dnearneigh(locs, d1=0, d2=dists[k])
+		t_mt[k] <- moran.test(td[,n_spp_col_weighted], nb2listw(nb))$estimate[1]
+	}
+	plot(dists, t_mt, type='o', main="Sensitivity to Neighbor Distance", xlab="Max Distance to Neighbor (km)", ylab="Moran's I")
+	nb <- dnearneigh(locs, d1=0, d2=dists[which.max(t_mt)])
+  correlo <- sp.correlogram(nb, td[,n_spp_col_weighted], order = 5, method = "I", style = "B")
+	plot(correlo)
+	
+
+	
+	mt_out <- moran.test(td[,n_spp_col_weighted], nb2listw(dnearneigh(locs, d1=0, d2=125)))
+	moran.plot(td[,n_spp_col_weighted], nb2listw(dnearneigh(locs, d1=0, d2=125)))
+	ml_out <- localmoran(td[,n_spp_col_weighted], nb2listw(dnearneigh(locs, d1=0, d2=125)))
+	
+	plot_space(x=locs[,1], y=locs[,2], z=ml_out[,1]*(ml_out[,5]<0.05), scatter=TRUE)
+	
+	
+}
+
+
+
 
 # =================================
 # = Save Data Ojbects for Package =
