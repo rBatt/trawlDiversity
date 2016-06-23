@@ -4,7 +4,7 @@
 \name{comm_master}
 \alias{comm_master}
 \title{Master Community-Level Data}
-\format{An object of class \code{data.table} (inherits from \code{data.frame}) with 197 rows and 18 columns.}
+\format{data.table}
 \usage{
 comm_master
 }

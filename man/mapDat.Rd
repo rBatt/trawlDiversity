@@ -4,7 +4,7 @@
 \name{mapDat}
 \alias{mapDat}
 \title{Data for Maps}
-\format{An object of class \code{data.table} (inherits from \code{data.frame}) with 795 rows and 11 columns.}
+\format{data.table}
 \usage{
 mapDat
 }

@@ -76,6 +76,8 @@
 #' }
 #' 
 #' @seealso \code{\link{spp_master}}, \code{\link{mapData}}
+#' 
+#' @format data.table
 "comm_master"
 
 #' Data for Maps
@@ -97,7 +99,26 @@
 #' }
 #' 
 #' @seealso \code{\link{spp_master}}, \code{\link{comm_master}}
+#' 
+#' @format data.table
 "mapDat"
+
+#' Regional Polygon Outlines
+#' 
+#' Like a convex hull, but a bit more form-fitting. They should all be counterclockwise (to work with \code{spatstat::ppp}), and they are not quite closed. These were manually created.
+#' 
+#' @details
+#' Meant for making maps. Other processed data sets emphasize the temporal dimension. This data set collapses time, and emphasizes 2D spatial information.
+#' 
+#' @details
+#' \tabular{lll}{
+#' \code{reg} \tab character \tab region \cr
+#' \code{lonP} \tab numeric \tab longitude in degrees East (such that negative values are in the Western hemisphere) \cr
+#' \code{latP} \tab numeric \tab latitude \cr
+#' }
+#' 
+#' @format data.table
+"outlines"
 
 
 
