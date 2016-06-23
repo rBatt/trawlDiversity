@@ -1,5 +1,9 @@
-library('trawlDiversity')
+
 library('maps')
+library('raster')
+library('spatstat')
+library('rbLib')
+library('trawlDiversity')
 
 # ===========
 # = Generic =
@@ -57,19 +61,58 @@ for(st in 1:2){
 dev.off()
 
 # ---- colonization rate map ----
-# dev.new(height=3, width=7)
-# pdf("~/Desktop/Figure3_cRate_map.pdf", width=7, height=3)
 png("~/Desktop/Figure3_cRate_map.png", width=7, height=3, units='in', res=200)
 map_layout <- trawl_layout()
-par(mar=c(1.5,1.5,0.5,0.5), mgp=c(0.75,0.1,0), tcl=-0.1,ps=8, cex=1, oma=c(0.5,0.5,1,0.1))
+par(mar=c(1.15,1.15,0.25,0.25), mgp=c(0.5,0.075,0), tcl=-0.1, ps=8, cex=1, oma=c(0.75,0.5,1,0.1))
 layout(map_layout)
-u_regs <- mapDat[,unique(reg)]
-for(r in 1:lu(u_regs)){
-	mapDat[reg==u_regs[r], plot_space(lon,lat, n_spp_col_weighted/avgRich, bty='l', xlab="", ylab="")]
-	map(add=TRUE, fill=TRUE, col="white")
+
+map_col <- grDevices::colorRampPalette(c("#000099", "#00FEFF", "#45FE4F", "#FCFF00", "#FF9400", "#FF3100"))(256)
+toRast <- function(p){
+	x = rep(p$xcol, length(p$yrow))
+	y = rep(p$yrow, each=length(p$xcol))
+	z = c(t(as.matrix(p)))
+	raster::rasterFromXYZ(cbind(x, y, z))
 }
-mtext(bquote(Specific~Colonization~Rate~(C~~y^-1~spp^-1)), side=3, outer=TRUE, font=2, line=-0.5)
-mtext(bquote(Longitude~(phantom()*degree*E)), side=1, line=-0.4, outer=TRUE)
+
+u_regs <- mapDat[,unique(reg)]
+rs <- X[,una(reg)]
+nr <- length(rs)
+mapPPP_col <- list()
+for(r in 1:nr){
+	td <- X[reg==rs[r]]
+	mapPPP_col[[r]] <- spatstat::ppp(x=td[,lon], y=td[,lat], marks=td[,n_spp_col_weighted], window=mapOwin[[r]]) # /avgRich
+	
+	t_idw <- spatstat::Smooth(mapPPP_col[[r]], hmax=1)
+	z <- toRast(t_idw)
+	image(z, col=map_col, xlab="", ylab="")
+	map(add=TRUE, fill=TRUE, col="slategray")
+	
+	zl <- range(values(z)*10, na.rm=TRUE)
+	switch(rs[r],
+		ebs = mapLegend(x=0.05, y=0.25, h=0.375, w=0.025, zlim=zl, cols=map_col, lab.cex=1),
+		ai = mapLegend(x=0.985, y=0.3, w=0.02, h=0.5, zlim=zl, cols=map_col, lab.cex=1),
+		goa = mapLegend(x=0.985, y=0.15, w=0.02,  zlim=zl, cols=map_col, lab.cex=1),
+		wctri = mapLegend(x=0.1, y=0.125, w=0.07, zlim=zl, cols=map_col, lab.cex=1),
+		gmex = mapLegend(x=0.95, y=0.2, h=0.375, zlim=zl, cols=map_col, lab.cex=1),
+		sa = mapLegend(x=0.95, y=0.15, zlim=zl, cols=map_col, lab.cex=1),
+		neus = mapLegend(x=0.95, y=0.15, zlim=zl, cols=map_col, lab.cex=1),
+		shelf = mapLegend(x=0.95, y=0.15, zlim=zl, cols=map_col, lab.cex=1),
+		newf = mapLegend(x=0.05, y=0.15, h=0.25, zlim=zl, cols=map_col, lab.cex=1)
+	)
+	switch(rs[r],
+		ebs = legend("topright", legend="A", bty='n', text.font=2, inset=c(-0.02,-0.15), cex=1.25, text.col='white'),
+		ai = legend("topleft", legend="C", bty='n', text.font=2, inset=c(-0.065,-0.45), cex=1.25, xpd=T),
+		goa = legend("topleft", legend="B", bty='n', text.font=2, inset=c(-0.065,-0.06), cex=1.25),
+		wctri = legend("top", legend="E", bty='n', text.font=2, inset=c(0,0.15), cex=1.25, text.col='white'),
+		gmex = legend("topleft", legend="G", bty='n', text.font=2, inset=c(-0.175,-0.12), cex=1.25, text.col='white'),
+		sa = legend("topleft", legend="I", bty='n', text.font=2, inset=c(-0.15,-0.075), cex=1.25, text.col='white'),
+		neus = legend("topleft", legend="H", bty='n', text.font=2, inset=c(-0.125,-0.05), cex=1.25, text.col='white'),
+		shelf = legend("topleft", legend="D", bty='n', text.font=2, inset=c(-0.1,-0.125), cex=1.25, text.col='white'),
+		newf = legend("topright", legend="A", bty='n', text.font=2, inset=c(-0.01,-0.05), cex=1.25)
+	)
+}
+mtext(bquote(Colonization~Rate~(C[w]~~decade^-1)), side=3, outer=TRUE, font=2, line=-0.3)
+mtext(bquote(Longitude~(phantom()*degree*E)), side=1, line=-0.15, outer=TRUE)
 mtext(bquote(Latitude~(phantom()*degree*N)), side=2, line=-0.75, outer=TRUE)
 dev.off()
 
