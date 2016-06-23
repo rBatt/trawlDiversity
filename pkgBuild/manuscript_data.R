@@ -3,6 +3,8 @@ library("vegan")
 library("maps")
 library("spatstat")
 library("fields")
+library("raster")
+library("spdep")
 library("trawlDiversity")
 
 setwd("~/Documents/School&Work/pinskyPost/trawl/")
@@ -248,7 +250,7 @@ regOutline <- function(X){
 		td <- X[reg==rs[r]]
 		rast <- raster(xmn=td[,min(lon)-1], xmx=td[,max(lon)+1], ymn=td[,min(lat)-1], ymx=td[,max(lat)+1], res=c(0.5,0.5))
 		td[,plot(rasterize(cbind(x=lon,y=lat), rast))]
-		td[,points(lon, lat, cex=2)]
+		td[,points(lon, lat, cex=5)]
 		map(add=TRUE, fill=F)
 		to <- locator(type='o', pch=20, col='blue')
 		outlines[[r]] <- data.table(reg=rs[r], lonP=to$x, latP=to$y)
@@ -256,6 +258,8 @@ regOutline <- function(X){
 	
 	return(rbindlist(outlines))
 }
+# outlines <- regOutline(mapDat)
+# save(outlines, file="~/Documents/School&Work/pinskyPost/trawl/trawlDiversity/data/outlines.RData")
 
 
 # ---- make window polygon for ppp ----
@@ -263,7 +267,6 @@ make_owin <- function(X, outlines){
 	rs <- X[,una(reg)]
 	nr <- length(rs)
 	X_owin <- list()
-	
 	for(r in 1:nr){
 		td <- X[reg==rs[r]]
 		o <- outlines[reg==rs[r], list(x=lonP, y=latP)]
@@ -276,68 +279,115 @@ make_owin <- function(X, outlines){
 	
 		X_owin[[rs[r]]] <- tryCatch(td[, eval(ow_exp1)], error=function(cond)td[, eval(ow_exp2)])
 	}
-	
 	return(X_owin)
 }
-
 mapOwin <- make_owin(mapDat, outlines)
-
-plot(mapOwin[[1]])
+lapply(mapOwin, plot)
 
 
 # ---- do autocorrelation ----
+# dev.new(width=7, height=3)
+png("~/Desktop/FigureS4_nb_moranI.png", width=7, height=3, units='in', res=200)
+map_layout <- trawl_layout()
+par(mar=c(0.25,0.25,0.25,0.25), mgp=c(0.25,0.075,0), tcl=-0.1, ps=8, cex=1, oma=c(0.1,0.1,0.1,0.1))
+layout(map_layout)
+pretty_reg <- c("ebs"="E. Bering Sea", "ai"="Aleutian Islands", "goa"="Gulf of Alaska", "wctri"="West\nCoast\nUS", "gmex"="Gulf of Mexico", "sa"="Southeast US", "neus"="Northeast US", "shelf"="Scotian Shelf", "newf"="Newfoundland")
+
+X <- copy(mapDat)
+rs <- X[,una(reg)]
+nr <- length(rs)
+localAC <- list()
 for(r in 1:nr){
-	dev.new(width=5, height=7)
-	par(mfrow=c(3,2))
-	
 	td <- X[reg==rs[r]]
+	localAC[[rs[r]]]$td <- td
 	
+	locs_ll <- as.matrix(td[,list(lon,lat)])
 	locs <- simplify2array(ll2km(td[,lon], td[,lat]))[,2:1]
-	nn <- knearneigh(locs, k=8)
-	nb <- knn2nb(nn)
 	
-	# KNN
-	ks <- 1:15
-	t_mt <- c()
-	for(k in ks){
-		nn <- knearneigh(locs, k=k)
-		nb <- knn2nb(nn)
-		t_mt[k] <- moran.test(td[,n_spp_col_weighted], nb2listw(nb))$estimate[1]
-	}
-	plot(ks, t_mt, type='o', main="Sensitivity to # Neighbors", xlab="K Neighbors", ylab="Moran's I")
-	nn <- knearneigh(locs, k=which.max(t_mt))
-	nb <- knn2nb(nn)
-	if(which.max(t_mt)<=2){
-		plot(1, type='n', xaxt='n', yaxt='n', ylab='', xlab='')
+	nn1 <- knn2nb(knearneigh(locs, k=1))
+	max2NDist <- max(unlist(nbdists(nn1, locs)))
+	localAC[[rs[r]]]$max2NDist <- max2NDist
+	localAC[[rs[r]]]$nb <- dnearneigh(locs, d1=0, d2=max2NDist) # graph2nb(gabrielneigh(locs))
+	
+	ml_out <- localmoran(td[,n_spp_col_weighted], nb2listw(localAC[[rs[r]]]$nb), p.adjust.method="BH")
+	localAC[[rs[r]]]$I <- ml_out
+	
+	# mod <- lm(n_spp_col_weighted~1, data=td)
+	# ml_ex <- localmoran.exact(mod, nb=dnearneigh(locs, d1=0, d2=125))
+	# ml_sad <- localmoran.sad(mod, nb=dnearneigh(locs, d1=0, d2=125))
+	# ex_p <- sapply(ml_ex, function(x)x$p.value)
+	# sad_p <- sapply(ml_sad, function(x)x$p.value)
+	# ml_p <- ml_out[,5] #sapply(ml_out, function(x)x$p.value)
+	# plot(data.frame(ex_p, sad_p, ml_p))
+	# abline(a=0, b=1)
+	
+	plot(mapOwin[[r]], coords=locs_ll, add=F, main="")
+	box()
+	if(rs[r]=='wctri'){
+		mtext(pretty_reg[rs[r]], side=3, line=-3)
 	}else{
-	  correlo <- sp.correlogram(nb, td[,n_spp_col_weighted], order = min(which.max(t_mt), 8), method = "I", style = "B")
-		plot(correlo)
+		mtext(pretty_reg[rs[r]], side=3, line=-1)
 	}
-
-	
-	# Distance Neighbors
-	n_dists <- 20
-	dists <- seq(100, 300, length.out=n_dists)
-	t_mt <- c()
-	for(k in 1:n_dists){
-		nb <- dnearneigh(locs, d1=0, d2=dists[k])
-		t_mt[k] <- moran.test(td[,n_spp_col_weighted], nb2listw(nb))$estimate[1]
+	plot(localAC[[rs[r]]]$nb, locs_ll, add=T, col=adjustcolor('black', 0.5), cex=0.8, lwd=0.5)
+	sig_lac <- ml_out[,5]<0.05
+	if(any(sig_lac)){
+		zl <- range(ml_out[sig_lac,1], na.rm=TRUE)
+		t_col <- zCol(256,ml_out[sig_lac,1])
+		map_col <- zCol(6, 1:6)
+		print(max(ml_out[,1]))
+		points(x=locs_ll[sig_lac,1], y=locs_ll[sig_lac,2], bg=t_col, pch=21, cex=1.1)
+		switch(rs[r],
+			ebs = mapLegend(x=0.05, y=0.25, h=0.375, w=0.025, zlim=zl, cols=map_col, lab.cex=1),
+			ai = mapLegend(x=0.985, y=0.3, w=0.02, h=0.5, zlim=zl, cols=map_col, lab.cex=1),
+			goa = mapLegend(x=0.985, y=0.15, w=0.02,  zlim=zl, cols=map_col, lab.cex=1),
+			wctri = mapLegend(x=0.1, y=0.125, w=0.07, zlim=zl, cols=map_col, lab.cex=1),
+			gmex = mapLegend(x=0.95, y=0.2, h=0.375, zlim=zl, cols=map_col, lab.cex=1),
+			sa = mapLegend(x=0.95, y=0.15, zlim=zl, cols=map_col, lab.cex=1),
+			neus = mapLegend(x=0.95, y=0.15, zlim=zl, cols=map_col, lab.cex=1),
+			shelf = mapLegend(x=0.95, y=0.15, zlim=zl, cols=map_col, lab.cex=1),
+			newf = mapLegend(x=0.05, y=0.15, h=0.25, zlim=zl, cols=map_col, lab.cex=1)
+		)
+	}else{
+		# plot(x=locs[,1], y=locs[,2], col='blue')
 	}
-	plot(dists, t_mt, type='o', main="Sensitivity to Neighbor Distance", xlab="Max Distance to Neighbor (km)", ylab="Moran's I")
-	nb <- dnearneigh(locs, d1=0, d2=dists[which.max(t_mt)])
-  correlo <- sp.correlogram(nb, td[,n_spp_col_weighted], order = 5, method = "I", style = "B")
-	plot(correlo)
+	# switch(rs[r],
+	# 	ebs = legend("topright", legend="A", bty='n', text.font=2, inset=c(-0.02,-0.15), cex=1.25),
+	# 	ai = legend("topleft", legend="C", bty='n', text.font=2, inset=c(-0.065,-0.45), cex=1.25, xpd=T),
+	# 	goa = legend("topleft", legend="B", bty='n', text.font=2, inset=c(-0.065,-0.06), cex=1.25),
+	# 	wctri = legend("top", legend="E", bty='n', text.font=2, inset=c(0,0.15), cex=1.25),
+	# 	gmex = legend("topleft", legend="G", bty='n', text.font=2, inset=c(-0.175,-0.12), cex=1.25),
+	# 	sa = legend("topleft", legend="I", bty='n', text.font=2, inset=c(-0.15,-0.075), cex=1.25),
+	# 	neus = legend("topleft", legend="H", bty='n', text.font=2, inset=c(-0.125,-0.05), cex=1.25),
+	# 	shelf = legend("topleft", legend="D", bty='n', text.font=2, inset=c(-0.1,-0.125), cex=1.25),
+	# 	newf = legend("topright", legend="F", bty='n', text.font=2, inset=c(-0.01,-0.05), cex=1.25)
+	# )
 	
-
-	
-	mt_out <- moran.test(td[,n_spp_col_weighted], nb2listw(dnearneigh(locs, d1=0, d2=125)))
-	moran.plot(td[,n_spp_col_weighted], nb2listw(dnearneigh(locs, d1=0, d2=125)))
-	ml_out <- localmoran(td[,n_spp_col_weighted], nb2listw(dnearneigh(locs, d1=0, d2=125)))
-	
-	plot_space(x=locs[,1], y=locs[,2], z=ml_out[,1]*(ml_out[,5]<0.05), scatter=TRUE)
-	
-	
+	# # plots
+	# dev.new(width=5, height=5)
+	# par(mfrow=c(2,2), mar=c(2,2,1,0.5), ps=8, mgp=c(1,0.1,0), tcl=-0.1, cex=1)
+	#
+	# # moran's i vs neighborhood size
+	# plot(dists, t_mt, type='o', main="Sensitivity to Neighbor Distance", xlab="Max Distance to Neighbor (km)", ylab="Moran's I")
+	#
+	# # correlogram
+	# if(min(card(nb))>2){
+	#   correlo <- sp.correlogram(nb, td[,n_spp_col_weighted], order = min(card(nb)), method = "I", style = "B")
+	# 	plot(correlo)
+	# }else{
+	# 	plot(1, type='n', xaxt='n', yaxt='n', ylab='', xlab='')
+	# }
+	#
+	# # value at focal vs at lag 1 (moran plot)
+	# moran.plot(td[,n_spp_col_weighted], localAC[[rs[r]]]$nb)
+	#
+	# # spatial sca
+	# if(any(ml_out[,5]<0.05)){
+	# 	plot_space(x=locs[,1], y=locs[,2], z=ml_out[,1]*(ml_out[,5]<0.05), scatter=TRUE)
+	# }else{
+	# 	plot(x=locs[,1], y=locs[,2], col='blue')
+	# }
 }
+dev.off()
 
 
 
