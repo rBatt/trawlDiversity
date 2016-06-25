@@ -17,6 +17,16 @@ update_dependencies <- function(){
 	
 	devtools::use_package("zoo", type="Suggests")
 	
+	devtools::use_package("spatstat", type="Suggests")
+	
+	devtools::use_package("spdep", type="Suggests")
+	
+	devtools::use_package("raster", type="Suggests")
+	
+	devtools::use_package("Kendall", type="Suggests")
+	
+	devtools::use_package("forecast", type="Suggests")
+	
 }
 
 

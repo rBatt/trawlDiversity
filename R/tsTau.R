@@ -6,6 +6,7 @@
 #' @param y numeric vector of value to be inspected for a trend
 #' @param tauOnly Logical, if FALSE (default) only the Kendall's Tau is returned
 #' @param checkTies Logical, if FALSE (default) \code{\link{cor}} is used to compute Kendall's Tau. Otherwise, \code{Kendall::Kendall} is used.
+#' @param ... arguments passed to \code{\link{cor}}
 #' 
 #' @details
 #' The general approach has 3 components: estimate the linear trend, estimate the serial dependence, then estimate Kendall's Tau. 
@@ -28,7 +29,9 @@
 #' 
 #' @references
 #' Yue, S., and C. Y. Wang. 2002. Applicability of prewhitening to eliminate the influence of serial correlation on the Mann-Kendall test. Water resources research 38:4–1–4–7.
+#' 
 #' Yue, S., and C. Wang. 2004. The Mann-Kendall Test Modified by Effective Sample Size to Detect Trend in Serially Correlated Hydrological Series. Water Resources Management 18:201–218.
+#' 
 #' Hyndman, R. J., and G. Athanasopoulos. 2014. Forecasting: principles and practice: OTexts.
 #' 
 #' @examples
@@ -43,11 +46,14 @@
 #' 
 #' @export
 tsTau <- function(x, y, tauOnly=FALSE, checkTies=FALSE, ...){
+	requireNamespace("forecast", quietly = TRUE)
+	
 	mod_stat <- forecast::auto.arima(y, xreg=x, d=0, max.p=2, max.q=2, seasonal=FALSE, allowdrift=FALSE, approximation=TRUE)
 	b <- unname(coef(mod_stat)['x'])
 	y_stat <- residuals(mod_stat) + b*x[!is.na(y)]
 	
 	if(checkTies){
+		requireNamespace("Kendall", quietly = TRUE)
 		mod <- Kendall::Kendall(x, y_stat)
 		tau <- mod[['tau']][1]
 	}else{
