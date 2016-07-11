@@ -7,6 +7,8 @@
 #' 
 #' @examples
 #' trawlDiversity::make_owin(mapDat, outlines)
+#' 
+#' @export
 make_owin <- function(X, outlines){
 	requireNamespace("spatstat", quietly = TRUE)
 	
@@ -20,8 +22,8 @@ make_owin <- function(X, outlines){
 	
 		xr <- td[,range(c(lon,o[,x]))]
 		yr <- td[,range(c(lat,o[,y]))]
-		ow_exp1 <- bquote(owin(xr, yr, poly=o)) # use when I correctly traced outline counterclockwise
-		ow_exp2 <- bquote(owin(xr, yr, poly=o_r)) # reversed (use if traced outline in wrong direction)
+		ow_exp1 <- bquote(spatstat::owin(xr, yr, poly=o)) # use when I correctly traced outline counterclockwise
+		ow_exp2 <- bquote(spatstat::owin(xr, yr, poly=o_r)) # reversed (use if traced outline in wrong direction)
 	
 		X_owin[[rs[r]]] <- tryCatch(td[, eval(ow_exp1)], error=function(cond)td[, eval(ow_exp2)])
 	}
