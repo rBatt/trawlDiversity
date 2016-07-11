@@ -13,7 +13,7 @@
 #' 
 #' The simplest way to do this is to estimate and remove the linear trend from the data, model and remove first order autocorrelation, add the trend back into the AR residuals, then fit Kendall's Tau to the Trend+Residuals series. This is the approach described in the studies in the references section, and is implemented in the \href{https://cran.r-project.org/web/packages/zyp/index.html}{zyp package}.
 #' 
-#' This function improves upon the above approach by fitting the linear trend and the serial dependence at the same time, and by considering more complex models of serial dependence (specificall, up to ARMA(2,2) models). The fitting of the ARMA model is done using the \code{forecast::auto.arima} function; if one already knows the order of the ARMA model, an equivalent result could be achieved through \code{\link{arima}}. The key to this type of model is that it is fit as a regression with ARMA residuals (see the Hyndman 2004 reference below for more details, or \href{https://www.otexts.org/fpp/9/1}{or this chapter in the free online text}). The order of the model is limited to second order autoregressive (AR(2) component) and second order moving average (MA(2) component). Differencing, drift, and seasonality are not considered. This is partially done for speed, and partially to protect against the model soaking up too much of any nonlinear trend (b/c the trend we're explicitly modeling is linear, but Kendall's Tau wouldn't be needed if that was the actual trend was linear!).
+#' This function improves upon the above approach by fitting the linear trend and the serial dependence at the same time, and by considering more complex models of serial dependence (specifically, up to ARMA(2,2) models). The fitting of the ARMA model is done using the \code{forecast::auto.arima} function; if one already knows the order of the ARMA model, an equivalent result could be achieved through \code{\link{arima}}. The key to this type of model is that it is fit as a regression with ARMA residuals (see the Hyndman 2004 reference below for more details, or \href{https://www.otexts.org/fpp/9/1}{or this chapter in the free online text}). The order of the model is limited to second order autoregressive (AR(2) component) and second order moving average (MA(2) component). Differencing, drift, and seasonality are not considered. This is partially done for speed, and partially to protect against the model soaking up too much of any nonlinear trend (because the trend we're explicitly modeling is linear, but Kendall's Tau wouldn't be needed if that was the actual trend was linear!).
 #' 
 #' When \code{checkTies} is TRUE, \code{Kendall::Kendall} is used instead of \code{cor} to estimate Kendall's Tau. This is because the variance of the numerator in Kendall's Tau is more complex when there are ties, and the former handles this case whereas the latter does not.
 #' 
@@ -24,13 +24,13 @@
 #' \code{tau} \tab Kendall's Tau \cr
 #' \code{bp} \tab P-value associated with the linear trend \cr
 #' \code{taup} \tab P-value associated with Kendall's Tau \cr
-#' \code{tauZ} \tab Z statistic associated with Kendall's Tau \cr
+#' \code{tauZ} \tab Z statistic associated with Kendall's Tau
 #' }
 #' 
 #' @references
-#' Yue, S., and C. Y. Wang. 2002. Applicability of prewhitening to eliminate the influence of serial correlation on the Mann-Kendall test. Water resources research 38:4–1–4–7.
+#' Yue, S., and C. Y. Wang. 2002. Applicability of prewhitening to eliminate the influence of serial correlation on the Mann-Kendall test. Water resources research 38:4-1-4-7.
 #' 
-#' Yue, S., and C. Wang. 2004. The Mann-Kendall Test Modified by Effective Sample Size to Detect Trend in Serially Correlated Hydrological Series. Water Resources Management 18:201–218.
+#' Yue, S., and C. Wang. 2004. The Mann-Kendall Test Modified by Effective Sample Size to Detect Trend in Serially Correlated Hydrological Series. Water Resources Management 18:201-218.
 #' 
 #' Hyndman, R. J., and G. Athanasopoulos. 2014. Forecasting: principles and practice: OTexts.
 #' 
