@@ -168,6 +168,48 @@ mtext("Colonizations or Extinctions", side=2, line=-0.2, outer=TRUE)
 mtext("Year", side=1, line=-0.5, outer=TRUE)
 dev.off()
 
+# ---- Figure S4: Map of Neighs and Local AC of Coloniz. Rate ----
+png("~/Desktop/FigureS4_nb_moranI.png", width=7, height=3, units='in', res=200)
+map_layout <- trawl_layout()
+par(mar=c(0.25,0.25,0.25,0.25), mgp=c(0.25,0.075,0), tcl=-0.1, ps=8, cex=1, oma=c(0.1,0.1,0.1,0.1))
+layout(map_layout)
+pretty_reg <- c("ebs"="E. Bering Sea", "ai"="Aleutian Islands", "goa"="Gulf of Alaska", "wctri"="West\nCoast\nUS", "gmex"="Gulf of Mexico", "sa"="Southeast US", "neus"="Northeast US", "shelf"="Scotian Shelf", "newf"="Newfoundland")
+
+rs <- mapDat[,una(reg)]
+nr <- length(rs)
+for(r in 1:nr){
+	t_lac <- localAC[[rs[r]]]
+	plot(mapOwin[[rs[r]]], coords=t_lac$I[,list(lon,lat)], add=FALSE, main="")
+	box()
+	if(rs[r]=='wctri'){
+		mtext(pretty_reg[rs[r]], side=3, line=-3)
+	}else{
+		mtext(pretty_reg[rs[r]], side=3, line=-1)
+	}
+	plot(t_lac$nb, t_lac$I[,list(lon,lat)], add=TRUE, col=adjustcolor('black', 0.5), cex=0.8, lwd=0.5)
+	sig_lac <- t_lac$I[,lI_pvalue]<0.05
+	if(any(sig_lac)){
+		zl <- range(t_lac$I[sig_lac,Ii], na.rm=TRUE)
+		t_col <- rbLib::zCol(256,t_lac$I[sig_lac,Ii])
+		map_col <- rbLib::zCol(6, 1:6)
+		points(x=t_lac$I[sig_lac,lon], y=t_lac$I[sig_lac,lat], bg=t_col, pch=21, cex=1.1)
+		switch(rs[r],
+			ebs = mapLegend(x=0.05, y=0.25, h=0.375, w=0.025, zlim=zl, cols=map_col, lab.cex=1),
+			ai = mapLegend(x=0.985, y=0.3, w=0.02, h=0.5, zlim=zl, cols=map_col, lab.cex=1),
+			goa = mapLegend(x=0.985, y=0.15, w=0.02,  zlim=zl, cols=map_col, lab.cex=1),
+			wctri = mapLegend(x=0.1, y=0.125, w=0.07, zlim=zl, cols=map_col, lab.cex=1),
+			gmex = mapLegend(x=0.95, y=0.2, h=0.375, zlim=zl, cols=map_col, lab.cex=1),
+			sa = mapLegend(x=0.95, y=0.15, zlim=zl, cols=map_col, lab.cex=1),
+			neus = mapLegend(x=0.95, y=0.15, zlim=zl, cols=map_col, lab.cex=1),
+			shelf = mapLegend(x=0.95, y=0.15, zlim=zl, cols=map_col, lab.cex=1),
+			newf = mapLegend(x=0.05, y=0.15, h=0.25, zlim=zl, cols=map_col, lab.cex=1)
+		)
+	}else{
+		# plot(x=locs[,1], y=locs[,2], col='blue')
+	}
+}
+dev.off()
+
 
 
 
