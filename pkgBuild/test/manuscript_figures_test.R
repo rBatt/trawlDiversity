@@ -361,9 +361,9 @@ spp_master[!is.na(stretch_type), j={
 map_names <- c("Average Richness", "Colonizations per Species")
 map_expr <- list(
 	bquote(avgRich),
+	bquote(n_spp_col_weighted/avgRich),
 	bquote(sdRich),
 	bquote(n_spp_col_weighted),
-	bquote(n_spp_col_weighted/avgRich),
 	bquote(n_spp_ext_weighted),
 	bquote(n_spp_ext_weighted/avgRich)
 )
@@ -383,6 +383,7 @@ for(mp in 1:length(map_names)){
 	mtext(map_names[mp], side=3, outer=TRUE, font=2, line=0)
 }
 
+# ---- n_spp_col_unique ----
 
 # # ---- scatter ----
 # dev.new()
