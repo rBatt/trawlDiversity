@@ -512,6 +512,7 @@ comm_master[,j={
 # 	plot(plogis(detect_mu_avg), naive_rich, main=reg[1], col=zCol(256,year))
 # },by="reg"]
 
+# ---- Classic Abundance (i.e., Detection) - Occupancy Relationship ----
 dev.new()
 par(mfrow=c(3,3), mar=c(2,2,0.5,0.5), mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
 spp_master[,j={
@@ -521,6 +522,7 @@ spp_master[,j={
 	NULL
 },by=c("reg")]
 
+# ---- Prevalence NOT Related to Richness ----
 dev.new()
 par(mfrow=c(3,3), mar=c(2,2,0.5,0.5), mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
 comm_master[,j={
