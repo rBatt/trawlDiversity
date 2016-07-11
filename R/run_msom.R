@@ -10,8 +10,8 @@
 #' @param n0 integer indicating the number of species to use in data augmentation; defaults to 50, is passed to \code{\link{msomData}}
 #' @param chains integer number of chains, default is 4
 #' @param cores integer number of cores for parallel processes; default is half of avaialble cores
-#' @param iter number of iterations; the default depends on \code{language} and on /code{test}; testing in Stan is 50, non-testing is 200. Testing in JAGS is 500, non-testing is 5000.
-#' @param thin Integer, thinning rate. Default is set to yield 200 draws from the posterior, or if that is not possible, thinning rate is 1 and draws will be \code{iter}/2.
+#' @param iter number of iterations; the default depends on \code{language} and on \code{test}; testing in Stan is 50, non-testing is 200. Testing in JAGS is 500, non-testing is 5000.
+#' @param thin Integer, thinning rate. Default is set to yield 200 draws from the posterior, or if that is not possible, thinning rate is 1 and draws will be \code{iter/2}.
 #' @param language character indicating the language to be used --- JAGS or Stan
 #' @param test Logical, whether to do this run as a 'test' run. Default is FALSE. If TRUE, fewer iterations are run (unless overridden by non-default), and the data set is subsetted 
 #' @param test_sub a named list with elements 'stratum', 'year', and 'spp'. Each element should be an integer indicating the number of levels to select for each of those dimensions. Used for subsetting when \code{test} is TRUE.
@@ -19,7 +19,7 @@
 #' @param pre_save Logical; if TRUE (default) saves a workspace image before running the model
 #' @param save_dir Character string indicating the location of the directory to save the intermediate image; default is current directory
 #' @param model_dir Character string indicating the location of the model file; default is selected automatically based on \code{language} and \code{model_type}, and looks to models that come with this package
-#' @param compiled_model Only used when language="Stan"; a Stan model compiled using \code{\link{stan_model}}. Useful for preventing repeated model recompilation and/or reapeated loading of DLLs, which can cause an error if done enough.
+#' @param compiled_model Only used when language="Stan"; a Stan model compiled using \code{rstan::stan_model}. Useful for preventing repeated model recompilation and/or reapeated loading of DLLs, which can cause an error if done enough.
 #' @param ... arguments passed to \code{rstan::sampling}
 #' 
 #' @details
@@ -44,7 +44,6 @@ run_msom <- function(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf"
 	requireNamespace("rbLib", quietly=TRUE)
 	if(language=="Stan"){requireNamespace("rstan", quietly=TRUE)}
 	if(language=="JAGS"){requireNamespace("R2jags", quietly=TRUE)}
-	if(language=="JAGS"){library("R2jags")}
 		
 	if(missing(iter)){
 		if(test){
