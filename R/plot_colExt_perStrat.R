@@ -4,6 +4,8 @@
 #' 
 #' @param prn the p object (processed msom; output from \code{process_msomStatic})
 #' @param Figures option list to which the figure and its information should be added
+#' @param FUN graphical device function
+#' @param ... arguments passed to plot_device
 #' 
 #' @details
 #' Each of the 3 types of plots has two panels: The first panel is a map of the strata indicating the the values seen in the data. Each stratum is a point. The second panel is a thin plat spline of the first panel (see \code{fields::Tps}), which acts to smooth the values in the convex hull of the strata.
@@ -20,7 +22,7 @@
 #' 
 #' @export
 plot_colExt_perStrat <- function(prn, Figures, FUN="dev.new", ...){
-	requireNamespace("fields", quietly=TRUE)
+	requireNamespace("maps", quietly=TRUE)
 	unpack_p(prn)
 	
 	if(missing(Figures)){
@@ -61,31 +63,31 @@ plot_colExt_perStrat <- function(prn, Figures, FUN="dev.new", ...){
 
 	# site-specific colonizations from data
 	colonization$n_spp_col_weighted_tot[,plot_space(lon, lat, n_spp_col_weighted, TRUE, pch=19, ylab="", xlab="")]
-	map(add=TRUE, fill=TRUE, col="white")
+	maps::map(add=TRUE, fill=TRUE, col="white")
 	mtext("Colonizations (C)", side=ifelse(lay_logic, 2, 3), line=ifelse(lay_logic, 1, 0.25))
 	# smoothed map for convex hull of site observations
 	colonization$n_spp_col_weighted_tot[,plot_space(lon, lat, n_spp_col_weighted, pch=19, ylab="", xlab="")]
-	map(add=TRUE, fill=TRUE, col="white")
+	maps::map(add=TRUE, fill=TRUE, col="white")
 	
 	
 	# site-specific extinctions from data
 	colonization$n_spp_ext_weighted_tot[,plot_space(lon, lat, n_spp_ext_weighted, TRUE, pch=19, ylab="", xlab="")]
-	map(add=TRUE, fill=TRUE, col="white")
+	maps::map(add=TRUE, fill=TRUE, col="white")
 	mtext("Extinctions (E)", side=ifelse(lay_logic, 2, 3), line=ifelse(lay_logic, 1, 0.25))
 	# smoothed map for convex hull of site observations
 	colonization$n_spp_ext_weighted_tot[,plot_space(lon, lat, n_spp_ext_weighted, pch=19, ylab="", xlab="")]
-	map(add=TRUE, fill=TRUE, col="white")
+	maps::map(add=TRUE, fill=TRUE, col="white")
 	
 	
 	# site-specific extinctions from data
 	cre <- merge(colonization$n_spp_col_weighted_tot, colonization$n_spp_ext_weighted_tot, by=c("stratum","lon","lat","depth"), all=TRUE)
 	cre[,rel_col_ext:=(n_spp_col_weighted - n_spp_ext_weighted) ]
 	cre[,plot_space(lon, lat, rel_col_ext, TRUE, pch=19, ylab="", xlab="")]
-	map(add=TRUE, fill=TRUE, col="white")
+	maps::map(add=TRUE, fill=TRUE, col="white")
 	mtext("C - E", side=ifelse(lay_logic, 2, 3), line=ifelse(lay_logic, 1, 0.25))
 	# smoothed map for convex hull of site observations
 	cre[,plot_space(lon, lat, rel_col_ext, pch=19, ylab="", xlab="")]
-	map(add=TRUE, fill=TRUE, col="white")
+	maps::map(add=TRUE, fill=TRUE, col="white")
 	
 	
 	

@@ -15,7 +15,7 @@
 #' 
 #' @export
 plot_ce <- function(t_sco, pad_top_mar=2, plt_pts=FALSE, use_ext=FALSE, ...){
-	
+	requireNamespace("maps", quietly=TRUE)
 	omar <- par("mar")
 	
 	# set up info for col/ext
@@ -64,6 +64,6 @@ plot_ce <- function(t_sco, pad_top_mar=2, plt_pts=FALSE, use_ext=FALSE, ...){
 	t_col_strat <- merge(t_sll, t_col_strat, by=c("stratum"), all=TRUE)
 	t_col_strat[is.na(col_logic), col_logic:=0]
 	t_col_strat[,plot_space(lon, lat, as.integer(col_logic), TRUE, pch=20, ylab="", xlab="", ...)]
-	map(add=TRUE, fill=TRUE, col="white")
+	maps::map(add=TRUE, fill=TRUE, col="white")
 	mtext(paste(col_yrs, collapse=" "), side=3, line=0, adj=0.01, font=2)
 }

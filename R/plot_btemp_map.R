@@ -4,6 +4,8 @@
 #' 
 #' @param prn the p object (processed msom; output from \code{process_msomStatic})
 #' @param Figures option list to which the figure and its information should be added
+#' @param FUN graphical device function
+#' @param ... arguments passed to plot_device
 #' 
 #' @details
 #' The function uses \code{unpack_p} to get much of the information it needs. The \code{Figures} object is a list whose first level is intended to be the region. The second level is specific to each figure. The third level has 3 elements: 'figure', 'name', and 'dim'. The 'figure' element is the result of using \code{\link{recordPlot}} on what is plotted. The name of the figure is, e.g., what the saved figure would be called. The dim is the width and height (in that order) in inches.
@@ -16,6 +18,7 @@
 #' 
 #' @export
 plot_btemp_map <- function(prn, Figures, FUN="dev.new", ...){
+	requireNamespace("maps", quietly=TRUE)
 	unpack_p(prn)
 	
 	if(missing(Figures)){
@@ -44,7 +47,7 @@ plot_btemp_map <- function(prn, Figures, FUN="dev.new", ...){
 		t_lat <- bt[year==yrs2loop[y],lat]
 		t_bt_col <- bt[year==yrs2loop[y],bt_col]
 		plot(t_lon, t_lat, type="n")
-		map(add=TRUE)
+		maps::map(add=TRUE)
 		points(t_lon, t_lat, col=t_bt_col, pch=20)
 		mtext(yrs2loop[y], side=3, adj=0.1, line=-0.75, font=2)
 	}

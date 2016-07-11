@@ -5,6 +5,12 @@
 #' @param prn the p object (processed msom; output from \code{process_msomStatic})
 #' @param Figures option list to which the figure and its information should be added
 #' @param spp_cat Category for colonization/ extinction to be chosen
+#' @param width.max max width of figure in inches
+#' @param height.max max height of figure in inches
+#' @param max_spp_columns max number of columns
+#' @param nPlots max number of plots per species
+#' @param FUN the graphical device function
+#' @param ... arguments passed to plot_device
 #' 
 #' @details
 #' This figure is rather complicated, and is divided into 3 parts. This function is the piece that should be interacted with. The core piece of the function is \code{\link{plot_ce}}, which creates 3 core plots.

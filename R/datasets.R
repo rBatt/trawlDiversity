@@ -46,7 +46,7 @@
 #' \code{ce_categ} \tab character \tab colonization/extinction category; neither means present every year, colonizer means colonized only, leaver means went extinct only, both means has both types of events \cr
 #' }
 #' 
-#' @seealso \code{\link{comm_master}}, \code{\link{mapData}}
+#' @seealso \code{\link{comm_master}}, \code{\link{mapDat}}
 #' 
 #' @format data.table
 "spp_master"
@@ -75,7 +75,7 @@
 #' \code{propStrata_avg} \tab numeric \tab cross species average of \code{propStrata} in \code{\link{spp_master}} \cr
 #' }
 #' 
-#' @seealso \code{\link{spp_master}}, \code{\link{mapData}}
+#' @seealso \code{\link{spp_master}}, \code{\link{mapDat}}
 #' 
 #' @format data.table
 "comm_master"
@@ -119,6 +119,24 @@
 #' 
 #' @format data.table
 "outlines"
+
+#' Region outlines in owin format
+#' 
+#' Transformed \code{\link{outlines}} for use with the \code{spatstat package}
+#' 
+#' @seealso \code{\link{make_owin}}
+#' 
+#' @format owin
+"mapOwin"
+
+#' Results for local autocorrelation
+#' 
+#' Includes distance, neighborhood, and local autocorrelation (and associated pvalues, z scores, lon lat) for each site
+#' 
+#' @seealso \code{\link{spatial_ac}}
+#' 
+#' @format list data.table
+"localAC"
 
 
 

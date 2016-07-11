@@ -46,7 +46,7 @@ plot_ab <- function(X, t_spp, plt_img=TRUE, plt_pts=TRUE, ...){
 	}
 	mu[,lines(year, mu, lwd=1, col='white')]
 	if(is.null(si) & plt_img){
-		common_name <- spp.key[spp==t_spp, una(common)]
+		common_name <- trawlData::spp.key[spp==t_spp, una(common)]
 		mtext(paste(t_spp, common_name, sep="\n"), side=3)
 	}
 	
