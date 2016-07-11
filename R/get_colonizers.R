@@ -85,13 +85,16 @@ get_colonizers <- function(d){
 	
 		n_spp_ce_weighted <- ce_dt[, list(n_spp_col_weighted=una(n_spp_col_weighted)),by=c("year","stratum","yrs_sampled")]
 		n_spp_ce_weighted <- merge(n_spp_ce_weighted, unique(d[,list(lon, lat, depth),keyby=c("year","stratum")]), by=c("year","stratum"))
-	
 		n_spp_ce_weighted_tot <- n_spp_ce_weighted[,list(lon=mean(lon), lat=mean(lat), depth=mean(depth), n_spp_col_weighted=sum(n_spp_col_weighted)/una(yrs_sampled)),by=c("stratum")]
+		
+		# n_spp_ce_unique <- ce_dt[,.SD[,list(V1=sum(as.integer(col_logic)/n_strat_col)),by=c("stratum","year")][,mean(V1[V1>0], na.rm=TRUE),by="stratum"], by=c("spp")]
+		n_spp_ce_unique <- ce_dt[(col_logic),sum(as.integer(col_logic)/n_strat_col)/.N, by=c("spp","stratum")][,list(n_spp_col_unique=sum(V1)),keyby="stratum"]
+		n_spp_ce_weighted_tot <- n_spp_ce_weighted_tot[n_spp_ce_unique, on="stratum"]
 		
 		if(ce == "ext"){
 			setnames(ce_dt, c("n_spp_col", "n_strat_col", "n_spp_col_weighted"),  c("n_spp_ext", "n_strat_ext", "n_spp_ext_weighted"))
 			setnames(n_spp_ce_weighted, "n_spp_col_weighted", "n_spp_ext_weighted")
-			setnames(n_spp_ce_weighted_tot, "n_spp_col_weighted", "n_spp_ext_weighted")
+			setnames(n_spp_ce_weighted_tot, c("n_spp_col_weighted", "n_spp_col_unique"), c("n_spp_ext_weighted", "n_spp_ext_unique"))
 			
 			return(list(ext_dt=ce_dt, n_spp_ext_weighted=n_spp_ce_weighted, n_spp_ext_weighted_tot=n_spp_ce_weighted_tot))
 		}else{
