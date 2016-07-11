@@ -42,7 +42,7 @@ Master data set of species time series related to colonization, extinction, rich
 }
 }
 \seealso{
-\code{\link{comm_master}}, \code{\link{mapData}}
+\code{\link{comm_master}}, \code{\link{mapDat}}
 }
 \keyword{datasets}
 

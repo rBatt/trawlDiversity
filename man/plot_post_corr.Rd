@@ -12,6 +12,10 @@ plot_post_corr(prn, Figures, yr = 1, FUN = "dev.new", ...)
 \item{Figures}{option list to which the figure and its information should be added}
 
 \item{yr}{integer indicating the index for the year to plot. Note that this is not the calendar year}
+
+\item{FUN}{graphical device function}
+
+\item{...}{arguments passed to plot_device}
 }
 \value{
 Returns the Figure object

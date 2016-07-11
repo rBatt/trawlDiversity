@@ -32,9 +32,9 @@ run_msom(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf", "sa",
 
 \item{cores}{integer number of cores for parallel processes; default is half of avaialble cores}
 
-\item{iter}{number of iterations; the default depends on \code{language} and on /code{test}; testing in Stan is 50, non-testing is 200. Testing in JAGS is 500, non-testing is 5000.}
+\item{iter}{number of iterations; the default depends on \code{language} and on \code{test}; testing in Stan is 50, non-testing is 200. Testing in JAGS is 500, non-testing is 5000.}
 
-\item{thin}{Integer, thinning rate. Default is set to yield 200 draws from the posterior, or if that is not possible, thinning rate is 1 and draws will be \code{iter}/2.}
+\item{thin}{Integer, thinning rate. Default is set to yield 200 draws from the posterior, or if that is not possible, thinning rate is 1 and draws will be \code{iter/2}.}
 
 \item{language}{character indicating the language to be used --- JAGS or Stan}
 
@@ -50,7 +50,7 @@ run_msom(reg = c("ai", "ebs", "gmex", "goa", "neus", "newf", "ngulf", "sa",
 
 \item{model_dir}{Character string indicating the location of the model file; default is selected automatically based on \code{language} and \code{model_type}, and looks to models that come with this package}
 
-\item{compiled_model}{Only used when language="Stan"; a Stan model compiled using \code{\link{stan_model}}. Useful for preventing repeated model recompilation and/or reapeated loading of DLLs, which can cause an error if done enough.}
+\item{compiled_model}{Only used when language="Stan"; a Stan model compiled using \code{rstan::stan_model}. Useful for preventing repeated model recompilation and/or reapeated loading of DLLs, which can cause an error if done enough.}
 
 \item{...}{arguments passed to \code{rstan::sampling}}
 }

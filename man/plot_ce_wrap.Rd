@@ -14,6 +14,18 @@ plot_ce_wrap(prn, Figures, spp_cat = c("col", "ext", "both", "neither"),
 \item{Figures}{option list to which the figure and its information should be added}
 
 \item{spp_cat}{Category for colonization/ extinction to be chosen}
+
+\item{width.max}{max width of figure in inches}
+
+\item{height.max}{max height of figure in inches}
+
+\item{max_spp_columns}{max number of columns}
+
+\item{nPlots}{max number of plots per species}
+
+\item{FUN}{the graphical device function}
+
+\item{...}{arguments passed to plot_device}
 }
 \value{
 Returns the Figure object

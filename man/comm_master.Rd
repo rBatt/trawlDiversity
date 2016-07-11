@@ -32,7 +32,7 @@ Many of the columns in this data set are cross-species averages of columns by th
 }
 }
 \seealso{
-\code{\link{spp_master}}, \code{\link{mapData}}
+\code{\link{spp_master}}, \code{\link{mapDat}}
 }
 \keyword{datasets}
 

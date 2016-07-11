@@ -10,6 +10,10 @@ plot_btemp_map(prn, Figures, FUN = "dev.new", ...)
 \item{prn}{the p object (processed msom; output from \code{process_msomStatic})}
 
 \item{Figures}{option list to which the figure and its information should be added}
+
+\item{FUN}{graphical device function}
+
+\item{...}{arguments passed to plot_device}
 }
 \value{
 Returns the Figure object
