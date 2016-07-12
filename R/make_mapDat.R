@@ -28,7 +28,7 @@ make_mapDat <- function(p){
 			data.table(avgRich=avgRich, sdRich=sdRich, avgBtemp=avgBtemp, sdBtemp=sdBtemp)
 		},by=c("reg","stratum")]
 		to_merge <- c(p[[r]]$colonization[c("n_spp_col_weighted_tot","n_spp_ext_weighted_tot","n_cep")])
-		mapDat[[r]] <- merge(to_merge[["n_spp_col_weighted_tot"]], to_merge[["n_spp_ext_weighted_tot"]], by=c("stratum","lon","lat","depth"),all=TRUE)
+		mapDat[[r]] <- merge(to_merge[["n_spp_col_weighted_tot"]], to_merge[["n_spp_ext_weighted_tot"]], by=c("stratum","lon","lat","depth","yrs_sampled"),all=TRUE)
 		mapDat[[r]] <- merge(mapDat[[r]], pt2, by="stratum",all=TRUE)
 	}
 	mapDat <- rbindlist(mapDat)[reg!="wcann"]
