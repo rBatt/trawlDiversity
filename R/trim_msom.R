@@ -219,7 +219,7 @@ trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tol
 	
 	if(cull_show_up){
 		o_reg <- reg
-		bad_spp <- show_up_spp[(reg)==o_reg,una(spp)]
+		bad_spp <- trawlDiversity::show_up_spp[(reg)==o_reg,una(spp)]
 		X.t <- X.t[!spp%in%bad_spp,]
 	}
 	
