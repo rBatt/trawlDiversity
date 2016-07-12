@@ -19,7 +19,8 @@
 #' @export
 plot_btemp_map <- function(prn, Figures, FUN="dev.new", ...){
 	requireNamespace("maps", quietly=TRUE)
-	unpack_p(prn)
+	pup <- unpack_p(prn)
+mapply(x=names(pup), value=pup, function(x, value){assign(x, value, envir=parent.frame(n=2));invisible(NULL)})(prn)
 	
 	if(missing(Figures)){
 		Figures <- list()

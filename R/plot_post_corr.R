@@ -19,7 +19,8 @@
 #' 
 #' @export
 plot_post_corr <- function(prn, Figures, yr=1, FUN="dev.new", ...){
-	unpack_p(prn)
+	pup <- unpack_p(prn)
+mapply(x=names(pup), value=pup, function(x, value){assign(x, value, envir=parent.frame(n=2));invisible(NULL)})(prn)
 	
 	if(missing(Figures)){
 		Figures <- list()

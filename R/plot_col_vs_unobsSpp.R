@@ -21,7 +21,8 @@
 #' @export
 
 plot_col_vs_unobsSpp <- function(prn, Figures, FUN="dev.new", ...){
-	unpack_p(prn)
+	pup <- unpack_p(prn)
+mapply(x=names(pup), value=pup, function(x, value){assign(x, value, envir=parent.frame(n=2));invisible(NULL)})(prn)
 	
 	if(missing(Figures)){
 		Figures <- list()

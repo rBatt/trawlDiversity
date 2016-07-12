@@ -25,7 +25,8 @@
 #' 
 #' @export
 plot_ce_wrap <- function(prn, Figures, spp_cat=c("col","ext","both","neither"), width.max=12, height.max=7, max_spp_columns=15, nPlots=3, FUN="dev.new", ...){
-	unpack_p(prn)
+	pup <- unpack_p(prn)
+mapply(x=names(pup), value=pup, function(x, value){assign(x, value, envir=parent.frame(n=2));invisible(NULL)})(prn)
 	
 	if(missing(Figures)){
 		Figures <- list()
