@@ -9,10 +9,10 @@
 #' @details
 #' The neighborhood is defined in a 2-step process. First, the nearest neighbor for each location is found, and the maximum distance among nearest neighbors recorded. Second, the neighborhood for a focal point is then defined as all points within that distance. So it's defined as all points within a raidus with a size that is the minimum distance required for all points to have at least 1 neighbor.
 #' 
-#' Local Moran's I is calculated for each site. P value is adjusted to number of sites in each "region" (not the same 'region' used in the trawlDiversity package); see \code{\link{localmoran}}.
+#' Local Moran's I is calculated for each site. P value is adjusted to number of sites in each "region" (not the same 'region' used in the trawlDiversity package); see \code{spdep::localmoran}.
 #' 
 #' @return
-#' A named list of length 3. The first element of this list, \code{max2NDist} is the minimum distance and is a length 1 numeric vector. The second element, \code{nb} is the neighborhood object returned by \code{\link{knn2nb}}. The third element, \code{I}, is a data.table that contains columns as returned by \code{\link{localmoran}} with a few adjustments: the column for the pvalue is changed to \code{lI_pvalue} and columns for \code{lon} and \code{lat} of the sites are added.
+#' A named list of length 3. The first element of this list, \code{max2NDist} is the minimum distance and is a length 1 numeric vector. The second element, \code{nb} is the neighborhood object returned by \code{spdep::knn2nb}. The third element, \code{I}, is a data.table that contains columns as returned by \code{spdep::localmoran} with a few adjustments: the column for the pvalue is changed to \code{lI_pvalue} and columns for \code{lon} and \code{lat} of the sites are added.
 #' 
 #' @examples
 #' # calculate local I on random subset of volcano
@@ -30,7 +30,7 @@
 #' sig_ind <- spac[["I"]][,lI_pvalue] < 0.05
 #' plot(spac[["nb"]], cbind(lon[rind], lat[rind]))
 #' spac[["I"]][sig_ind, points(lon, lat, col=zCol(256, Ii), pch=19)]
-#' mapLegend(zlim=spac[["I"]][sig_ind,range(Ii)], cols=zCol(6, 1:6))
+#' mapLegend(zlim=spac[["I"]][sig_ind,range(Ii)], cols=rbLib::zCol(6, 1:6))
 #' 
 #' @export
 spatial_ac <- function(lon, lat, value){
