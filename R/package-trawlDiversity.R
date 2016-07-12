@@ -9,6 +9,7 @@
 #' @importFrom graphics abline barplot layout lines mtext pairs par plot points text
 #' @importFrom stats coef cor model.frame model.matrix plogis pnorm predict rbinom residuals runif sd vcov
 #' @importFrom utils head tail
+#' @importFrom methods as
 #' 
 #' @docType package
 #' @name trawlDiversity
