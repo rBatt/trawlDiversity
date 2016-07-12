@@ -2,6 +2,7 @@
 library('maps')
 library('raster')
 library('spatstat')
+library("spdep")
 library('rbLib')
 library('trawlDiversity')
 
@@ -75,12 +76,13 @@ toRast <- function(p){
 }
 
 u_regs <- mapDat[,unique(reg)]
-rs <- X[,una(reg)]
+rs <- mapDat[,una(reg)]
 nr <- length(rs)
 mapPPP_col <- list()
 for(r in 1:nr){
-	td <- X[reg==rs[r]]
+	td <- mapDat[reg==rs[r]]
 	mapPPP_col[[r]] <- spatstat::ppp(x=td[,lon], y=td[,lat], marks=td[,n_spp_col_weighted], window=mapOwin[[r]]) # /avgRich
+	# mapPPP_col[[r]] <- spatstat::ppp(x=td[,lon], y=td[,lat], marks=td[,n_spp_col_unique], window=mapOwin[[r]]) # /avgRich
 	
 	t_idw <- spatstat::Smooth(mapPPP_col[[r]], hmax=1)
 	z <- toRast(t_idw)
