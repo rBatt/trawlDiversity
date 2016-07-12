@@ -266,13 +266,15 @@ mapOwin <- trawlDiversity::make_owin(mapDat, outlines)
 rs <- mapDat[,una(reg)]
 nr <- length(rs)
 localAC <- list()
+lac_val <- c("n_spp_col_weighted", "n_spp_col_unique")[1]
 for(r in 1:nr){
-	t_lac <- with(mapDat[reg==rs[r]], spatial_ac(lon, lat, n_spp_col_weighted))
+	# t_lac <- with(mapDat[reg==rs[r]], spatial_ac(lon, lat, n_spp_col_weighted))
+	t_lac <- with(mapDat[reg==rs[r]][complete.cases(mapDat[reg==rs[r]])], spatial_ac(lon, lat, eval(s2c(lac_val))[[1]]))
 	t_lac$I <- data.table(mapDat[reg==rs[r], list(reg,stratum)], t_lac$I)
 	localAC[[rs[r]]] <- t_lac
 }
 lac_2mapDat <- rbindlist(lapply(localAC, function(x1)x1$I))
-mapDat <- merge(trawlDiversity::mapDat, lac_2master[,list(reg,stratum,Ii,lI_pvalue)], by=c("reg","stratum"), all=TRUE)
+mapDat <- merge(mapDat, lac_2mapDat[,list(reg,stratum,Ii,lI_pvalue)], by=c("reg","stratum"), all=TRUE)
 mapDat[,reg:=factor(reg, levels=c("ebs", "ai", "goa", "wctri", "gmex", "sa", "neus", "shelf", "newf"))]
 setorder(mapDat, reg, stratum)
 mapDat[,reg:=as.character(reg)]
