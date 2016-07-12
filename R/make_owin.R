@@ -20,8 +20,8 @@ make_owin <- function(X, outlines){
 		o <- outlines[reg==rs[r], list(x=lonP, y=latP)]
 		o_r <- outlines[reg==rs[r], list(x=rev(lonP), y=rev(latP))]
 	
-		xr <- td[,range(c(lon,o[,x]))]
-		yr <- td[,range(c(lat,o[,y]))]
+		xr <- td[,range(c(lon,o[,x]), na.rm=TRUE)]
+		yr <- td[,range(c(lat,o[,y]), na.rm=TRUE)]
 		ow_exp1 <- bquote(spatstat::owin(xr, yr, poly=o)) # use when I correctly traced outline counterclockwise
 		ow_exp2 <- bquote(spatstat::owin(xr, yr, poly=o_r)) # reversed (use if traced outline in wrong direction)
 	
