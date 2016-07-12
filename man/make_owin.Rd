@@ -16,5 +16,6 @@ Make an owin object for spatstat package
 }
 \examples{
 trawlDiversity::make_owin(mapDat, outlines)
+
 }
 
