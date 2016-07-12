@@ -78,6 +78,7 @@ get_colonizers <- function(d){
 		ce_dt[,n_strat_col:=sum(col_logic),by=c("year","spp")]
 		ce_dt[n_strat_col>0, n_spp_col_weighted:=sum(as.integer(col_logic)/n_strat_col), by=c("year","stratum")]
 		ce_dt[n_strat_col<=0, n_spp_col_weighted:=0]
+		ce_dt[,n_spp_col_unique:=col_logic/max(1,sum(col_logic)),by="spp"]
 		
 		yrs_sampled <- reshape2::melt(d[,apply(table(stratum,year)>0, 1, sum)], value.name="yrs_sampled")
 		yrs_sampled <- data.table(stratum=rownames(yrs_sampled), yrs_sampled=yrs_sampled[,1])
@@ -85,11 +86,12 @@ get_colonizers <- function(d){
 	
 		n_spp_ce_weighted <- ce_dt[, list(n_spp_col_weighted=una(n_spp_col_weighted)),by=c("year","stratum","yrs_sampled")]
 		n_spp_ce_weighted <- merge(n_spp_ce_weighted, unique(d[,list(lon, lat, depth),keyby=c("year","stratum")]), by=c("year","stratum"))
-		n_spp_ce_weighted_tot <- n_spp_ce_weighted[,list(lon=mean(lon), lat=mean(lat), depth=mean(depth), n_spp_col_weighted=sum(n_spp_col_weighted)/una(yrs_sampled)),by=c("stratum")]
+		n_spp_ce_weighted_tot <- n_spp_ce_weighted[,list(lon=mean(lon), lat=mean(lat), depth=mean(depth), yrs_sampled=una(yrs_sampled), n_spp_col_weighted=sum(n_spp_col_weighted)/una(yrs_sampled)),by=c("stratum")]
 		
 		# n_spp_ce_unique <- ce_dt[,.SD[,list(V1=sum(as.integer(col_logic)/n_strat_col)),by=c("stratum","year")][,mean(V1[V1>0], na.rm=TRUE),by="stratum"], by=c("spp")]
-		n_spp_ce_unique <- ce_dt[(col_logic),sum(as.integer(col_logic)/n_strat_col)/.N, by=c("spp","stratum")][,list(n_spp_col_unique=sum(V1)),keyby="stratum"]
-		n_spp_ce_weighted_tot <- n_spp_ce_weighted_tot[n_spp_ce_unique, on="stratum"]
+		# n_spp_ce_unique <- ce_dt[(col_logic),sum(as.integer(col_logic)/n_strat_col)/.N, by=c("spp","stratum")][,list(n_spp_col_unique=sum(V1)),keyby="stratum"]
+		n_spp_ce_unique <- ce_dt[,list(n_spp_col_unique=sum(n_spp_col_unique)/una(yrs_sampled)),keyby="stratum"]
+		n_spp_ce_weighted_tot <- merge(n_spp_ce_weighted_tot, n_spp_ce_unique, by="stratum", all=TRUE)
 		
 		if(ce == "ext"){
 			setnames(ce_dt, c("n_spp_col", "n_strat_col", "n_spp_col_weighted"),  c("n_spp_ext", "n_strat_ext", "n_spp_ext_weighted"))
