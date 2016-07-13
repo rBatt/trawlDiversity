@@ -29,8 +29,8 @@
 #' # plot significant I's
 #' sig_ind <- spac[["I"]][,lI_pvalue] < 0.05
 #' plot(spac[["nb"]], cbind(lon[rind], lat[rind]))
-#' spac[["I"]][sig_ind, points(lon, lat, col=zCol(256, Ii), pch=19)]
-#' mapLegend(zlim=spac[["I"]][sig_ind,range(Ii)], cols=rbLib::zCol(6, 1:6))
+#' spac[["I"]][sig_ind, points(lon, lat, col=rbLib::zCol(256, Ii), pch=19)]
+#' rbLib::mapLegend(zlim=spac[["I"]][sig_ind,range(Ii)], cols=rbLib::zCol(6, 1:6))
 #' 
 #' @export
 spatial_ac <- function(lon, lat, value){
