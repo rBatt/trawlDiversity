@@ -155,6 +155,7 @@ process_msomStatic <- function(reg_out, save_mem=TRUE, obs_yrs){
 	}else if(lang == "JAGS"){
 		z_spp <- function(x){gsub("Z\\[[0-9]+\\,([0-9]+)\\]$", "\\1", x)}
 		z_j <- function(x){gsub("Z\\[([0-9]+)\\,[0-9]+\\]$", "\\1", x)}
+		reg_rich_iter <- list()
 		reg_rich <- rep(NA, length(out))
 		bd_list <- list()
 		for(i in 1:length(out)){
@@ -182,8 +183,10 @@ process_msomStatic <- function(reg_out, save_mem=TRUE, obs_yrs){
 			
 			# ---- Get Richness ----
 			mu_site_Z <- t_Z_big_long[,j={ list(mu_site_Z = max(value)) }, by=c("iter","chain","sppID")]
-			reg_rich_iter <- mu_site_Z[, j={list(reg_rich = sum(mu_site_Z))}, by=c("iter","chain")]
-			reg_rich[i] <- reg_rich_iter[,mean(reg_rich)]
+			reg_rich_iter[[i]] <- mu_site_Z[, j={list(reg_rich = sum(mu_site_Z))}, by=c("iter","chain")]
+			reg_rich[i] <- reg_rich_iter[[i]][,mean(reg_rich)]
+			reg_rich_iter[[i]][,chain:=NULL]
+			reg_rich_iter[[i]][,year:=info_yrs[i]]
 			if(save_mem){rm(list="t_Z_big_long")}
 				
 			 # this is different than how I did it for Stan -- for Stan I calculated took the mean (across iterations) probability of a species being present somewhere in the region, then summed up across species to get richness. Here I get the pres/abs for each species in the region for each iteration, then I sum across species but w/in an iteration to get the posterior of region wide richness (that summing is done on this line), and then in the next line I take the mean of the posterior distribution of region-wide richness
@@ -196,8 +199,12 @@ process_msomStatic <- function(reg_out, save_mem=TRUE, obs_yrs){
 	# create beta_div object
 	beta_div <- rbindlist(bd_list)
 	
+	# fix up richness by iteration
+	reg_rich_iter <- rbindlist(reg_rich_iter)
+	reg_rich_iter[,c("reg"):=list(reg=reg)]
+	
 	# return
-	return(list(param_iters=param_iters, processed=processed, ab=ab, alpha_unscale=alpha_unscale, beta_div=beta_div))
+	return(list(param_iters=param_iters, processed=processed, ab=ab, alpha_unscale=alpha_unscale, beta_div=beta_div, reg_rich_iter=reg_rich_iter))  # reg_rich_iter only in JAGS)
 	
 }
 	
