@@ -18,16 +18,25 @@ comm_master[,sd(reg_rich),by='reg']#[,mean(V1)]
 comm_master[,sd(reg_rich),by='reg'][,mean(V1)]
 
 # ---- long-term trends ----
-rich_trend_kendall <- comm_master[,cor.test(reg_rich, year, method="kendall")[c("estimate","p.value")], by='reg']
-rich_naive_trend_kendall <- comm_master[,cor.test(naive_rich, year, method="kendall")[c("estimate","p.value")], by='reg']
+# rich_trend_kendall <- comm_master[,cor.test(reg_rich, year, method="kendall")[c("estimate","p.value")], by='reg']
+# rich_naive_trend_kendall <- comm_master[,cor.test(naive_rich, year, method="kendall")[c("estimate","p.value")], by='reg']
+#
+# rich_trend_kendall[,BH:=p.adjust(p.value, method="BH")]
+# setcolorder(rich_trend_kendall, c("reg","estimate","BH","p.value"))
+# rich_naive_trend_kendall[,BH:=p.adjust(p.value, method='BH')[,"BH"]]
+# setcolorder(rich_naive_trend_kendall, c("reg","estimate","BH","p.value"))
+#
+# print(rich_naive_trend_kendall)
+# print(rich_trend_kendall)
 
-rich_trend_kendall[,BH:=p.adjust(p.value, method="BH")]
-setcolorder(rich_trend_kendall, c("reg","estimate","BH","p.value"))
-rich_naive_trend_kendall[,BH:=p.adjust(p.value, method='BH')[,"BH"]]
-setcolorder(rich_naive_trend_kendall, c("reg","estimate","BH","p.value"))
-
-print(rich_naive_trend_kendall)
-print(rich_trend_kendall)
+load("pkgBuild/results/processedMsom/p.RData")
+tau_list <- list()
+for(i in 1:length(p)){
+	cast_rich_iter <- as.matrix(dcast(p[[i]]$reg_rich_iter, iter~year, value.var="reg_rich")[,iter:=NULL])
+	rich_year <- as.integer(colnames(cast_rich_iter))
+	tau_list[[i]] <- c(list(reg=p[[i]]$reg_rich_iter[,unique(reg)]), as.list(post_trend(rich_year, cast_rich_iter, nSamp=1E2)))
+}
+rich_trend_kendall <- rbindlist(tau_list)
 
 
 # =======================================
