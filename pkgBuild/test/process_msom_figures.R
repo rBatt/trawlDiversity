@@ -7,9 +7,9 @@ library("maps")
 library("beanplot")
 library("fields")
 
-setwd("~/Documents/School&Work/pinskyPost/trawl")
+setwd("~/Documents/School&Work/pinskyPost/trawlDiversity")
 
-load("trawlDiversity/pkgBuild/results/processedMsom/p.RData")
+load("pkgBuild/results/processedMsom/p.RData")
 
 Figures <- list()
 
@@ -78,7 +78,7 @@ plot_Figures <- function(x, FUN, ...){
 }
 
 
-save(Figures, file="trawlDiversity/pkgBuild/figures/Figures.RData")
+save(Figures, file="pkgBuild/figures/Figures.RData")
 
 #
 # for(i in 1:length(p)){
@@ -105,7 +105,7 @@ for(i in 1:length(p)){
 	}
 	ins <- file.path(td, fig_names) 
 	i_reg <- p[[i]]$rd[,una(reg)]
-	save_name <- paste0(od, "/trawlDiversity/pkgBuild/figures/processed_msom_figures_", i_reg, ".pdf")
+	save_name <- paste0(od, "/pkgBuild/figures/processed_msom_figures_", i_reg, ".pdf")
 	combine_pdf(shQuote(ins, "cmd"), shQuote(save_name, "cmd"))
 	
 	setwd(od)

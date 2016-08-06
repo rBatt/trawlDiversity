@@ -120,7 +120,7 @@ for(r in 9:10){ # shelf and newf
 	
 	append_r <- paste0("_r", r, ".RData")
 	save_name <- gsub("\\.RData", append_r, rm_out[[r]][[1]][[3]]["save_path"])
-	save_name <- gsub("^\\./", "./trawlDiversity/pkgBuild/results/", save_name)
+	save_name <- gsub("^\\./", "./pkgBuild/results/", save_name)
 	save_name <- gsub("[0-9]+(?=nZ)",reg_n0_pad[regs[r]],save_name, perl=TRUE)
 	save(rm_out, file=save_name, compress="xz")
 	

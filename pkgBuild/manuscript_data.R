@@ -7,9 +7,9 @@ library("raster")
 library("spdep")
 library("trawlDiversity")
 
-setwd("~/Documents/School&Work/pinskyPost/trawl/")
+setwd("~/Documents/School&Work/pinskyPost/trawlDiversity/")
 
-load("trawlDiversity/pkgBuild/results/processedMsom/p.RData")
+load("/pkgBuild/results/processedMsom/p.RData")
 
 
 # ---- Processed ----
@@ -283,9 +283,9 @@ mapDat[,reg:=as.character(reg)]
 # =================================
 # = Save Data Ojbects for Package =
 # =================================
-save(mapDat, file="trawlDiversity/data/mapDat.RData")
-save(mapOwin, file="trawlDiversity/data/mapOwin.RData")
-save(localAC, file="trawlDiversity/data/localAC.RData")
-save(spp_master, file="trawlDiversity/data/spp_master.RData")
-save(comm_master, file="trawlDiversity/data/comm_master.RData")
+save(mapDat, file="data/mapDat.RData")
+save(mapOwin, file="data/mapOwin.RData")
+save(localAC, file="data/localAC.RData")
+save(spp_master, file="data/spp_master.RData")
+save(comm_master, file="data/comm_master.RData")
 

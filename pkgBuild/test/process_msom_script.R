@@ -7,7 +7,7 @@ library("rbLib")
 library("R2jags")
 library("maps")
 
-setwd("~/Documents/School&Work/pinskyPost/trawl")
+setwd("~/Documents/School&Work/pinskyPost/trawlDiversity")
 
 reg_file <- c(
 		"msomStatic_norv_1yr_ebs_jags_12kIter_50nZ_start2016-05-07_r1.RData",
@@ -81,7 +81,7 @@ p <- list()
 for(i in 1:length(reg_file)){
 	cat(i)
 	
-	load(paste0("trawlDiversity/pkgBuild/results/", reg_file[i]))
+	load(paste0("pkgBuild/results/", reg_file[i]))
 	
 	reg_results_ind <- which(sapply(rm_out, function(x)!is.null(x)))
 	stopifnot(length(reg_results_ind) == 1)
@@ -109,4 +109,4 @@ for(i in 1:length(reg_file)){
 }
 
 
-save(p, file="trawlDiversity/pkgBuild/results/processedMsom/p.RData")
+save(p, file="pkgBuild/results/processedMsom/p.RData")
