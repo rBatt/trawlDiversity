@@ -20,7 +20,7 @@ A named numeric vector of length 3, containing Kendall's Tau, the associated Z s
 Fit a trend to a time series of posterior estimates. Ends up being similar to bootstrapping.
 }
 \details{
-Uses Kendall's Tau and accounts for serial correlation in the time series (up to ARMA(2,2)). Currently assumes that there are no ties in the resampled Y. If there are, the p-value may be incorrect.
+Uses Kendall's Tau and accounts for serial correlation in the time series (up to ARMA(2,2)). Uses Kendall::Kendall. Accounts for ties.
 }
 \examples{
 n <- 20

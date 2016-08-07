@@ -4,27 +4,28 @@
 \alias{tsTau}
 \title{Kendall's Tau with Serial Dependence}
 \usage{
-tsTau(x, y, tauOnly = FALSE, checkTies = FALSE, ...)
+tsTau(x, y, tauOnly = FALSE, ...)
 }
 \arguments{
 \item{x}{numeric vector of times (dates, step number, etc)}
 
 \item{y}{numeric vector of value to be inspected for a trend}
 
-\item{tauOnly}{Logical, if FALSE (default) only the Kendall's Tau is returned}
-
-\item{checkTies}{Logical, if FALSE (default) \code{\link{cor}} is used to compute Kendall's Tau. Otherwise, \code{Kendall::Kendall} is used.}
+\item{tauOnly}{Logical, if TRUE (FALSE is default) only the Kendall's Tau is returned}
 
 \item{...}{arguments passed to \code{\link{cor}}}
 }
 \value{
-If \code{tauOnly} is TRUE, returns a length-1 numeric vector with name \code{"tau"} that is Kendall's Tau. Otherwise, returns a data.frame with 1 row and 5 numeric columns:
+If \code{tauOnly} is TRUE, returns a length-1 numeric vector with name \code{"tau"} that is Kendall's Tau. Otherwise, returns a length 8 list:
 \tabular{ll}{
 \code{b} \tab the slope of the linear trend, as estimated alongisde the ARMA model \cr
-\code{tau} \tab Kendall's Tau \cr
 \code{bp} \tab P-value associated with the linear trend \cr
-\code{taup} \tab P-value associated with Kendall's Tau \cr
-\code{tauZ} \tab Z statistic associated with Kendall's Tau
+\code{tau} \tab Kendall's Tau \cr
+\code{S} \tab score \cr
+\code{varS} \tab variance of score \cr
+\code{tauZ} \tab Z statistic associated with Kendall's Tau (either S/sqrt(varS) or qnorm(taup))
+\code{taup} \tab p-value of tau \cr
+\code{adjusted} \tab character indicating whether S or Z had to be adjusted to match p-value reported by Kendall::Kendall 
 }
 }
 \description{
@@ -37,7 +38,7 @@ The simplest way to do this is to estimate and remove the linear trend from the 
 
 This function improves upon the above approach by fitting the linear trend and the serial dependence at the same time, and by considering more complex models of serial dependence (specifically, up to ARMA(2,2) models). The fitting of the ARMA model is done using the \code{forecast::auto.arima} function; if one already knows the order of the ARMA model, an equivalent result could be achieved through \code{\link{arima}}. The key to this type of model is that it is fit as a regression with ARMA residuals (see the Hyndman 2004 reference below for more details, or \href{https://www.otexts.org/fpp/9/1}{or this chapter in the free online text}). The order of the model is limited to second order autoregressive (AR(2) component) and second order moving average (MA(2) component). Differencing, drift, and seasonality are not considered. This is partially done for speed, and partially to protect against the model soaking up too much of any nonlinear trend (because the trend we're explicitly modeling is linear, but Kendall's Tau wouldn't be needed if that was the actual trend was linear!).
 
-When \code{checkTies} is TRUE, \code{Kendall::Kendall} is used instead of \code{cor} to estimate Kendall's Tau. This is because the variance of the numerator in Kendall's Tau is more complex when there are ties, and the former handles this case whereas the latter does not.
+\code{Kendall::Kendall} is used. The variance of the numerator in Kendall's Tau is more complex when there are ties, and changes the p-value. \code{cor(..., method="kendall")} does not make the correction.
 }
 \examples{
 n <- 10
