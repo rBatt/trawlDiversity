@@ -16,8 +16,8 @@ setwd("~/Documents/School&Work/pinskyPost/trawlDiversity")
 comm_master[,mean(reg_rich), by='reg'][reg%in%c("gmex","shelf")]
 
 # ---- long-term variability ----
-comm_master[,sd(reg_rich),by='reg']#[,mean(V1)]
-comm_master[,sd(reg_rich),by='reg'][,mean(V1)]
+comm_master[,stats::sd(reg_rich),by='reg']#[,mean(V1)]
+comm_master[,stats::sd(reg_rich),by='reg'][,mean(V1)]
 
 # ---- long-term trends ----
 # rich_trend_kendall <- comm_master[,cor.test(reg_rich, year, method="kendall")[c("estimate","p.value")], by='reg']
