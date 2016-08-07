@@ -6,6 +6,8 @@ library('lme4')
 library('car')
 library('multcomp')
 
+setwd("~/Documents/School&Work/pinskyPost/trawlDiversity")
+
 # ========================
 # = Richness Time Series =
 # ========================
@@ -19,15 +21,7 @@ comm_master[,sd(reg_rich),by='reg'][,mean(V1)]
 
 # ---- long-term trends ----
 # rich_trend_kendall <- comm_master[,cor.test(reg_rich, year, method="kendall")[c("estimate","p.value")], by='reg']
-# rich_naive_trend_kendall <- comm_master[,cor.test(naive_rich, year, method="kendall")[c("estimate","p.value")], by='reg']
-#
-# rich_trend_kendall[,BH:=p.adjust(p.value, method="BH")]
-# setcolorder(rich_trend_kendall, c("reg","estimate","BH","p.value"))
-# rich_naive_trend_kendall[,BH:=p.adjust(p.value, method='BH')[,"BH"]]
-# setcolorder(rich_naive_trend_kendall, c("reg","estimate","BH","p.value"))
-#
-# print(rich_naive_trend_kendall)
-# print(rich_trend_kendall)
+rich_naive_trend_kendall <- comm_master[,tsTau(year, naive_rich), by='reg'] # comm_master[,Kendall::Kendall(year, reg_rich), by='reg']
 
 load("pkgBuild/results/processedMsom/p.RData")
 tau_list <- list()
@@ -37,6 +31,14 @@ for(i in 1:length(p)){
 	tau_list[[i]] <- c(list(reg=p[[i]]$reg_rich_iter[,unique(reg)]), as.list(post_trend(rich_year, cast_rich_iter, nSamp=1E2)))
 }
 rich_trend_kendall <- rbindlist(tau_list)
+
+rich_trend_kendall[,BH:=p.adjust(pvalue, method="BH")]
+rich_trend_kendall <- rich_trend_kendall[,list(reg=reg, estimate=tau, BH=BH, p.value=pvalue)]
+rich_naive_trend_kendall[,BH:=p.adjust(taup, method='BH')]
+rich_naive_trend_kendall <- rich_naive_trend_kendall[,list(reg=reg, estimate=tau, BH=BH, p.value=taup)]
+
+print(rich_naive_trend_kendall)
+print(rich_trend_kendall)
 
 
 # =======================================
@@ -61,7 +63,7 @@ omega2 <- function(m){
 # summary(tb_pc)
 
 big <- spp_master[!is.na(stretch_type) & propStrata!=0]
-big<-big[,list(prevalence=propStrata, time=ext_dist, type=as.character(stretch_type), reg=reg, event=as.character(event_year), spp=spp)]
+big <- big[,list(prevalence=propStrata, time=ext_dist, type=as.character(stretch_type), reg=reg, event=as.character(event_year), spp=spp)]
 
 # LMER Model Components:
 # Begin Model
