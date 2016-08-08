@@ -91,6 +91,11 @@ tsTau <- function(x, y, tauOnly=FALSE, ...){
 			Z <- (S)/sqrt(varS) # recalc Z, but using Kendall::Kendall S
 			adjusted <- c(adjusted, "Z")
 		}
+		# ---- Return non-0 p-value ----
+		if(taup < 1E-9){
+			taup <- pnorm(Z, lower.tail=(Z<0))*2
+			adjusted <- c(adjusted, "P")
+		}
 		adjusted <- as.character(paste(adjusted, collapse=""))
 		return(list(b=b, bp=bp, tau=tau, S=S, varS=varS, tauZ=Z, taup=taup, adjusted=adjusted))
 	}
