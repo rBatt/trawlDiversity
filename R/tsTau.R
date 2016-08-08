@@ -24,9 +24,9 @@
 #' \code{tau} \tab Kendall's Tau \cr
 #' \code{S} \tab score \cr
 #' \code{varS} \tab variance of score \cr
-#' \code{tauZ} \tab Z statistic associated with Kendall's Tau (either S/sqrt(varS) or qnorm(taup))
+#' \code{tauZ} \tab Z statistic associated with Kendall's Tau (either \code{S/sqrt(varS)} or \code{qnorm(taup/2)}) \cr
 #' \code{taup} \tab p-value of tau \cr
-#' \code{adjusted} \tab character indicating whether S or Z had to be adjusted to match p-value reported by Kendall::Kendall 
+#' \code{adjusted} \tab character indicating whether S or Z (z score) or P (p-value) had to be adjusted to match p-value reported by Kendall::Kendall \cr
 #' }
 #' 
 #' @references
