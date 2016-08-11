@@ -9,7 +9,8 @@ library('trawlDiversity')
 # ===========
 # = Generic =
 # ===========
-
+setwd("~/Documents/School&Work/pinskyPost/trawlDiversity")
+source("pkgBuild/manuscript/manuscript_figures_functions.R")
 
 
 # ==================

@@ -1,3 +1,10 @@
+library('maps')
+library('raster')
+library('spatstat')
+library("spdep")
+library('rbLib')
+library('trawlDiversity')
+library("data.table")
 
 figure_setup <- function(){
 	bquote({
@@ -17,9 +24,12 @@ richness_ts <- function(){
 	eval(figure_setup())
 	par(mar=c(1.75,1.5,0.25,0.25),mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
 	comm_master[,plot(year, reg_rich, col=pretty_col[reg], xlab="Year", ylab="Estimated Richness", pch=20)]
-	comm_master[,lines(year, reg_rich, lwd=0.5, col=adjustcolor(pretty_col[reg], 0.5)),by='reg']
+	for(r in 1:length(regs)){
+		comm_master[reg==regs[r],j={lines(year, reg_rich, lwd=0.5, col=adjustcolor(pretty_col[reg], 0.5))}]
+	}
 	comm_master[,lines(year,fitted(lm(reg_rich~year))),by='reg']
 	comm_master[,legend("topleft",ncol=1,legend=pretty_reg[una(reg)],text.col=pretty_col[una(reg)], inset=c(-0.085,-0.01), bty='n')]
+	invisible(NULL)
 }
 
 # ---- Prevalence Time to Absence ----
@@ -43,6 +53,7 @@ prevalence_absenceTime <- function(){
 			comm_master[,legend("topright",ncol=1,legend=pretty_reg[una(reg)],text.col=pretty_col[una(reg)], inset=c(-0.02, -0.03), bty='n', x.intersp=1, y.intersp=0.65)]
 		}	
 	}
+	invisible(NULL)
 }
 
 # ---- Colonization Rate ----
@@ -71,7 +82,7 @@ cRate_map <- function(){
 	
 		t_idw <- spatstat::Smooth(mapPPP_col[[r]], hmax=1)
 		z <- toRast(t_idw)
-		image(z, col=map_col, xlab="", ylab="")
+		raster::image(z, col=map_col, xlab="", ylab="")
 		map(add=TRUE, fill=TRUE, col="slategray")
 	
 		zl <- range(values(z)*10, na.rm=TRUE)
@@ -101,6 +112,7 @@ cRate_map <- function(){
 	mtext(bquote(Colonization~Rate~(C[w]~~decade^-1)), side=3, outer=TRUE, font=2, line=-0.3)
 	mtext(bquote(Longitude~(phantom()*degree*E)), side=1, line=-0.15, outer=TRUE)
 	mtext(bquote(Latitude~(phantom()*degree*N)), side=2, line=-0.75, outer=TRUE)
+	invisible(NULL)
 }
 
 # ---- Richness vs Detectability ----
@@ -110,6 +122,7 @@ rich_detect <- function(){
 	comm_master[,plot((propTow_occ_avg), reg_rich, col=adjustcolor(pretty_col[reg],0.5), xlab="Within-site prevalence", ylab="Estimated richness", pch=16)]
 	comm_master[,lines((propTow_occ_avg),fitted(lm(reg_rich~propTow_occ_avg))),by='reg']
 	comm_master[,legend("topright",ncol=2,legend=pretty_reg[una(reg)],text.col=pretty_col[una(reg)], inset=c(-0.02, -0.02), bty='n')]
+	invisible(NULL)
 }
 
 
@@ -126,6 +139,7 @@ naive_msom_scatter <- function(){
 	}, by='reg']
 	mtext("MSOM Richness", side=2, line=-0.2, outer=TRUE)
 	mtext("Naive Richness", side=1, line=-0.5, outer=TRUE)
+	invisible(NULL)
 }
 
 # ---- Category Barplot ----
@@ -137,10 +151,12 @@ categ_barplot <- function(){
 	par(cex=1, mar=c(3,2,1,0.1), ps=8)
 	bp <- barplot(categ_table, beside=T, legend=T, names.arg=rep("",ncol(categ_table)), args.legend=list(bty='n'))
 	text(colMeans(bp)-1, -11, labels=colnames(categ_table), srt=45, xpd=TRUE)
+	invisible(NULL)
 }
 
 # ---- Colonization / Extinction Time Series ----
 col_ext_ts <- function(){
+	eval(figure_setup())
 	par(mfrow=c(3,3), mar=c(1.25,1.0,0.5,0.1), oma=c(0.35,0.5,0.1,0.1), mgp=c(0.25,0.1,0), tcl=-0.1, ps=8, cex=1)
 	comm_master[,j={
 		ylim=range(c(n_col,n_ext));
@@ -149,11 +165,13 @@ col_ext_ts <- function(){
 	}, by='reg']
 	mtext("Colonizations or Extinctions", side=2, line=-0.2, outer=TRUE)
 	mtext("Year", side=1, line=-0.5, outer=TRUE)
+	invisible(NULL)
 }
 
 
 # ---- Neighborhood used in Moran's I ----
 nb_moranI <- function(){
+	eval(figure_setup())
 	map_layout <- trawl_layout()
 	par(mar=c(0.25,0.25,0.25,0.25), mgp=c(0.25,0.075,0), tcl=-0.1, ps=8, cex=1, oma=c(0.1,0.1,0.1,0.1))
 	layout(map_layout)
@@ -192,6 +210,7 @@ nb_moranI <- function(){
 			# plot(x=locs[,1], y=locs[,2], col='blue')
 		}
 	}
+	invisible(NULL)
 }
 
 
