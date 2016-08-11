@@ -9,7 +9,7 @@ library("trawlDiversity")
 
 setwd("~/Documents/School&Work/pinskyPost/trawlDiversity/")
 
-load("/pkgBuild/results/processedMsom/p.RData")
+load("pkgBuild/results/processedMsom/p.RData")
 
 
 # ---- Processed ----
@@ -265,20 +265,29 @@ mapOwin <- trawlDiversity::make_owin(mapDat, outlines)
 # ---- calculate spatial autocorrelation ----
 rs <- mapDat[,una(reg)]
 nr <- length(rs)
-localAC <- list()
-lac_val <- c("n_spp_col_weighted", "n_spp_col_unique")[1]
-for(r in 1:nr){
-	# t_lac <- with(mapDat[reg==rs[r]], spatial_ac(lon, lat, n_spp_col_weighted))
-	t_lac <- with(mapDat[reg==rs[r]][complete.cases(mapDat[reg==rs[r]])], spatial_ac(lon, lat, eval(s2c(lac_val))[[1]]))
-	t_lac$I <- data.table(mapDat[reg==rs[r], list(reg,stratum)], t_lac$I)
-	localAC[[rs[r]]] <- t_lac
+localAC <- list(colonization=list(), extinction=list())
+# lac_val <- c("n_spp_col_weighted", "n_spp_col_unique")[1]
+lac_val <- c("n_spp_col_weighted", "n_spp_ext_weighted")
+ce_types <- names(localAC) #c("colonization","extinction")
+for(ce in 1:2){
+	for(r in 1:nr){
+		lac_val_ce <- lac_val[ce]
+		# t_lac <- with(mapDat[reg==rs[r]], spatial_ac(lon, lat, n_spp_col_weighted))
+		t_lac <- with(mapDat[reg==rs[r]][complete.cases(mapDat[reg==rs[r]])], spatial_ac(lon, lat, eval(s2c(lac_val_ce))[[1]]))
+		t_lac$I <- data.table(mapDat[reg==rs[r], list(reg,stratum)], t_lac$I)
+		localAC[[ce_types[ce]]][[rs[r]]] <- t_lac
+	}
+	lac_2mapDat <- rbindlist(lapply(localAC[[ce_types[ce]]], function(x1)x1$I))
+	
+	if(ce_types[ce]=="colonization"){
+		mapDat <- merge(mapDat, lac_2mapDat[,list(reg,stratum,Ii_col=Ii,lI_pvalue_col=lI_pvalue)], by=c("reg","stratum"), all=TRUE)
+	}else if(ce_types[ce]=="extinction"){
+		mapDat <- merge(mapDat, lac_2mapDat[,list(reg,stratum,Ii_ext=Ii,lI_pvalue_ext=lI_pvalue)], by=c("reg","stratum"), all=TRUE)
+	}
+	mapDat[,reg:=factor(reg, levels=c("ebs", "ai", "goa", "wctri", "gmex", "sa", "neus", "shelf", "newf"))]
+	setorder(mapDat, reg, stratum)
+	mapDat[,reg:=as.character(reg)]
 }
-lac_2mapDat <- rbindlist(lapply(localAC, function(x1)x1$I))
-mapDat <- merge(mapDat, lac_2mapDat[,list(reg,stratum,Ii,lI_pvalue)], by=c("reg","stratum"), all=TRUE)
-mapDat[,reg:=factor(reg, levels=c("ebs", "ai", "goa", "wctri", "gmex", "sa", "neus", "shelf", "newf"))]
-setorder(mapDat, reg, stratum)
-mapDat[,reg:=as.character(reg)]
-
 
 # =================================
 # = Save Data Ojbects for Package =
