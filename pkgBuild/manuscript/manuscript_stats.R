@@ -22,6 +22,10 @@ comm_master[,stats::sd(reg_rich),by='reg'][,mean(V1)]
 # ---- long-term trend ----
 load("pkgBuild/results/rich_trend_kendall.RData")
 load("pkgBuild/results/rich_naive_trend_kendall.RData")
+rich_trend_kendall[reg!="wcann",BH:=p.adjust(pvalue, method="BH")]
+rich_trend_kendall <- rich_trend_kendall[reg!="wcann",list(reg=reg, estimate=tau, BH=BH, p.value=pvalue)]
+rich_naive_trend_kendall[reg!="wcann",BH:=p.adjust(taup, method='BH')]
+rich_naive_trend_kendall <- rich_naive_trend_kendall[reg!="wcann",list(reg=reg, estimate=tau, BH=BH, p.value=taup)]
 print(rich_naive_trend_kendall)
 print(rich_trend_kendall)
 
