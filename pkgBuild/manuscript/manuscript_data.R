@@ -234,6 +234,9 @@ comm_tows <- spp_master[present==1,j={
 comm_master <- merge(beta_div_dt, processed_dt, all=TRUE) # community-level data
 comm_master <- merge(comm_master, comm_metrics, by=c("reg","year"), all=TRUE)
 comm_master <- merge(comm_master, spp_master[present==1,list(propStrata_avg=mean(propStrata)),by=c("reg","year")], by=c("reg","year"), all=TRUE)
+avg_ltSize <- merge(unique(spp_master[present==1,list(reg,spp,year)]), spp_master[present==1,list(propStrata_ltAvg=mean(propStrata)),by=c("reg","spp")], by=c('reg','spp'), all=TRUE)
+avg_ltSize <- avg_ltSize[,list(propStrata_avg_ltAvg=mean(propStrata_ltAvg)), by=c("reg","year")]
+comm_master <- merge(comm_master, avg_ltSize, by=c("reg","year"), all=TRUE)
 comm_master <- merge(comm_master, comm_tows, by=c("reg","year"), all=TRUE)
 
 # ---- Map Data ----
