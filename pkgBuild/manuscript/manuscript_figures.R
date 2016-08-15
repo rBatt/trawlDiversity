@@ -43,11 +43,11 @@ png("~/Desktop/Figure3_cRate_map.png", width=7, height=3, units='in', res=200)
 ceRate_map()
 dev.off()
 
-# ---- richness vs detectability in 1 panel ----
+# ---- richness vs geographic density in 1 panel ----
 # dev.new(width=3.5, height=3.5)
 # pdf("~/Desktop/Figure4_rich_detect.pdf", width=3.5, height=3.5)
-png("~/Desktop/Figure4_rich_detect.png", width=3.5, height=3.5, units='in', res=200)
-rich_detect()
+png("~/Desktop/Figure4_rich_density.png", width=3.5, height=3.5, units='in', res=200)
+rich_geoRange("density", leg=TRUE)
 dev.off()
 
 
