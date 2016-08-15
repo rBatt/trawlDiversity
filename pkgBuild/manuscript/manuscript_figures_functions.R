@@ -136,15 +136,71 @@ ceRate_map <- function(ce=c("colonization","extinction")){
 	invisible(NULL)
 }
 
-# ---- Richness vs Detectability ----
-rich_detect <- function(){
+# ---- Richness vs Range Density ----
+# ---- Richness vs Range Size ----
+#' Plot richness amd geographic range
+#' Plots species richness against two measures of geographic distribution: range size and range density. Size is the proportion of sites a species is present, density is the proportion of tows in occupied sites. 
+#' 
+#' @param gR0 character vector (can be length 1 or 2) specifying metrics to plot
+#' @param leg logical, plot a legend? Default is to plot the legend associating each region with a color.
+#' @param legPan integer, which panel should contain the legend? Default is 2, and if \code{gR0} is default, the second panel which is range density (because it fits better). 
+#' @param panLab logical, add letter for panel label? Default is TRUE, to add A in bottom-left of first panel, B in second
+#' 
+#' @details
+#' All values taken from \code{\link{comm_master}}.
+#' 
+#' The measures are species- and year-specific; for this figure they are first averaged across all years for each species-region combination. This first average yields a value that is intended to be "characteristic" of that species in that region. In each year, the characteristic values of each species are then averaged to form a community descriptor. That community descriptor can change among years because the identity of the species present can change, thus the species characteristics being averaged can change.
+#' 
+#' @note The above description of these metrics is subject to change. Check manuscript_data.R to be sure.
+#' 
+#' @return NULL returned invisibly
+#' 
+#' @seelaso \code{\link{comm_master}} \code{\link{spp_master}}
+#' 
+#' @examples
+#' rich_geoRange()
+#' 
+#' @export
+rich_geoRange <- function(gR0=c("size", "density"), leg=TRUE, legPan=2, panLab=TRUE){
 	eval(figure_setup())
-	par(mar=c(1.75,1.5,0.25,0.25),mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
-	comm_master[,plot((propTow_occ_avg), reg_rich, col=adjustcolor(pretty_col[reg],0.5), xlab="Within-site prevalence", ylab="Estimated richness", pch=16)]
-	comm_master[,lines((propTow_occ_avg),fitted(lm(reg_rich~propTow_occ_avg))),by='reg']
-	comm_master[,legend("topright",ncol=2,legend=pretty_reg[una(reg)],text.col=pretty_col[una(reg)], inset=c(-0.02, -0.02), bty='n')]
+	
+	gR0 <- match.arg(gR0, several.ok=TRUE)
+	if(length(gR0)>1){
+		mfr <- rbLib::auto.mfrow(length(gR0), tall=TRUE)
+		par(mfrow=mfr, mar=c(1.75,1.5,0.25,0.25),mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
+	}else{
+		par(mar=c(1.75,1.5,0.25,0.25),mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
+	}
+	for(g in 1:length(gR0)){
+		gR <- switch(gR0[g],
+			density = "propTow_occ_avg",
+			size = "propStrata_avg_ltAvg"
+		)	
+		xlab <- switch(gR0[g],
+			density = "Range density",
+			size = "Range size"
+		)
+		comm_master[,plot(eval(s2c(gR))[[1]], reg_rich, col=adjustcolor(pretty_col[reg],0.5), xlab=xlab, ylab="Species richness", pch=16)]
+		ur <- comm_master[,unique(reg)]
+		mod_expr <- bquote(fitted(lm(reg_rich~eval(s2c(gR))[[1]])))
+		for(r in 1:length(ur)){
+			comm_master[reg==ur[r],lines(eval(s2c(gR))[[1]],eval(mod_expr))]
+		}
+		if(leg & g==legPan){
+			comm_master[,legend("topright",ncol=2,legend=pretty_reg[una(reg)],text.col=pretty_col[una(reg)], inset=c(-0.02, -0.02), bty='n')]
+		}
+		if(panLab){
+			# xy <- par()$usr[c(1,3)]
+			# xy <- xy + c(sign(xy[1]), sign(xy[2]))*c(0.1, 0.15)*xy
+			# text(xy[1], xy[2], labels=c("A","B")[g], font=2)
+			mtext(c("A","B")[g], side=1, line=-1.5, adj=0.05, font=2, cex=1.25)
+		}	
+	}
 	invisible(NULL)
 }
+
+
+
 
 
 # ==============
@@ -238,7 +294,6 @@ nb_moranI <- function(ce=c("colonization", "extinction")){
 	}
 	invisible(NULL)
 }
-
 
 
 
