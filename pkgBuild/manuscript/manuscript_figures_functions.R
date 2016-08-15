@@ -296,6 +296,33 @@ nb_moranI <- function(ce=c("colonization", "extinction")){
 }
 
 
+# ---- community range density vs range size ----
+rangeSizeDens <- function(){
+	eval(figure_setup())
+	
+	par(mfrow=c(2,1), mar=c(1.75,1.5,0.25,0.25),mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
+	range_reg_spp <- spp_master[,list(reg, year, density=propTow_occ, size=propStrata)]
+	range_reg_spp[,plot(size, density, col=adjustcolor(pretty_col[reg],0.1), xlab="Range size", ylab="Range density", pch=16)]
+	ur <- range_reg_spp[,unique(reg)]
+	for(r in 1:length(ur)){
+		td <- range_reg_spp[reg==ur[r] & !is.na(density) & !is.na(size)]
+		setorder(td, size)
+		lf <- td[,fitted(loess(density~size))]
+		td[, lines(size, lf, col="white", lwd=4)]
+		td[, lines(size, lf, col=pretty_col[reg], lwd=2)]
+	}
+	mtext(c("A"), side=1, line=-1.5, adj=0.95, font=2, cex=1.25)
+	
+	range_reg <- comm_master[,list(reg, year, rich=reg_rich, density=propTow_occ_avg, size=propStrata_avg_ltAvg)]
+	range_reg[,plot(size, density, col=adjustcolor(pretty_col[reg],0.5), xlab="Community range size", ylab="Community range density", pch=16)]
+	comm_master[,legend("topright",ncol=2,legend=pretty_reg[una(reg)],text.col=pretty_col[una(reg)], inset=c(-0.02, -0.02), bty='n')]
+	mtext(c("B"), side=1, line=-1.5, adj=0.95, font=2, cex=1.25)
+
+	invisible(NULL)
+	
+}
+
+
 
 
 
