@@ -40,7 +40,7 @@ dev.off()
 
 # ---- colonization rate map ----
 png("~/Desktop/Figure3_cRate_map.png", width=7, height=3, units='in', res=200)
-cRate_map()
+ceRate_map()
 dev.off()
 
 # ---- richness vs detectability in 1 panel ----
@@ -76,7 +76,7 @@ dev.off()
 
 # ---- Figure S4: Map of Neighs and Local AC of Coloniz. Rate ----
 png("~/Desktop/FigureS4_nb_moranI.png", width=7, height=3, units='in', res=200)
-nb_moranI()
+nb_moranI(ce="colonization")
 dev.off()
 
 
