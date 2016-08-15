@@ -57,61 +57,82 @@ prevalence_absenceTime <- function(){
 }
 
 # ---- Colonization Rate ----
-cRate_map <- function(){
+ceRate_map <- function(ce=c("colonization","extinction")){
+	ce <- match.arg(ce)
 	eval(figure_setup())
 	map_layout <- trawl_layout()
-	par(mar=c(1.15,1.15,0.25,0.25), mgp=c(0.5,0.075,0), tcl=-0.1, ps=8, cex=1, oma=c(0.75,0.5,1,0.1))
+	par(mar=c(0.9,0.9,0.25,0.25), mgp=c(0.5,0.075,0), tcl=-0.1, ps=8, cex=1, oma=c(0.85,0.6,1,0.1))
 	layout(map_layout)
 
 	map_col <- grDevices::colorRampPalette(c("#000099", "#00FEFF", "#45FE4F", "#FCFF00", "#FF9400", "#FF3100"))(256)
 	toRast <- function(p){
-		x = rep(p$xcol, length(p$yrow))
-		y = rep(p$yrow, each=length(p$xcol))
+		crs_orig <- CRS("+proj=longlat")
+		
+		x0 = rep(p$xcol, length(p$yrow))
+		y0 = rep(p$yrow, each=length(p$xcol))
+		# xy <- mapproject(x0, y0, proj="albers", parameters=extent(r)[3:4], orientation=c(mean(y0), mean(x0), 0))
 		z = c(t(as.matrix(p)))
-		raster::rasterFromXYZ(cbind(x, y, z))
+		
+		r0 <- raster::rasterFromXYZ(cbind(x0, y0, z), crs=crs_orig)
+		
+		# crs_new <- CRS(paste0("+proj=aea +lat_1=", min(y0), " +lat_2=", max(y0), " +lat_0=", mean(y0), " +lon_0=", mean(x0), " +x_0=0 +y_0=0 +ellps=WGS84 +datum=NAD83 +units=m +no_defs"))
+		# proj_to <- projectExtent(r0, crs=crs_new)
+		# r <- projectRaster(from=r0, to=proj_to)
+		# plot(r, asp=1)
+		# map(add=T, proj="albers", parameters=extent(r)[3:4], orientation=c(mean(y0), mean(x0), 0))
+		r <- r0
+		return(r)
 	}
 
 	u_regs <- mapDat[,unique(reg)]
 	rs <- mapDat[,una(reg)]
 	nr <- length(rs)
-	mapPPP_col <- list()
+	mapPPP_ce <- list()
 	for(r in 1:nr){
 		td <- mapDat[reg==rs[r]]
-		mapPPP_col[[r]] <- spatstat::ppp(x=td[,lon], y=td[,lat], marks=td[,n_spp_col_weighted], window=mapOwin[[r]]) # /avgRich
-		# mapPPP_col[[r]] <- spatstat::ppp(x=td[,lon], y=td[,lat], marks=td[,n_spp_col_unique], window=mapOwin[[r]]) # /avgRich
-	
-		t_idw <- spatstat::Smooth(mapPPP_col[[r]], hmax=1)
+		if(ce=="colonization"){
+			mapPPP_ce[[r]] <- spatstat::ppp(x=td[,lon], y=td[,lat], marks=td[,n_spp_col_weighted], window=mapOwin[[r]]) # /avgRich
+			# mapPPP_ce[[r]] <- spatstat::ppp(x=td[,lon], y=td[,lat], marks=td[,n_spp_col_unique], window=mapOwin[[r]]) # /avgRich
+		}else if(ce=="extinction"){
+			mapPPP_ce[[r]] <- spatstat::ppp(x=td[,lon], y=td[,lat], marks=td[,n_spp_ext_weighted], window=mapOwin[[r]])
+		}
+		
+		t_idw <- spatstat::Smooth(mapPPP_ce[[r]], hmax=1)
 		z <- toRast(t_idw)
-		raster::image(z, col=map_col, xlab="", ylab="")
-		map(add=TRUE, fill=TRUE, col="slategray")
+		raster::image(z, col=map_col, xlab="", ylab="", asp=1)
+		map(add=TRUE, fill=TRUE, col="lightgray")
 	
 		zl <- range(values(z)*10, na.rm=TRUE)
 		switch(rs[r],
 			ebs = mapLegend(x=0.05, y=0.25, h=0.375, w=0.025, zlim=zl, cols=map_col, lab.cex=1),
-			ai = mapLegend(x=0.985, y=0.3, w=0.02, h=0.5, zlim=zl, cols=map_col, lab.cex=1),
+			ai = mapLegend(x=0.985, y=0.3, w=0.02, h=0.75, zlim=zl, cols=map_col, lab.cex=1),
 			goa = mapLegend(x=0.985, y=0.15, w=0.02,  zlim=zl, cols=map_col, lab.cex=1),
-			wctri = mapLegend(x=0.1, y=0.125, w=0.07, zlim=zl, cols=map_col, lab.cex=1),
+			wctri = mapLegend(x=0.1, y=0.120, w=0.2, h=0.15, zlim=zl, cols=map_col, lab.cex=1),
 			gmex = mapLegend(x=0.95, y=0.2, h=0.375, zlim=zl, cols=map_col, lab.cex=1),
 			sa = mapLegend(x=0.95, y=0.15, zlim=zl, cols=map_col, lab.cex=1),
 			neus = mapLegend(x=0.95, y=0.15, zlim=zl, cols=map_col, lab.cex=1),
 			shelf = mapLegend(x=0.95, y=0.15, zlim=zl, cols=map_col, lab.cex=1),
-			newf = mapLegend(x=0.05, y=0.15, h=0.25, zlim=zl, cols=map_col, lab.cex=1)
+			newf = mapLegend(x=0.05, y=0.15, h=0.20, zlim=zl, cols=map_col, lab.cex=1)
 		)
 		switch(rs[r],
-			ebs = legend("topright", legend="A", bty='n', text.font=2, inset=c(-0.02,-0.15), cex=1.25, text.col='white'),
+			ebs = legend("topright", legend="A", bty='n', text.font=2, inset=c(-0.02,-0.15), cex=1.25, text.col='black'),
 			ai = legend("topleft", legend="C", bty='n', text.font=2, inset=c(-0.065,-0.45), cex=1.25, xpd=T),
 			goa = legend("topleft", legend="B", bty='n', text.font=2, inset=c(-0.065,-0.06), cex=1.25),
-			wctri = legend("top", legend="E", bty='n', text.font=2, inset=c(0,0.15), cex=1.25, text.col='white'),
-			gmex = legend("topleft", legend="G", bty='n', text.font=2, inset=c(-0.175,-0.12), cex=1.25, text.col='white'),
-			sa = legend("topleft", legend="I", bty='n', text.font=2, inset=c(-0.15,-0.075), cex=1.25, text.col='white'),
-			neus = legend("topleft", legend="H", bty='n', text.font=2, inset=c(-0.125,-0.05), cex=1.25, text.col='white'),
-			shelf = legend("topleft", legend="D", bty='n', text.font=2, inset=c(-0.1,-0.125), cex=1.25, text.col='white'),
+			wctri = legend("top", legend="E", bty='n', text.font=2, inset=c(0,0.05), cex=1.25, text.col='black'),
+			gmex = legend("topleft", legend="G", bty='n', text.font=2, inset=c(-0.175,-0.12), cex=1.25, text.col='black'),
+			sa = legend("topleft", legend="I", bty='n', text.font=2, inset=c(-0.15,-0.075), cex=1.25, text.col='black'),
+			neus = legend("topleft", legend="H", bty='n', text.font=2, inset=c(-0.125,-0.05), cex=1.25, text.col='black'),
+			shelf = legend("topleft", legend="D", bty='n', text.font=2, inset=c(-0.1,-0.125), cex=1.25, text.col='black'),
 			newf = legend("topright", legend="F", bty='n', text.font=2, inset=c(-0.01,-0.05), cex=1.25)
 		)
 	}
-	mtext(bquote(Colonization~Rate~(C[w]~~decade^-1)), side=3, outer=TRUE, font=2, line=-0.3)
-	mtext(bquote(Longitude~(phantom()*degree*E)), side=1, line=-0.15, outer=TRUE)
-	mtext(bquote(Latitude~(phantom()*degree*N)), side=2, line=-0.75, outer=TRUE)
+	if(ce=="colonization"){
+		mtext(bquote(Colonization~Rate~(C[w]~~decade^-1)), side=3, outer=TRUE, font=2, line=-0.3)
+	}else if(ce=="extinction"){
+		mtext(bquote(Extinction~Rate~(E[w]~~decade^-1)), side=3, outer=TRUE, font=2, line=-0.3)
+	}
+	mtext(bquote(Longitude~(phantom()*degree*E)), side=1, line=0.15, outer=TRUE)
+	mtext(bquote(Latitude~(phantom()*degree*N)), side=2, line=-0.4, outer=TRUE)
 	invisible(NULL)
 }
 
@@ -133,10 +154,13 @@ rich_detect <- function(){
 naive_msom_scatter <- function(){
 	eval(figure_setup())
 	par(mfrow=c(3,3), mar=c(1.25,1.0,0.5,0.1), oma=c(0.35,0.5,0.1,0.1), mgp=c(0.25,0.1,0), tcl=-0.1, ps=8, cex=1)
-	comm_master[,j={
-		plot(naive_rich, reg_rich, main=pretty_reg[una(reg)], type='p', xlab="", ylab="", cex.main=1)
-		abline(a=0, b=1)
-	}, by='reg']
+	for(r in 1:length(regs)){
+		comm_master[reg==regs[r],j={
+			plot(naive_rich, reg_rich, main=pretty_reg[una(reg)], type='p', xlab="", ylab="", cex.main=1)
+			abline(a=0, b=1)
+		}]
+	}
+
 	mtext("MSOM Richness", side=2, line=-0.2, outer=TRUE)
 	mtext("Naive Richness", side=1, line=-0.5, outer=TRUE)
 	invisible(NULL)
@@ -158,11 +182,13 @@ categ_barplot <- function(){
 col_ext_ts <- function(){
 	eval(figure_setup())
 	par(mfrow=c(3,3), mar=c(1.25,1.0,0.5,0.1), oma=c(0.35,0.5,0.1,0.1), mgp=c(0.25,0.1,0), tcl=-0.1, ps=8, cex=1)
-	comm_master[,j={
-		ylim=range(c(n_col,n_ext));
-		plot(year, n_col, main=pretty_reg[una(reg)], type='l', col='blue', ylim=ylim, xlab="", ylab="", cex.main=1)
-		lines(year, n_ext, col='red')
-	}, by='reg']
+	for(r in 1:length(regs)){
+		comm_master[reg==regs[r],j={
+			ylim=range(c(n_col,n_ext));
+			plot(year, n_col, main=pretty_reg[una(reg)], type='l', col='blue', ylim=ylim, xlab="", ylab="", cex.main=1)
+			lines(year, n_ext, col='red')
+		}]
+	}
 	mtext("Colonizations or Extinctions", side=2, line=-0.2, outer=TRUE)
 	mtext("Year", side=1, line=-0.5, outer=TRUE)
 	invisible(NULL)
@@ -170,7 +196,7 @@ col_ext_ts <- function(){
 
 
 # ---- Neighborhood used in Moran's I ----
-nb_moranI <- function(){
+nb_moranI <- function(ce=c("colonization", "extinction")){
 	eval(figure_setup())
 	map_layout <- trawl_layout()
 	par(mar=c(0.25,0.25,0.25,0.25), mgp=c(0.25,0.075,0), tcl=-0.1, ps=8, cex=1, oma=c(0.1,0.1,0.1,0.1))
@@ -180,7 +206,7 @@ nb_moranI <- function(){
 	rs <- mapDat[,una(reg)]
 	nr <- length(rs)
 	for(r in 1:nr){
-		t_lac <- localAC[[rs[r]]]
+		t_lac <- localAC[[ce]][[rs[r]]]
 		plot(mapOwin[[rs[r]]], coords=t_lac$I[,list(lon,lat)], add=FALSE, main="")
 		box()
 		if(rs[r]=='wctri'){
@@ -197,14 +223,14 @@ nb_moranI <- function(){
 			points(x=t_lac$I[sig_lac,lon], y=t_lac$I[sig_lac,lat], bg=t_col, pch=21, cex=1.1)
 			switch(rs[r],
 				ebs = mapLegend(x=0.05, y=0.25, h=0.375, w=0.025, zlim=zl, cols=map_col, lab.cex=1),
-				ai = mapLegend(x=0.985, y=0.3, w=0.02, h=0.5, zlim=zl, cols=map_col, lab.cex=1),
+				ai = mapLegend(x=0.985, y=0.3, w=0.02, h=0.75, zlim=zl, cols=map_col, lab.cex=1),
 				goa = mapLegend(x=0.985, y=0.15, w=0.02,  zlim=zl, cols=map_col, lab.cex=1),
-				wctri = mapLegend(x=0.1, y=0.125, w=0.07, zlim=zl, cols=map_col, lab.cex=1),
+				wctri = mapLegend(x=0.1, y=0.120, w=0.2, h=0.15, zlim=zl, cols=map_col, lab.cex=1),
 				gmex = mapLegend(x=0.95, y=0.2, h=0.375, zlim=zl, cols=map_col, lab.cex=1),
 				sa = mapLegend(x=0.95, y=0.15, zlim=zl, cols=map_col, lab.cex=1),
 				neus = mapLegend(x=0.95, y=0.15, zlim=zl, cols=map_col, lab.cex=1),
 				shelf = mapLegend(x=0.95, y=0.15, zlim=zl, cols=map_col, lab.cex=1),
-				newf = mapLegend(x=0.05, y=0.15, h=0.25, zlim=zl, cols=map_col, lab.cex=1)
+				newf = mapLegend(x=0.05, y=0.15, h=0.20, zlim=zl, cols=map_col, lab.cex=1)
 			)
 		}else{
 			# plot(x=locs[,1], y=locs[,2], col='blue')
