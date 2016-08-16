@@ -33,26 +33,46 @@ richness_ts <- function(){
 }
 
 # ---- Prevalence Time to Absence ----
-prevalence_absenceTime <- function(){
+rangeSize_absenceTime <- function(pred_var=c("rangeSize","rangeDensity")){
 	eval(figure_setup())
-	avg_prev_abs <- spp_master[!is.na(ext_dist) & ext_dist!=0,list(prevalence=mean(propStrata)),by=c("reg","ext_dist","stretch_type")]
-	par(mfrow=c(2,1), mar=c(1.5,1.5,0.25,0.25), oma=c(0.1,0.1,0.1,0.1), cex=1, ps=8, mgp=c(0.75,0.1,0), tcl=-0.1, ylbias=0.35)
-	for(st in 1:2){
-		t_st <- c("pre_ext","post_col")[st]
-		t_xlab <- c("Years until extinction", "Years after colonization")[st]
-		t_panel <- c("A","B")[st]
-		leg_log <- c(TRUE, FALSE)[st]
+	avg_prev_abs <- spp_master[!is.na(ext_dist) & ext_dist!=0,list(rangeSize=mean(propStrata), rangeDensity=mean(propTow_occ)),by=c("reg","ext_dist","stretch_type")]
+	# avg_prev_abs <- spp_master[!is.na(ext_dist) & ext_dist!=0,list(rangeSize=mean(propStrata), rangeDensity=mean(propTow_occ)),by=c("reg","ext_dist","stretch_type","spp")]
 	
-		avg_prev_abs[stretch_type==t_st,plot(ext_dist, prevalence, col=adjustcolor(pretty_col[(reg)], 0.5), pch=16, xlab=t_xlab, ylab="Prevalence")]
-		avg_prev_abs[stretch_type==t_st,j={
-			lines(ext_dist, fitted(lm(prevalence~ext_dist)), col=pretty_col[(reg[1])], lwd=1.5)
-		},by=c('reg')]
+	pred_var <- match.arg(pred_var, several.ok=TRUE) #c("rangeSize","rangeDensity")
+	par(mfrow=c(length(pred_var),2), mar=c(1.5,1.5,0.25,0.25), oma=c(0.1,0.1,0.1,0.1), cex=1, ps=8, mgp=c(0.75,0.1,0), tcl=-0.1, ylbias=0.35)
+	counter <- 0
+	for(v in 1:length(pred_var)){
+		pv <- pred_var[v]
+		for(st in 1:2){
+			counter <- counter + 1L
+			t_st <- c("pre_ext","post_col")[st]
+			t_xlab <- c("Years before extinction", "Years after colonization")[st]
+			t_panel <- LETTERS[counter]
+			leg_log <- c(TRUE, FALSE)[st]
 	
-		legend("topleft", legend=t_panel, inset=c(-0.075, -0.03), bty='n', text.font=2)
-		if(leg_log){
-			comm_master[,legend("topright",ncol=1,legend=pretty_reg[una(reg)],text.col=pretty_col[una(reg)], inset=c(-0.02, -0.03), bty='n', x.intersp=1, y.intersp=0.65)]
-		}	
+			xlim <- avg_prev_abs[stretch_type==t_st, range(ext_dist, na.rm=TRUE)]
+			if(st==1){
+				xlim <- rev(xlim)
+			}
+			avg_prev_abs[stretch_type==t_st,plot(ext_dist, eval(s2c(pv))[[1]], col=adjustcolor(pretty_col[(reg)], 0.5), xlim=xlim, pch=16, xlab=t_xlab, ylab=c("Range Size","Range Density")[v])]
+			avg_prev_abs[stretch_type==t_st,j={
+				lines(ext_dist, fitted(lm(eval(s2c(pv))[[1]]~ext_dist)), col=pretty_col[(reg[1])], lwd=1.5)
+			},by=c('reg')]
+
+			# avg_prev_abs[stretch_type==t_st,plot(eval(s2c(pv))[[1]], ext_dist, col=adjustcolor(pretty_col[(reg)], 0.5), pch=16, ylab=t_xlab, xlab=c("Range Size","Range Density")[v])]
+			# avg_prev_abs[stretch_type==t_st,j={
+			# 	lines(eval(s2c(pv))[[1]], fitted(lm(ext_dist ~ eval(s2c(pv))[[1]])), col=pretty_col[(reg[1])], lwd=1.5)
+			# },by=c('reg')]
+	
+			# legend("topleft", legend=t_panel, inset=c(-0.075, -0.03), bty='n', text.font=2)
+			mtext(t_panel, side=3, line=-1.5, adj=c(0.05,0.95)[st], font=2, cex=1.25)
+			if(counter == 1){
+				comm_master[,legend("topright",ncol=1,legend=pretty_reg[una(reg)],text.col=pretty_col[una(reg)], inset=c(-0.02, -0.03), bty='n', x.intersp=1, y.intersp=0.65)]
+			}	
+		}
 	}
+	
+	
 	invisible(NULL)
 }
 
@@ -322,6 +342,34 @@ rangeSizeDens <- function(){
 	
 }
 
+ceEventRange <- function(){
+	eval(figure_setup())
+	
+	par(mfrow=c(2,1), mar=c(1.75,1.5,0.25,0.25),mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
+	
+	range_ceEvents <- spp_master[present==1,.SD[,list(mean_size=mean(propStrata), mean_density=mean(propTow_occ), total_colExt=sum(col+ext)),by='spp'],by='reg']
+	ur <- range_ceEvents[,unique(reg)]
+	
+	pred_vars <- c("mean_size", "mean_density")
+	
+	for(v in 1:2){
+		pv <- pred_vars[v]
+		
+		range_ceEvents[,plot(eval(s2c(pv))[[1]], total_colExt, col=adjustcolor(pretty_col[reg],0.5), xlab=c("Range Size", "Range Density")[v], ylab="Total Colonizations and Extinctions", pch=16)]
+		for(r in 1:length(ur)){
+			td <- range_ceEvents[reg==ur[r] & !is.na(mean_density) & !is.na(mean_size)]
+			setorderv(td, pv)
+			lf <- td[,fitted(loess(total_colExt~eval(s2c(pv))[[1]]))]
+			td[, lines(eval(s2c(pv))[[1]], lf, col="white", lwd=4)]
+			td[, lines(eval(s2c(pv))[[1]], lf, col=pretty_col[reg], lwd=2)]
+		}
+		if(v==1){
+			range_ceEvents[,legend("topright",ncol=2,legend=pretty_reg[una(reg)],text.col=pretty_col[una(reg)], inset=c(-0.02, -0.02), bty='n')]
+		}	
+		mtext(c("A","B")[v], side=1, line=-2, adj=0.95, font=2, cex=1.25)
+	}
+	invisible(NULL)
+}
 
 
 
