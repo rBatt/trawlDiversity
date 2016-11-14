@@ -95,6 +95,6 @@ save(data_all, file="trawlDiversity/data/data_all.RData")
 # spp_master
 # comm_master
 # mapDat
-source("trawlDiversity/pkgBuild/manuscript_data.R")
+source("trawlDiversity/pkgBuild/manuscript/manuscript_data.R")
 
 
