@@ -15,6 +15,13 @@ figure_setup <- function(){
 	})
 }
 
+panLab <- function(){
+	pm <- par("mfg")
+	nmat <- matrix(1:(prod(pm[3:4])), nr=pm[3], nc=pm[4])
+	panelLabel <- LETTERS[nmat[pm[1], pm[2]]]
+	return(panelLabel)
+}
+
 
 # =============
 # = Main Text =
@@ -39,7 +46,7 @@ rangeSize_absenceTime <- function(pred_var=c("rangeSize","rangeDensity")){
 	# avg_prev_abs <- spp_master[!is.na(ext_dist) & ext_dist!=0,list(rangeSize=mean(propStrata), rangeDensity=mean(propTow_occ)),by=c("reg","ext_dist","stretch_type","spp")]
 	
 	pred_var <- match.arg(pred_var, several.ok=TRUE) #c("rangeSize","rangeDensity")
-	par(mfrow=c(length(pred_var),2), mar=c(1.5,1.5,0.25,0.25), oma=c(0.1,0.1,0.1,0.1), cex=1, ps=8, mgp=c(0.75,0.1,0), tcl=-0.1, ylbias=0.35)
+	par(mfrow=c(length(pred_var),2), mar=c(1.65,1.65,0.25,0.25), oma=c(0.1,0.1,0.1,0.1), cex=1, ps=8, mgp=c(0.75,0.1,0), tcl=-0.1, ylbias=0.35)
 	counter <- 0
 	for(v in 1:length(pred_var)){
 		pv <- pred_var[v]
@@ -370,7 +377,5 @@ ceEventRange <- function(){
 	}
 	invisible(NULL)
 }
-
-
 
 
