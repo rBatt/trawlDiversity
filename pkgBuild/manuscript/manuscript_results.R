@@ -74,7 +74,7 @@ library(rbLib) # library(devtools); install_github("rBatt/rbLib")
 # ================
 doc_type <- c("html", "pdf")[2]
 table_type <- c("html"="html", "pdf"="latex")[doc_type]
-options("digits"=4) # rounding output to 4 in kable() (non-regression tables)
+options("digits"=3) # rounding output to 4 in kable() (non-regression tables)
 o_f <- paste(doc_type, "document", sep="_")
 
 # problem with pdflatex in El Capitan? It might be directories. Check http://pages.uoregon.edu/koch/FixLink.pkg
@@ -186,16 +186,8 @@ kable(rich_trend_kendall,
 #+ Richness-col-ext-barplot, include=TRUE, echo=TRUE, fig.height=3.5, fig.width=3.5, fig.cap="**Figure S2.** Number of species beloning to the categories of both, neither, colonizer, leaver in each region"
 categ_barplot()
 #+ Richness-col-ext-barplot-table, echo=FALSE
-kable(
-	t(spp_master[!duplicated(paste(reg,ce_categ,spp)), table(reg, ce_categ)])[c(4,1,2,3),],
-	caption = "Number of species in each category in each region."
-)
-kable(
-	data.frame(as.list(rowSums(t(
-		spp_master[!reg%in%pos_reg & !duplicated(paste(reg,ce_categ,spp)), table(reg, ce_categ)])[c(4,1,2,3),]
-	))),
-	caption = "Total for each category, summed across regions."
-)
+categ_tbl <- t(spp_master[!duplicated(paste(reg,ce_categ,spp)), table(reg, ce_categ)])[c(4,1,2,3),]
+kable(categ_tbl, caption = "Number of species in each category in each region.")
 #' It's the same pattern, whichever way you split it. However, AI is the only region that had more *colonizers* than *both* species. An interesting way to think about some of this is that the average sd in richness was `r comm_master[,stats::sd(reg_rich),by='reg'][,mean(V1)]`, so when the number of *colonizer* or *leaver* species exceed's that region's sd, the impact of those categories, which I consider to be dubious, might start being relevant (though it's not necessarily problematic, nor is this even close to an actual test for the significance of those categories to the trend). EBS and Shelf had significant positive trends in richness and very low numbers in the *colonizer* category. WCTRI and NEWF had similar numbers in the *both* and *colonizer* category.  
 #'   
 #' ####Figure NotIncluded. Time series of colonizations and extinctions
@@ -213,7 +205,7 @@ col_ext_ts()
 #' ***  
 #'   
 #' ##Spatial Clustering of Colonization and Extinction
-#'  ###Heat Maps
+#' ###Heat Maps
 #' ####Figure 2. Colonization map
 #+ col-map, echo=TRUE, fig.width=7, fig.height=3, fig.cap="**Figure 2.** Maps of long-term averages of colonizations per site per decade for each region: A) E. Bering Sea, B) Gulf of Alaska, C) Aleutian Islands, D) Scotian Shelf, E) West Coast US, F) Newfoundland, G) Gulf of Mexico, H) Northeast US, I) Southeast US. Values of colonization rate were smoothed using a Gaussian kernel smoother. The smoothed colonization rate is indicated by the color bars in each panel; colors are scaled independently for each region."
 ceRate_map(ce="colonization")
@@ -276,9 +268,13 @@ rangeSizeDens()
 #'   
 #' The positive relationship between size and density is not surprising. My interpretation of density is ~population size. Often population size is correlated with range size. I think this is a standard result, but I need to double-check.
 #'   
-#' ####Figure 3. Species richness versus geographic range
-#+ rich-geo-range, fig.width=3.5, fig.height=5.5, fig.cap="**Figure 3.** Species richness vs A) geographic range size, and B) geographic range density. Both metrics are based on each species' long-term average of a statistic; range size is the proportion of sites occupied, range density is the proportion of tows in occupied sites. Solid lines are linear regressions with MSOM richness as the response and the horizontal axis and an intercept as the predictors."
-rich_geoRange()
+#' ####Figure 3. Species richness versus geographic range size
+#+ rich-geo-rangeSize, fig.width=3.5, fig.height=3.5, fig.cap="**Figure 3.** Species richness vs geographic range size. Range size is presented as each species' long-term average of the proportion of sites it occupied. Solid lines are linear regressions with MSOM richness as the response and the horizontal axis and an intercept as the predictors."
+rich_geoRange("size", leg=FALSE)
+
+#' ####Figure Not Included. Species richness versus range density
+#+ rich-geo-rangeDensity, fig.width=3.5, fig.height=3.5, fig.cap="**Figure 3b.** Species richness vs geographic range density. Range density is presented as each species' long-term average of the proportion of tows containing that species in sites where it was observed to be in at least one tow. Solid lines are linear regressions with MSOM richness as the response and the horizontal axis and an intercept as the predictors."
+rich_geoRange("density", leg=FALSE)
 #' Both range size and range density are pretty good predictors of species richness. I think I had originally missed the range size relationship b/c I hadn't done the same aggregating procedure. The interpretation I have is that richness is highest when you have a bunch of rare species.  
 #'   
 #' The goal here is to see if species richness is predicted by the typical range density or range size of community's constituent species. First I'll run different types of models just to explore whether this is true, in general (across regions). Then I'll drill in to each region individually to answer the same question.  
@@ -343,6 +339,11 @@ rich_ds_reg_smry <- data.table(
 )
 setkey(rich_ds_reg_smry, reg, Class, predictor)
 
+setnames(rich_ds_reg_smry, old=c("Marginal","Conditional","p.value"), new=c("MargR2","CondR2","pval"))
+setkey(rich_ds_reg_smry, reg, Class, mod_call, predictor)
+rich_ds_reg_smry[, BH:=round(p.adjust(pval, "BH"), 3), by=c("mod_call", "predictor")]
+rich_ds_reg_smry <- dcast(rich_ds_reg_smry, reg+Class+mod_call+MargR2+CondR2+AIC~predictor, value.var=c("pval", "BH"))
+
 #+ rich-rangeDensitySize-tables, echo=FALSE
 # stargazer(
 # 	rDens_mods[[1]],
@@ -371,7 +372,7 @@ kable(
 	caption="Regression models of richness predicted by community metric of range density and range size, but each region has a separate model."
 ) # same model applied to each reg sep
 kable(
-	rich_ds_reg_smry[,lapply(.SD, base::mean), by="predictor"], 
+	rich_ds_reg_smry[,lapply(.SD, base::mean), by="mod_call"], 
 	caption="Average of above region-specific rich ~ density and rich ~ size models."
 ) 
 #' All models are pretty good predictors. Well, the most basic model kinda sucks I guess. It needs to account for some of the between-region variation.  
@@ -381,7 +382,7 @@ kable(
 #'   
 #+ rich-range-compareSizeDens
 deltaExpr <- bquote(
-	.SD[predictor=="density", Marginal] - .SD[predictor=="size", Marginal]
+	.SD[grepl("density",mod_call), MargR2] - .SD[grepl("size",mod_call), MargR2]
 )
 fight <- rich_ds_reg_smry[,list(
 	marginal_density_minus_size=eval(deltaExpr)
@@ -405,14 +406,17 @@ kable(
 #' ###Total Colonizations vs Extinctions and Geographic Range
 #' The result that richness is predicted by geographic range implied an underlying association between range, colonization/ extinction, and richness itself. Above, richness was explained with range. Later, the results will explain how range changes near a colonization/ extinction event. Here, between the two, the results show how the number of colonizations is related to range.  
 #'   
-#' ####Figure S7. Total Colinizations/ Extinctions vs Georaphic Range
+#' ####Figure S7. Total Colonizations/ Extinctions vs Georaphic Range
 #+ ceEvents-vs-rangeSizeDensity, fig.width=3.5, fig.height=6, fig.cap="**Figure S7.** Number of colonizations and extinctions as a function of range size and range density."
 ceEventRange()
 #' Yup, this is definitely a thing. Long-term average range size and range density predict how many colonizations and extinctions a species is likely to have. This will lead nicely into examing how range changes prior to an extinction or after a colonization.  
 #'   
 #' ###Range Change after Colonization/ before Extinction
 #' ####Figure 4. Changes in Geographic Range before Extinction and after Colonization
-#+ rangeColExt, fig.width=6, fig.height=6, fig.cap="Figure 4. Geographic range size (A,B) and geographic range density (C,D) vs years until extinction (A,C) and years after colonization (B,D). For each unique value on the horizontal axis, the cross-species average for the range metric is displayed, and a linear model fit through this average. Statistics in main text do not use this aggregation. Extinction events are identified as occuring the year before the species is absent (?right?), colonization the first year it is present after an absence."
+#+ rangeSize_ColExt, fig.width=6, fig.height=3.5, fig.cap="**Figure 4.** Geographic range size vs years until extinction (A) and years after colonization (B). For visualization purposes, range size is averaged across species for each unique value on each axis, and a linear model fit through this average. Statistics in main text do not use this aggregation. Extinction events are identified as occuring the year before the species is absent (?right?), colonization the first year it is present after an absence."
+rangeSize_absenceTime()
+#' ####Figure 4b. Changes in Geographic Range before Extinction and after Colonization
+#+ rangeDensity_ColExt, fig.width=6, fig.height=3.5, fig.cap="**Figure 4b.** Geographic range density vs years until extinction (A) and years after colonization (B). For visualization purposes, range size is averaged across species for each unique value on each axis, and a linear model fit through this average. Statistics in main text do not use this aggregation. Extinction events are identified as occuring the year before the species is absent (?right?), colonization the first year it is present after an absence."
 rangeSize_absenceTime()
 #' Range size declines near an absence much more consistently than does range density; both are (relatively) low just before extinction and just after colonization. However, range density has much more variable intercepts among regions, whereas range size does not.   
 #'   
@@ -434,6 +438,24 @@ rangeTimeDT <- rangeTimeDT[,list(
 	density=propTow_occ
 )]
 
+# summary function used in tables
+mod_smry2 <- function(m){
+	mod_call <- switch(class(m), lmerMod=m@call, lm=m$call)
+	mod_call <- as.character(mod_call)[2]
+	fits <- sem.model.fits(m)
+	fits[,c("estimate","p.value","Marginal","Conditional")] <- lapply(fits[,c("Marginal","Conditional")], signif, 4)
+	anova_sum <- car::Anova(m)
+	
+	out <- data.frame(
+		mod_call = mod_call,
+		data.frame(predictor=rownames(anova_sum), anova_sum)[,c("predictor","Pr..Chisq.")],
+		fits, 
+		AIC=AIC(m)#signif(AIC(m), getOption("digits"))
+	)
+	out[,c("Class","mod_call", "predictor", "Pr..Chisq.","Marginal","Conditional","AIC")]
+}
+
+#+ rangeSizeDensity-ColExtTime-models, results='markup'
 # models for range size
 sizeCE_mods <- list()
 sizeCE_mods[[1]] <- lme4::lmer(size ~ time + (time|spp/reg), data=rangeTimeDT)
@@ -457,34 +479,83 @@ do.call(stargazer, c(
 		list(type=table_type)
 ))
 
-mod_smry2 <- function(m){
-	# pred_name <- match.arg(pred_name)
-	# sc <- sem.coefs(m)
-	# sc[,c("estimate","p.value")] <- lapply(sc[,c("estimate","p.value")], signif, 4)
-	mod_call <- switch(class(m), lmerMod=m@call, lm=m$call)
-	mod_call <- as.character(mod_call)[2]
-	fits <- sem.model.fits(m)
-	fits[,c("estimate","p.value","Marginal","Conditional")] <- lapply(fits[,c("Marginal","Conditional")], signif, 4)
-	anova_sum <- cars::Anova(m)
-	
-	out <- cbind(
-		mod_call = mod_call,
-		# sc[sc[,"predictor"]==pred_name,],
-		data.frame(predictor=rownames(anova_sum), anova_sum)[,c("predictor","Pr..Chisq.")],
-		fits, 
-		AIC=round(AIC(m), getOption("digits"))
-	)
-	out[,c(
-		# "std.error","N",
-		"Class","mod_call", "predictor", "Pr..Chisq.",
-		# "predictor","estimate","p.value",
-		"Marginal","Conditional","AIC"
-	)]
-}
-
 tbl_ColExtTime <- rbindlist(lapply(c(sizeCE_mods, densityCE_mods), mod_smry2))
+setnames(tbl_ColExtTime, old=c("Pr..Chisq.","Marginal","Conditional"), new=c("pval","MargR2","CondR2"))
 kable(tbl_ColExtTime, caption="Same as above, but shows slightly different metrics")
 
-#' For range size, the simple model appears to perform best. For range density, it seems to be important to include type as a fixed effect. Neither needs an interaction between time*type. I did additional testing beyond what's presenting here, and I can confirm that having spp as a random factor is useful, too.
-
+#' For both range size and range density, it seems to be important to include type as a fixed effect. Neither needs an interaction between time*type. I did additional testing beyond what's presenting here, and I can confirm that having spp as a random factor is useful, too.  
+#'   
 #' ####Table. Regressions separate regions -- geographic range vs time until extinction or after colonization
+#+ rangeSizeDensity-ColExtTime-reg
+# Fit same model to each region separately 
+dTime_reg_mods <- list()
+sTime_reg_mods <- list()
+ur <- range_reg[,unique(reg)]
+for(r in 1:length(ur)){
+	dTime_reg_mods[[r]] <- lme4::lmer(density ~ time + type + (time|spp), data=rangeTimeDT[reg==ur[r]])
+	sTime_reg_mods[[r]] <- lme4::lmer(size ~ time + type + (time|spp), data=rangeTimeDT[reg==ur[r]])
+}
+dsTime_reg_smry <- data.table(rbind(
+	rbindlist(structure(lapply(dTime_reg_mods, mod_smry2), .Names=ur), idcol=TRUE),
+	rbindlist(structure(lapply(sTime_reg_mods, mod_smry2), .Names=ur), idcol=TRUE)
+))
+setnames(dsTime_reg_smry, old=c(".id","Pr..Chisq.","Marginal","Conditional"), new=c('reg',"pval","MargR2","CondR2"))
+setkey(dsTime_reg_smry, reg, Class, mod_call, predictor)
+
+# adjust p-values for multiple tests
+dsTime_reg_smry[, BH:=round(p.adjust(pval, "BH"), 3), by=c("mod_call", "predictor")]
+
+# rearrange so each model on 1 line
+dsTime_reg_smry <- dcast(dsTime_reg_smry, reg+Class+mod_call+MargR2+CondR2+AIC~predictor, value.var=c("pval", "BH"))
+
+# add coefficients to the dsTime_reg_smry data.table
+getCoefs <- function(mList){
+	outList <- list()
+	for(r in 1:length(ur)){
+		outList[[ur[r]]] <- rbindlist(lapply(
+			coef(mList[[r]]), function(x)as.list(colMeans(x))
+		), idcol=TRUE)
+		setnames(outList[[ur[r]]], c(".id"), c("randomGroup"))
+		mod_call <- switch(class(mList[[r]]), lmerMod=mList[[r]]@call, lm=mList[[r]]$call)
+		mod_call <- as.character(mod_call)[2]
+		outList[[ur[r]]][,mod_call:=mod_call]
+	}
+	outList <- rbindlist(outList, idcol=TRUE)
+	setnames(outList, c(".id"), c("reg"))
+	# setcolorder(outList, c("reg", "mod_call", "randomGroup", "(Intercept)", "time", "typepre_ext"))
+	outList
+}
+modCoef <- rbind(getCoefs(dTime_reg_mods), getCoefs(sTime_reg_mods))
+dsTime_reg_smry <- merge(dsTime_reg_smry, modCoef, by=c("reg","mod_call"))
+setnames(dsTime_reg_smry, old=c("(Intercept)"), new=c("Int"))
+
+#+ rangeSizeDensity-ColExtTime-reg-table, echo=FALSE
+# do.call(stargazer, c(
+# 		dTime_reg_mods, sTime_reg_mods,
+# 		report = c("vc*"), header=FALSE,
+# 		title = "Region-specific regressions predicting range size/ density from years before extinction and years after colonization.",
+# 		list(type=table_type)
+# ))
+capD <- dsTime_reg_smry[grepl("density",mod_call),mod_call[1]]
+capS <- dsTime_reg_smry[grepl("size",mod_call),mod_call[1]]
+dTime_reg_smry <- dsTime_reg_smry[grepl("density",mod_call)]
+dTime_reg_smry[,c("mod_call","randomGroup","Class"):=NULL]
+sTime_reg_smry <- dsTime_reg_smry[grepl("size",mod_call)]
+sTime_reg_smry[,c("mod_call","randomGroup","Class"):=NULL]
+kable(dTime_reg_smry, caption=paste0("Summary statistics for fits of predicting range DENSITY from years before extinction and years after colonization. These are mixed effect models of the form ", capD))
+kable(sTime_reg_smry, caption=paste0("Summary statistics for fits of predicting range SIZE from years before extinction and years after colonization. These are mixed effect models of the form ", capS))
+
+
+#' ###Conclusion for Range Change before Extinction/ after Colonization
+#' As stated with the larger (pooled regional data) regressions, range size respondes more consistently/ strongly to an approaching extinction/ departure from colonization than does range density. Range size shrinks as extinction approaches, increases as time since colonization increases. In both cases, there was only 1 region for which the direction (into extinction, out of colonization mattered): for range density, it was the Southeast US (effect of pre-extinction direction = 0.037, p=0.043 [BH correction], Table 12), and for range size it was Scotial Shelf (effect = -0.021, p = 0.002). Time was a significant predictor of range size in all regions; time was *not* a significant predictor of range density in Newfoundland (p = 0.846 [BH]), and the Scotial Shelf (p = 0.916).  
+#'  
+#' These results support the hypothesis that species rarity is closely associated with proximity to extinction/ colonization, and therefore the probability that the species will contribute to a change in species richness. Furthermore, these relationships have not been directly quantified for entire assemblages. Competing hypotheses exist regarding how range should change approaching extinction and after colonization. We find that the change in range is similar regardless of direction. However, spatial scale was important. Although slopes were similar, the intercept for density was far larger than for range size --- the fraction of tows containing a species in occupied sites may remain high even when extinction is imminent, and may similar be large even if colonization was recent. Range size, on the other hand, was much closer to 0 near an absence.  
+#'   
+#' Overall, the results suggest that the spatial footprint of individual species is important for understanding changes in species richness. Furthermore, because species contributing most to the dynamics of richness are those that repeatedly colonize and go extinct, it is meaningful to look at a species' long-term rarity in order to gauge whether it is likely to contribute to those long-term richness changes. Determining what drives the geographic range of individual species is probably a powerful way to anticipate richness changes.
+#' 
+#'   
+#' \FloatBarrier  
+#'   
+#' ***  
+#'   
+
