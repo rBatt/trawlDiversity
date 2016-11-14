@@ -61,7 +61,7 @@ rangeSize_absenceTime <- function(pred_var=c("rangeSize","rangeDensity")){
 			if(st==1){
 				xlim <- rev(xlim)
 			}
-			avg_prev_abs[stretch_type==t_st,plot(ext_dist, eval(s2c(pv))[[1]], col=adjustcolor(pretty_col[(reg)], 0.5), xlim=xlim, pch=16, xlab=t_xlab, ylab=c("Range Size","Range Density")[v])]
+			avg_prev_abs[stretch_type==t_st,plot(ext_dist, eval(s2c(pv))[[1]], col=adjustcolor(pretty_col[(reg)], 0.5), xlim=xlim, pch=16, xlab=t_xlab, ylab=c(rangeSize="Range size",rangeDensity="Range density")[pv])]
 			avg_prev_abs[stretch_type==t_st,j={
 				lines(ext_dist, fitted(lm(eval(s2c(pv))[[1]]~ext_dist)), col=pretty_col[(reg[1])], lwd=1.5)
 			},by=c('reg')]
@@ -214,7 +214,12 @@ rich_geoRange <- function(gR0=c("size", "density"), leg=TRUE, legPan=2, panLab=T
 			comm_master[reg==ur[r],lines(eval(s2c(gR))[[1]],eval(mod_expr))]
 		}
 		if(leg & g==legPan){
-			comm_master[,legend("topright",ncol=2,legend=pretty_reg[una(reg)],text.col=pretty_col[una(reg)], inset=c(-0.02, -0.02), bty='n')]
+			if(gR0[g]=="density"){
+				comm_master[,legend("topright",ncol=2,legend=pretty_reg[una(reg)],text.col=pretty_col[una(reg)], inset=c(-0.02, -0.02), bty='n')]
+			}else if(gR0[g]=="size"){
+				comm_master[,legend("topleft",ncol=2,legend=pretty_reg[una(reg)],text.col=pretty_col[una(reg)], inset=c(0.03, -0.02), bty='n', x.intersp=0.15, y.intersp=0.65)]
+			}
+			
 		}
 		if(panLab){
 			# xy <- par()$usr[c(1,3)]
