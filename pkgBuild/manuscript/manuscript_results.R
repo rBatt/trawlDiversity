@@ -270,11 +270,11 @@ rangeSizeDens()
 #'   
 #' ####Figure 3. Species richness versus geographic range size
 #+ rich-geo-rangeSize, fig.width=3.5, fig.height=3.5, fig.cap="**Figure 3.** Species richness vs geographic range size. Range size is presented as each species' long-term average of the proportion of sites it occupied. Solid lines are linear regressions with MSOM richness as the response and the horizontal axis and an intercept as the predictors."
-rich_geoRange("size", leg=FALSE)
+rich_geoRange("size", leg=TRUE, legPan=1, panLab=FALSE)
 
 #' ####Figure Not Included. Species richness versus range density
 #+ rich-geo-rangeDensity, fig.width=3.5, fig.height=3.5, fig.cap="**Figure 3b.** Species richness vs geographic range density. Range density is presented as each species' long-term average of the proportion of tows containing that species in sites where it was observed to be in at least one tow. Solid lines are linear regressions with MSOM richness as the response and the horizontal axis and an intercept as the predictors."
-rich_geoRange("density", leg=FALSE)
+rich_geoRange("density", leg=TRUE, legPan=1, panLab=FALSE)
 #' Both range size and range density are pretty good predictors of species richness. I think I had originally missed the range size relationship b/c I hadn't done the same aggregating procedure. The interpretation I have is that richness is highest when you have a bunch of rare species.  
 #'   
 #' The goal here is to see if species richness is predicted by the typical range density or range size of community's constituent species. First I'll run different types of models just to explore whether this is true, in general (across regions). Then I'll drill in to each region individually to answer the same question.  
@@ -413,11 +413,11 @@ ceEventRange()
 #'   
 #' ###Range Change after Colonization/ before Extinction
 #' ####Figure 4. Changes in Geographic Range before Extinction and after Colonization
-#+ rangeSize_ColExt, fig.width=6, fig.height=3.5, fig.cap="**Figure 4.** Geographic range size vs years until extinction (A) and years after colonization (B). For visualization purposes, range size is averaged across species for each unique value on each axis, and a linear model fit through this average. Statistics in main text do not use this aggregation. Extinction events are identified as occuring the year before the species is absent (?right?), colonization the first year it is present after an absence."
-rangeSize_absenceTime()
+#+ rangeSize_ColExt, fig.width=6, fig.height=3, fig.cap="**Figure 4.** Geographic range size vs years until extinction (A) and years after colonization (B). For visualization purposes, range size is averaged across species for each unique value on each axis, and a linear model fit through this average. Statistics in main text use unaggregated data. The horizontal axes were formulated as time until (since) the nearest upcoming (previous) absence. Because range size must be zero when either horizontal axis has a value of zero, points at (0,0) were excluded from figures and analyses."
+rangeSize_absenceTime("rangeSize")
 #' ####Figure 4b. Changes in Geographic Range before Extinction and after Colonization
-#+ rangeDensity_ColExt, fig.width=6, fig.height=3.5, fig.cap="**Figure 4b.** Geographic range density vs years until extinction (A) and years after colonization (B). For visualization purposes, range size is averaged across species for each unique value on each axis, and a linear model fit through this average. Statistics in main text do not use this aggregation. Extinction events are identified as occuring the year before the species is absent (?right?), colonization the first year it is present after an absence."
-rangeSize_absenceTime()
+#+ rangeDensity_ColExt, fig.width=6, fig.height=3, fig.cap="**Figure 4b.** Geographic range density vs years until extinction (A) and years after colonization (B). For visualization purposes, range density is averaged across species for each unique value on each axis, and a linear model fit through this average. Statistics in main text use unaggregated data. The horizontal axes were formulated as time until (since) the nearest upcoming (previous) absence. Because range density must be zero when either horizontal axis has a value of zero, points at (0,0) were excluded from figures and analyses."
+rangeSize_absenceTime("rangeDensity")
 #' Range size declines near an absence much more consistently than does range density; both are (relatively) low just before extinction and just after colonization. However, range density has much more variable intercepts among regions, whereas range size does not.   
 #'   
 #' This makes sense, at least somewhat, because colonization and extinction events are defined at the site level; though the outcome isn't necessitated by this formulation, because size could drop suddenly. In fact, when a species is absent, both its range size and its range density must be 0 (though, range density is technically calculated for only those sites that are occupied, so I supposed it's technically undefined according to the equations I'm using).  
@@ -459,17 +459,17 @@ mod_smry2 <- function(m){
 # models for range size
 sizeCE_mods <- list()
 sizeCE_mods[[1]] <- lme4::lmer(size ~ time + (time|spp/reg), data=rangeTimeDT)
-sizeCE_mods[[2]] <- lme4::lmer(size ~ time + (time|spp/reg) + (1|type/reg), data=rangeTimeDT)
-sizeCE_mods[[3]] <- lme4::lmer(size ~ time*type + (time|spp/reg), data=rangeTimeDT)
-lmerTest::step(sizeCE_mods[[2]]) # doing most complicated throws an error
+# sizeCE_mods[[2]] <- lme4::lmer(size ~ time + (time|spp/reg) + (1|type/reg), data=rangeTimeDT) # error
+sizeCE_mods[[2]] <- lme4::lmer(size ~ time*type + (time|spp/reg), data=rangeTimeDT)
+# lmerTest::step(sizeCE_mods[[2]]) # doing most complicated throws an error
 
 
 # models for range density
 densityCE_mods <- list()
 densityCE_mods[[1]] <- lme4::lmer(density~time + (time|spp/reg), data=rangeTimeDT)
-densityCE_mods[[2]] <- lme4::lmer(density~time + (time|spp/reg)+(1|type/reg), data=rangeTimeDT)
-densityCE_mods[[3]] <- lme4::lmer(density~time*type + (time|spp/reg), data=rangeTimeDT)
-lmerTest::step(sizeCE_mods[[2]]) # again, can't do most complicated
+# densityCE_mods[[2]] <- lme4::lmer(density~time + (time|spp/reg)+(1|type/reg), data=rangeTimeDT) # error
+densityCE_mods[[2]] <- lme4::lmer(density~time*type + (time|spp/reg), data=rangeTimeDT)
+# lmerTest::step(sizeCE_mods[[2]]) # again, can't do most complicated
 
 #+ rangeSizeDensity-ColExtTime-table, echo=FALSE
 do.call(stargazer, c(
