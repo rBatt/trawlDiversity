@@ -483,6 +483,35 @@ sTime_reg_smry <- sTime_reg_smry[grepl("size",mod_call)]
 sTime_reg_smry[,c("mod_call","randomGroup","Class"):=NULL]
 kable(sTime_reg_smry, caption=paste0("Summary statistics for fits of predicting range SIZE from years before extinction and years after colonization. These are mixed effect models of the form ", capS))
 
+#' ####Table. Regressions separate regions -- range size vs time until, WITH INTERACTION
+#+ rangeSizeDensity-ColExtTime-reg-interaction
+sTime_reg_mods2 <- list()
+ur <- range_reg[,unique(reg)]
+for(r in 1:length(ur)){
+	sTime_reg_mods2[[r]] <- lme4::lmer(size ~ time * type + (time|spp), data=rangeTimeDT[reg==ur[r]])
+}
+sTime_reg_smry2 <- data.table(rbind(
+	rbindlist(structure(lapply(sTime_reg_mods2, mod_smry2), .Names=ur), idcol=TRUE)
+))
+setnames(sTime_reg_smry2, old=c(".id","Pr..Chisq.","Marginal","Conditional"), new=c('reg',"pval","MargR2","CondR2"))
+setkey(sTime_reg_smry2, reg, Class, mod_call, predictor)
+
+# adjust p-values for multiple tests
+sTime_reg_smry2[, BH:=round(p.adjust(pval, "BH"), 3), by=c("mod_call", "predictor")]
+
+# rearrange so each model on 1 line
+sTime_reg_smry2 <- dcast(sTime_reg_smry2, reg+Class+mod_call+MargR2+CondR2+AIC~predictor, value.var=c("pval", "BH"))
+
+modCoef2 <- getCoefs(sTime_reg_mods2)
+sTime_reg_smry2 <- merge(sTime_reg_smry2, modCoef2, by=c("reg","mod_call"))
+setnames(sTime_reg_smry2, old=c("(Intercept)"), new=c("Int"))
+
+#+ rangeSizeDensity-ColExtTime-reg-interaction-table, echo=FALSE
+capS <- sTime_reg_smry2[grepl("size",mod_call),mod_call[1]]
+sTime_reg_smry2 <- sTime_reg_smry2[grepl("size",mod_call)]
+sTime_reg_smry2[,c("mod_call","randomGroup","Class"):=NULL]
+kable(sTime_reg_smry2, caption=paste0("Summary statistics for fits of predicting range SIZE from years before extinction and years after colonization. These are mixed effect models of the form ", capS))
+
 
 #' ###Conclusion for Range Change before Extinction/ after Colonization
 #' As stated with the larger (pooled regional data) regressions, range size respondes more consistently/ strongly to an approaching extinction/ departure from colonization than does range density. Range size shrinks as extinction approaches, increases as time since colonization increases. In both cases, there was only 1 region for which the direction (into extinction, out of colonization mattered): for range density, it was the Southeast US (effect of pre-extinction direction = 0.037, p=0.043 [BH correction], Table 12), and for range size it was Scotial Shelf (effect = -0.021, p = 0.002). Time was a significant predictor of range size in all regions; time was *not* a significant predictor of range density in Newfoundland (p = 0.846 [BH]), and the Scotial Shelf (p = 0.916).  
@@ -595,6 +624,8 @@ sumry_counts <- data_all[reg!="wcann",
 ]
 setnames(sumry_counts, 'reg', "Region")
 knitr::kable(sumry_counts, caption="Years = Total number of years sampled, Year Range = the minimum and maximum of years sampled, Year Interval = the number of years elapsed between samples (and the frequency of this interval in parentheses), Sites = the total number of sites in the region, Max. Tows = maximum number of tows per site per year, Average Tows = the average number of tows per site per year, Total Species = the total number of species observed in the region across all sites and years.")
+
+
 
 
 #' 
