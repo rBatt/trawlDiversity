@@ -9,12 +9,14 @@
 #' @param tolFraction The fraction of years that a stratum can not be sampled yet still be included in output. Default is 1/3, indicating that a stratum will be included in output so long as it is sampled for at least 2/3 of years. Actual number of years tolerated is rounded up. This value determines the strat_tol argument in \code{\link{check_strat}}
 #' @param plot Logical, default FALSE; for \code{check_strat}, should the stratum tolerance be plotted?
 #' @param cull_show_up Logical, default \code{FALSE}; should spp in \code{\link{show_up_spp}} be removed when trimming?
+#' @param trimYears Default \code{TRUE}; trim data set to a pre-determined range of years?
+#' @param trimDOY Default \code{TRUE}; trim data set to hauls occurring within a certain range of day of year?
 #' 
 #' @return
 #' A data.table 
 #' 
 #' @export
-trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tolFraction=1/3, plot=FALSE, cull_show_up=FALSE){
+trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tolFraction=1/3, plot=FALSE, cull_show_up=FALSE, trimYears=TRUE, trimDOY=TRUE){
 		#
 	# reg = 'neus'
 	# gridSize = 0.5
@@ -56,53 +58,58 @@ trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tol
 		}
 	}
 	
+	if(trimYears){
+		# drop strata that weren't sampled every year
+		if(reg == "ai"){
+			X.t <- X.t[(year)>1900,]
+		}
+		if(reg == "ebs"){
+			X.t <- X.t[(year)>1983,]
+		}
+		if(reg == "gmex" | reg == "neus"){
+			X.t <- X.t[(year)!=2015,]
+		}
+		if(reg == "gmex"){
+			X.t <- X.t[(year)>1983 & (year)<2001]
+		}
+		if(reg == "neus"){
+			X.t <- X.t[(year)>1981 & (year)<2014]
+		}
+		if(reg == "newf"){
+			X.t <- X.t[(year)>1995,]
+		}
+		if(reg == "sa"){
+			X.t <- X.t[(year)>=1990]
+		}
+		if(reg == "shelf"){
+			X.t <- X.t[(year)!=2011 & (year)>1950,]
+		}
+		if(reg == "wcann"){
+			X.t <- X.t[(year)>2003,]
+		}
+	}
 	
-	# drop strata that weren't sampled every year
-	if(reg == "ai"){
-		X.t <- X.t[(year)>1900,]
-	}
-	if(reg == "ebs"){
-		X.t <- X.t[(year)>1983,]
-	}
-	if(reg == "gmex" | reg == "neus"){
-		X.t <- X.t[(year)!=2015,]
-	}
-	if(reg == "gmex"){
-		X.t <- X.t[(year)>1983 & (year)<2001]
-	}
-	if(reg == "neus"){
-		X.t <- X.t[(year)>1981 & (year)<2014]
-	}
-	if(reg == "newf"){
-		X.t <- X.t[(year)>1995,]
-	}
-	if(reg == "sa"){
-		X.t <- X.t[(year)>=1990]
-	}
-	if(reg == "shelf"){
-		X.t <- X.t[(year)!=2011 & (year)>1950,]
-	}
-	if(reg == "wcann"){
-		X.t <- X.t[(year)>2003,]
-	}
 	
 	# ---- constratin/ standardize time of year (day of year) sampling occurred ----
 	yd <- X.t[,yday(datetime)]
-	X.t <- switch(reg,
-		ebs = X.t[yd <= 220],
-		# ai = X.t[yd >= 170 & yd <= 225], # sampling periods really overlap between 175 and 225
-		# goa = X.t[yd <= 210],
-		# wc = X.t[yd >= 170 & yd <= 240],
-		# wctri = X.t[yd >= 170 & yd <= 240],
-		gmex = X.t,
-		sa = X.t[yd >= 150 & yd <= 250],
-		neus = X.t,
-		shelf = X.t[yd >=  180 & yd <= 215],
-		newf = X.t[ yd >= 250 | yd <= 28],
+	if(trimDOY){
+		X.t <- switch(reg,
+			ebs = X.t[yd <= 220],
+			# ai = X.t[yd >= 170 & yd <= 225], # sampling periods really overlap between 175 and 225
+			# goa = X.t[yd <= 210],
+			# wc = X.t[yd >= 170 & yd <= 240],
+			# wctri = X.t[yd >= 170 & yd <= 240],
+			gmex = X.t,
+			sa = X.t[yd >= 150 & yd <= 250],
+			neus = X.t,
+			shelf = X.t[yd >=  180 & yd <= 215],
+			newf = X.t[ yd >= 250 | yd <= 28],
 
-		X.t # just returns X.t if reg isn't matched (e.g., if reg was wcann or sgulf)
+			X.t # just returns X.t if reg isn't matched (e.g., if reg was wcann or sgulf)
 
-	)
+		)
+	}
+
 
 	# ---- Cut out methodologically suspicious species ----
 	if(reg == "ebs"){
