@@ -257,9 +257,11 @@ nb_moranI(ce="extinction")
 #'   
 #' ##Richness and Geographic Range
 #' ###Richness and Range Density, Range Size
-#' Looking for spatial footprint that will predict richness. Here I characterize the geographic distribution of a species in two ways: its density and its size. This is tricky for richness because richness is a community level trait, but I've characterized these two aspects of geographic distribution at the species level. In fact, these "species level" attributes are also potentially dyanmic -- a species need not have fixed range density or size. So there are two levels of averaging -- for each species take its long-term average value, then for each community take the average across species.  
+#' Looking for spatial footprint that will predict richness. Here I characterize the geographic distribution of a species as its range size. This is tricky for richness because richness is a community level trait, but I've characterized range size at the species level. In fact, this "species level" attribute is also potentially dyanmic -- a species need not have fixed range size. So there are two levels of averaging -- for each species take its long-term average value, then for each community take the average across species.  
+#' 
+#' Note that I'd previously used range density in addition to range size. I've dropped the density metric in most places in order to simplify the results, because the range size results were closely related to the range density results.  
 #'  
-#' First I'll show a figure relating range size and range density. Then I'll present the figure of how size and density can predict richness. Finally, I'll explore models more formally expressing the relationship between richness and size/ density.  
+#' First posterity, I'll show a figure relating range size and range density. Then I'll present the figure of how size can 'predict' richness. Finally, I'll explore models more formally expressing the relationship between richness and size. 
 #'  
 #' ####Figure S6. Relationship between range size and range density
 #+ geo-range-densVsize, fig.width=3.5, fig.height=5.5, fig.cap="**Figure S6**. Range density versus range size. In panel A each point is a species-region-year combination. In panel B, each point is a region-year. Range size is the proportion of sites occupied, range density the tows in occupied sites. The community metrics in B is calculated by take each species' long-term average from A, then taking the average across all species present in the community in a given year. Fitted lines in A are from a loess fit."
@@ -272,15 +274,12 @@ rangeSizeDens()
 #+ rich-geo-rangeSize, fig.width=3.5, fig.height=3.5, fig.cap="**Figure 3.** Species richness vs geographic range size. Range size is presented as each species' long-term average of the proportion of sites it occupied. Solid lines are linear regressions with MSOM richness as the response and the horizontal axis and an intercept as the predictors."
 rich_geoRange("size", leg=TRUE, legPan=1, panLab=FALSE)
 
-#' ####Figure Not Included. Species richness versus range density
-#+ rich-geo-rangeDensity, fig.width=3.5, fig.height=3.5, fig.cap="**Figure 3b.** Species richness vs geographic range density. Range density is presented as each species' long-term average of the proportion of tows containing that species in sites where it was observed to be in at least one tow. Solid lines are linear regressions with MSOM richness as the response and the horizontal axis and an intercept as the predictors."
-rich_geoRange("density", leg=TRUE, legPan=1, panLab=FALSE)
-#' Both range size and range density are pretty good predictors of species richness. I think I had originally missed the range size relationship b/c I hadn't done the same aggregating procedure. The interpretation I have is that richness is highest when you have a bunch of rare species.  
+#' Range size is a pretty good predictor of species richness. I think I had originally missed the range size relationship b/c I hadn't done the same aggregating procedure. The interpretation I have is that richness is highest when you have a bunch of rare species.  
 #'   
-#' The goal here is to see if species richness is predicted by the typical range density or range size of community's constituent species. First I'll run different types of models just to explore whether this is true, in general (across regions). Then I'll drill in to each region individually to answer the same question.  
+#' The goal here is to see if species richness is predicted by the typical range size of community's constituent species. First I'll run different types of models just to explore whether this is true, in general (across regions). Then I'll drill in to each region individually to answer the same question.  
 #'   
-#' ####Table. Regressions relating richness to range density and size
-#+ rich-rangeDensitySize
+#' ####Table. Regressions relating richness to range size
+#+ rich-rangeSize
 # This is a function that'll help summarize model fit and coeffs and parameter significance:  
 mod_smry <- function(m, pred_name=c("density","size","time","type","time:type")){
 	pred_name <- match.arg(pred_name)
@@ -308,13 +307,6 @@ range_reg <- comm_master[,list(
 )]
 
 # Fit different models to the whole data set
-rDens_mods <- list()
-rDens_mods[[1]] <- lm(rich ~ density, data=range_reg)
-rDens_mods[[2]] <- lm(rich ~ density*reg, data=range_reg)
-rDens_mods[[3]] <- lme4::lmer(rich ~ density + (1|reg), data=range_reg)
-rDens_mods[[4]] <- lme4::lmer(rich ~ density + (density|reg), data=range_reg)
-rich_dens_smry <- rbindlist(lapply(rDens_mods, mod_smry, pred_name="density"))
-
 rSize_mods <- list()
 rSize_mods[[1]] <- lm(rich ~ size, data=range_reg)
 rSize_mods[[2]] <- lm(rich ~ size*reg, data=range_reg)
@@ -323,75 +315,42 @@ rSize_mods[[4]] <- lme4::lmer(rich ~ size + (size|reg), data=range_reg)
 rich_size_smry <- rbindlist(lapply(rSize_mods, mod_smry, pred_name="size"))
 
 # Fit same model to each region separately 
-rDens_reg_mods <- list()
 rSize_reg_mods <- list()
 ur <- range_reg[,unique(reg)]
 for(r in 1:length(ur)){
-	rDens_reg_mods[[r]] <- lm(rich ~ density, data=range_reg[reg==ur[r]])
 	rSize_reg_mods[[r]] <- lm(rich ~ size, data=range_reg[reg==ur[r]])
 }
-rich_ds_reg_smry <- data.table(
+rich_s_reg_smry <- data.table(
 	reg=ur, 
 	rbind(
-		rbindlist(lapply(rDens_reg_mods, mod_smry, pred_name="density")),
 		rbindlist(lapply(rSize_reg_mods, mod_smry, pred_name="size"))
 	)
 )
-setkey(rich_ds_reg_smry, reg, Class, predictor)
+setkey(rich_s_reg_smry, reg, Class, predictor)
 
-setnames(rich_ds_reg_smry, old=c("Marginal","Conditional","p.value"), new=c("MargR2","CondR2","pval"))
-setkey(rich_ds_reg_smry, reg, Class, mod_call, predictor)
-rich_ds_reg_smry[, BH:=round(p.adjust(pval, "BH"), 3), by=c("mod_call", "predictor")]
-rich_ds_reg_smry <- dcast(rich_ds_reg_smry, reg+Class+mod_call+MargR2+CondR2+AIC~predictor, value.var=c("pval", "BH"))
+setnames(rich_s_reg_smry, old=c("Marginal","Conditional","p.value"), new=c("MargR2","CondR2","pval"))
+setkey(rich_s_reg_smry, reg, Class, mod_call, predictor)
+rich_s_reg_smry[, BH:=round(p.adjust(pval, "BH"), 3), by=c("mod_call", "predictor")]
+rich_s_reg_smry <- dcast(rich_s_reg_smry, reg+Class+mod_call+MargR2+CondR2+AIC~predictor, value.var=c("pval", "BH"))
 
-#+ rich-rangeDensitySize-tables, echo=FALSE
-# stargazer(
-# 	rDens_mods[[1]],
-# 	rDens_mods[[2]],
-# 	rDens_mods[[3]],
-# 	rDens_mods[[4]],
-# 	report = c("vc*"), header=FALSE,
-# 	title=c("Regression models predicting richness from 'community range density' (proportion of tows). The community metric is the cross-species avg of each species' long-term avg"),
-# 	type=table_type, single.row=TRUE
-# )
-# stargazer(
-# 	rSize_mods[[1]],
-# 	rSize_mods[[2]],
-# 	rSize_mods[[3]],
-# 	rSize_mods[[4]],
-# 	report = c("vc*"), header=FALSE,
-# 	title=c("Regression models predicting richness from 'community range size' (proportion sites). The community metric is the cross-species avg of each species' long-term avg"),
-# 	type=table_type, single.row=TRUE
-# )
+#+ rich-rangeSize-tables, echo=FALSE
 kable(
-	rbind(rich_dens_smry, rich_size_smry), 
-	caption="Summary of regression models involving richness and community metric of range density or range size."
+	rbind(rich_size_smry), 
+	caption="Summary of regression models involving richness and community metric of range size."
 ) # different kinds of models
 kable(
-	rich_ds_reg_smry, 
-	caption="Regression models of richness predicted by community metric of range density and range size, but each region has a separate model."
+	rich_s_reg_smry, 
+	caption="Regression models of richness predicted by community metric of range size, but each region has a separate model."
 ) # same model applied to each reg sep
 kable(
-	rich_ds_reg_smry[,lapply(.SD, base::mean), by="mod_call"], 
-	caption="Average of above region-specific rich ~ density and rich ~ size models."
+	rich_s_reg_smry[,lapply(.SD, base::mean), by="mod_call"], 
+	caption="Average of above region-specific rich ~ size models."
 ) 
 #' All models are pretty good predictors. Well, the most basic model kinda sucks I guess. It needs to account for some of the between-region variation.  
 #'   
 #' ###Predicting Richness: Range Size or Density?
 #' As far as picking one or the other, it doesn't end up mattering much. Range size is a lot better than density in NEUS, and density outperforms size in AI. Otherwise, size as a slight edge over density on average, although both predictors are significant in all regions.  
 #'   
-#+ rich-range-compareSizeDens
-deltaExpr <- bquote(
-	.SD[grepl("density",mod_call), MargR2] - .SD[grepl("size",mod_call), MargR2]
-)
-fight <- rich_ds_reg_smry[,list(
-	marginal_density_minus_size=eval(deltaExpr)
-),by='reg']
-#+ rich-range-compareSizeDens-table, echo=FALSE
-kable(
-	data.table(fight, mu=fight[,mean(marginal_density_minus_size)]),
-	caption="Differences in model fit when predicting richness from density - richness from size (positive value means density fit better)."
-)
 #' ###Conclusion for Richness and Geographic Range
 #' The two metrics of geographic range are well correlated. Furthermore, richness can be predicted pretty well using regressions with either as a predictor. There are large differences among regions, though. This is probably because richness is not readily comparable among most regions. Regions vary mostly in their intercept values, and they have fairly similar slopes (though they are not identical, and model fits improve when allowing slopes to vary among regions; it's just that the improvement is small compared to allowing intercepts to vary among regions).  
 #'  
@@ -425,7 +384,7 @@ rangeSize_absenceTime("rangeDensity")
 #' I think the regressions for range size should omit an intercept, while the regressions for range density should have it. This might be hard to justify fully *a priori* (though see my thinking in previous paragraph), so I'll probably just do a model selection and maybe discuess the difference if one model has an intercept and the other does not.  
 #'   
 #' ####Table. Regressions w/ regions pooled relating time until extinction or after colonization to geographic range
-#+ rangeSizeDensity-ColExtTime-data
+#+ rangeSize-ColExtTime-data
 # handy data set for regressions
 rangeTimeDT <-  spp_master[!is.na(stretch_type) & propStrata!=0]
 rangeTimeDT <- rangeTimeDT[,list(
@@ -455,7 +414,7 @@ mod_smry2 <- function(m){
 	out[,c("Class","mod_call", "predictor", "Pr..Chisq.","Marginal","Conditional","AIC")]
 }
 
-#+ rangeSizeDensity-ColExtTime-models, results='markup'
+#+ rangeSize-ColExtTime-models, results='markup'
 # models for range size
 sizeCE_mods <- list()
 sizeCE_mods[[1]] <- lme4::lmer(size ~ time + (time|spp/reg), data=rangeTimeDT)
@@ -463,52 +422,41 @@ sizeCE_mods[[1]] <- lme4::lmer(size ~ time + (time|spp/reg), data=rangeTimeDT)
 sizeCE_mods[[2]] <- lme4::lmer(size ~ time*type + (time|spp/reg), data=rangeTimeDT)
 # lmerTest::step(sizeCE_mods[[2]]) # doing most complicated throws an error
 
-
-# models for range density
-densityCE_mods <- list()
-densityCE_mods[[1]] <- lme4::lmer(density~time + (time|spp/reg), data=rangeTimeDT)
-# densityCE_mods[[2]] <- lme4::lmer(density~time + (time|spp/reg)+(1|type/reg), data=rangeTimeDT) # error
-densityCE_mods[[2]] <- lme4::lmer(density~time*type + (time|spp/reg), data=rangeTimeDT)
-# lmerTest::step(sizeCE_mods[[2]]) # again, can't do most complicated
-
-#+ rangeSizeDensity-ColExtTime-table, echo=FALSE
+#+ rangeSize-ColExtTime-table, echo=FALSE
 do.call(stargazer, c(
-		sizeCE_mods, densityCE_mods, 
+		sizeCE_mods, 
 		report = c("vc*"), header=FALSE,
-		title = "Mixed effect models predicting range size (size) and range density (density) from the temporal proximity (time) after colonization and/or until extinction (factor name = type). Each model uses data from all regions (reg) and all species (spp), and includes both time to extinction and time from colonization (type).",
+		title = "Mixed effect models predicting range size (size) from the temporal proximity (time) after colonization and/or until extinction (factor name = type). Each model uses data from all regions (reg) and all species (spp), and includes both time to extinction and time from colonization (type).",
 		list(type=table_type)
 ))
 
-tbl_ColExtTime <- rbindlist(lapply(c(sizeCE_mods, densityCE_mods), mod_smry2))
+tbl_ColExtTime <- rbindlist(lapply(c(sizeCE_mods), mod_smry2))
 setnames(tbl_ColExtTime, old=c("Pr..Chisq.","Marginal","Conditional"), new=c("pval","MargR2","CondR2"))
 kable(tbl_ColExtTime, caption="Same as above, but shows slightly different metrics")
 
-#' For both range size and range density, it seems to be important to include type as a fixed effect. Neither needs an interaction between time*type. I did additional testing beyond what's presenting here, and I can confirm that having spp as a random factor is useful, too.  
+#' Range size seems to be important to include type as a fixed effect. It does not need an interaction between time*type. I did additional testing beyond what's presenting here, and I can confirm that having spp as a random factor is useful, too.  
 #'   
 #' ####Table. Regressions separate regions -- geographic range vs time until extinction or after colonization
 #+ rangeSizeDensity-ColExtTime-reg
 # Fit same model to each region separately 
-dTime_reg_mods <- list()
 sTime_reg_mods <- list()
 ur <- range_reg[,unique(reg)]
 for(r in 1:length(ur)){
-	dTime_reg_mods[[r]] <- lme4::lmer(density ~ time + type + (time|spp), data=rangeTimeDT[reg==ur[r]])
 	sTime_reg_mods[[r]] <- lme4::lmer(size ~ time + type + (time|spp), data=rangeTimeDT[reg==ur[r]])
 }
 dsTime_reg_smry <- data.table(rbind(
-	rbindlist(structure(lapply(dTime_reg_mods, mod_smry2), .Names=ur), idcol=TRUE),
 	rbindlist(structure(lapply(sTime_reg_mods, mod_smry2), .Names=ur), idcol=TRUE)
 ))
-setnames(dsTime_reg_smry, old=c(".id","Pr..Chisq.","Marginal","Conditional"), new=c('reg',"pval","MargR2","CondR2"))
-setkey(dsTime_reg_smry, reg, Class, mod_call, predictor)
+setnames(sTime_reg_smry, old=c(".id","Pr..Chisq.","Marginal","Conditional"), new=c('reg',"pval","MargR2","CondR2"))
+setkey(sTime_reg_smry, reg, Class, mod_call, predictor)
 
 # adjust p-values for multiple tests
-dsTime_reg_smry[, BH:=round(p.adjust(pval, "BH"), 3), by=c("mod_call", "predictor")]
+sTime_reg_smry[, BH:=round(p.adjust(pval, "BH"), 3), by=c("mod_call", "predictor")]
 
 # rearrange so each model on 1 line
-dsTime_reg_smry <- dcast(dsTime_reg_smry, reg+Class+mod_call+MargR2+CondR2+AIC~predictor, value.var=c("pval", "BH"))
+sTime_reg_smry <- dcast(sTime_reg_smry, reg+Class+mod_call+MargR2+CondR2+AIC~predictor, value.var=c("pval", "BH"))
 
-# add coefficients to the dsTime_reg_smry data.table
+# add coefficients to the sTime_reg_smry data.table
 getCoefs <- function(mList){
 	outList <- list()
 	for(r in 1:length(ur)){
@@ -526,23 +474,13 @@ getCoefs <- function(mList){
 	outList
 }
 modCoef <- rbind(getCoefs(dTime_reg_mods), getCoefs(sTime_reg_mods))
-dsTime_reg_smry <- merge(dsTime_reg_smry, modCoef, by=c("reg","mod_call"))
-setnames(dsTime_reg_smry, old=c("(Intercept)"), new=c("Int"))
+sTime_reg_smry <- merge(sTime_reg_smry, modCoef, by=c("reg","mod_call"))
+setnames(sTime_reg_smry, old=c("(Intercept)"), new=c("Int"))
 
 #+ rangeSizeDensity-ColExtTime-reg-table, echo=FALSE
-# do.call(stargazer, c(
-# 		dTime_reg_mods, sTime_reg_mods,
-# 		report = c("vc*"), header=FALSE,
-# 		title = "Region-specific regressions predicting range size/ density from years before extinction and years after colonization.",
-# 		list(type=table_type)
-# ))
-capD <- dsTime_reg_smry[grepl("density",mod_call),mod_call[1]]
-capS <- dsTime_reg_smry[grepl("size",mod_call),mod_call[1]]
-dTime_reg_smry <- dsTime_reg_smry[grepl("density",mod_call)]
-dTime_reg_smry[,c("mod_call","randomGroup","Class"):=NULL]
-sTime_reg_smry <- dsTime_reg_smry[grepl("size",mod_call)]
+capS <- sTime_reg_smry[grepl("size",mod_call),mod_call[1]]
+sTime_reg_smry <- sTime_reg_smry[grepl("size",mod_call)]
 sTime_reg_smry[,c("mod_call","randomGroup","Class"):=NULL]
-kable(dTime_reg_smry, caption=paste0("Summary statistics for fits of predicting range DENSITY from years before extinction and years after colonization. These are mixed effect models of the form ", capD))
 kable(sTime_reg_smry, caption=paste0("Summary statistics for fits of predicting range SIZE from years before extinction and years after colonization. These are mixed effect models of the form ", capS))
 
 
@@ -551,7 +489,40 @@ kable(sTime_reg_smry, caption=paste0("Summary statistics for fits of predicting 
 #'  
 #' These results support the hypothesis that species rarity is closely associated with proximity to extinction/ colonization, and therefore the probability that the species will contribute to a change in species richness. Furthermore, these relationships have not been directly quantified for entire assemblages. Competing hypotheses exist regarding how range should change approaching extinction and after colonization. We find that the change in range is similar regardless of direction. However, spatial scale was important. Although slopes were similar, the intercept for density was far larger than for range size --- the fraction of tows containing a species in occupied sites may remain high even when extinction is imminent, and may similar be large even if colonization was recent. Range size, on the other hand, was much closer to 0 near an absence.  
 #'   
-#' Overall, the results suggest that the spatial footprint of individual species is important for understanding changes in species richness. Furthermore, because species contributing most to the dynamics of richness are those that repeatedly colonize and go extinct, it is meaningful to look at a species' long-term rarity in order to gauge whether it is likely to contribute to those long-term richness changes. Determining what drives the geographic range of individual species is probably a powerful way to anticipate richness changes.
+#' Overall, the results suggest that the spatial footprint of individual species is important for understanding changes in species richness. Furthermore, because species contributing most to the dynamics of richness are those that repeatedly colonize and go extinct, it is meaningful to look at a species' long-term rarity in order to gauge whether it is likely to contribute to those long-term richness changes. Determining what drives the geographic range of individual species is probably a powerful way to anticipate richness changes.  
+#'   
+#' ####Exploring Range size vs absence time as individual regressions
+#+ rangeSize_time_sepRegs, fig.width=5, fig.height=6, fig.cap="**Exploration Figure** histograms of separate regressions of size ~ time; this is for each run-up to an extinction and reach follow-up to a colonization. Trying to understand how regularly the pattern might be observed. Hard to answer because adjusting the restriction on number of events in the run-up or follow-up (nTime) greatly affects the proportion that are significant."
+rangeTimeDT[,nTime:=length(time),by=c("reg","type","event","spp")]
+getEPR <- function(x){
+	col_select <- c("Estimate","Pr(>|t|)")
+	sx <- summary(x)
+	EP <- sx$coefficients[2,col_select]
+	names(EP) <- c("Estimate","Pr")
+	R <- sx$r.squared
+	data.table(as.data.table(as.list(EP)), Rsquared=R)
+}
+o <- rangeTimeDT[nTime>=3,j={
+	getEPR(lm(size~time))
+	} ,by=c("reg","type","event","nTime","spp")
+]
+
+par(mfcol=c(3,2), mar=c(2,2,0.5,0.5), cex=1, ps=10, mgp=c(1,0.1,0), tcl=-0.1)
+o[,hist(Estimate)]
+o[,hist(Pr)]
+o[,hist(Rsquared)]
+setorder(o, nTime)
+o[,j={plot(nTime,Pr); lines(spline(Pr~nTime),col='red',lwd=2)}]
+o[,j={plot(nTime,Estimate); ; lines(spline(Estimate~nTime),col='red',lwd=2)}]
+
+
+o[,list(propSignificant=(sum(Pr<0.05)/sum(!is.na(Pr))),n=sum(!is.na(Pr))),by=c("reg","type")]
+o[,list(propSignificant=(sum(Pr<0.05)/sum(!is.na(Pr))),n=sum(!is.na(Pr))),by=c("reg","type")][,mean(propSignificant),by=c("type")]
+
+#' 
+#' The mixed effect models show a strong tendency for range size to be smaller near an absence. I figured that this relationship wouldn't be apparent for all cases, which ended up being the result. However, the significance of these relationships depends on the number of years for each event stretch. So sample size matters. On one hand, this could hold implications for the rate of decline, so excluding short stretches might also exclude more cases with abrupt declines/ increases (although, these may well be preceded by long durations of stability, so not all abrupt declines/ increases would be excluded necessarily). However, the slope estimate doesnt change a whole lot across sample size: from 0 to ~10 years, increasing sample size (duration) also increases the slope (going from slightly negative to pretty consistently positive). Then it levels out, and doesn't continue increasing. So it is *not* the case that longer stretches are long because they have more gradual slopes, necessarily. Actually, in the range of data for which there does appear to be a trend (0-10 samples), the slope becomes larger which is the opposite of "longer stretches result from more gradual processes" notion (thinking in terms of extinction).  
+#' 
+#' Ultimately, I think the mixed effects model is far more appropriate so long as conclusions are cauched in general patterns, not in being able to detect the pattern for any single species. While it could have been interesting to present the many-regression results too, I think it is a separate analysis to consider how often this rule would apply to individual species. Such an analysis would benefit from understanding when the rule does and does not apply, not just the apparent frequency of relevance.
 #' 
 #'   
 #' \FloatBarrier  
