@@ -236,7 +236,7 @@ trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tol
 	
 	
 	# ---- Deal with consistent strata ----
-	strat_tol <- X.t[,floor(lu(year)*tolFraction)]
+	strat_tol <- X.t[,floor(trawlData::lu(year)*tolFraction)]
 	check_strat(X.t, reg, gridSize=gridSize, strat_tol=strat_tol, append_keep_strat=TRUE, plot=plot)
 	
 	X.t <- X.t[(keep_strat)]
@@ -251,8 +251,8 @@ trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tol
 	
 	# X.t[,hist(rowSums(table(stratum, year)>0))]
 	# X.t[,plot(colSums(table(stratum, year)>0), xlab="year", ylab='nstrat', type='o')]
-	# X.t[, lu(stratum)]
-	# X.t[, lu(spp)]
+	# X.t[, trawlData::lu(stratum)]
+	# X.t[, trawlData::lu(spp)]
 
 	# aggregate to make sure a haul
 	# doesn't have duplicates of individuals
@@ -285,7 +285,7 @@ trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tol
 		metaCols = c("reg","datetime","season","year","lon","lat","stratum","common","species"),
 		meta.action = "unique1"
 	)
-	# X.agg1[nAgg!=1,j={par(mar=c(0,0,3,0),mfrow=rbLib::auto.mfrow(lu(spp))); for(i in 1:lu(spp)){trawlData::sppImg(unique(spp)[i],unique(common)[i])}}]
+	# X.agg1[nAgg!=1,j={par(mar=c(0,0,3,0),mfrow=rbLib::auto.mfrow(trawlData::lu(spp))); for(i in 1:trawlData::lu(spp)){trawlData::sppImg(unique(spp)[i],unique(common)[i])}}]
 
 	# drop new "time" column
 	# change name of agg to indicate step
