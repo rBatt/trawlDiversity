@@ -72,7 +72,7 @@ library(rbLib) # library(devtools); install_github("rBatt/rbLib")
 # ================
 # = Report Setup =
 # ================
-doc_type <- c("html", "pdf")[2]
+doc_type <- c("html", "pdf")[1]
 table_type <- c("html"="html", "pdf"="latex")[doc_type]
 options("digits"=3) # rounding output to 4 in kable() (non-regression tables)
 o_f <- paste(doc_type, "document", sep="_")
@@ -444,7 +444,7 @@ ur <- range_reg[,unique(reg)]
 for(r in 1:length(ur)){
 	sTime_reg_mods[[r]] <- lme4::lmer(size ~ time + type + (time|spp), data=rangeTimeDT[reg==ur[r]])
 }
-dsTime_reg_smry <- data.table(rbind(
+sTime_reg_smry <- data.table(rbind(
 	rbindlist(structure(lapply(sTime_reg_mods, mod_smry2), .Names=ur), idcol=TRUE)
 ))
 setnames(sTime_reg_smry, old=c(".id","Pr..Chisq.","Marginal","Conditional"), new=c('reg',"pval","MargR2","CondR2"))
@@ -473,7 +473,7 @@ getCoefs <- function(mList){
 	# setcolorder(outList, c("reg", "mod_call", "randomGroup", "(Intercept)", "time", "typepre_ext"))
 	outList
 }
-modCoef <- rbind(getCoefs(dTime_reg_mods), getCoefs(sTime_reg_mods))
+modCoef <- getCoefs(sTime_reg_mods)
 sTime_reg_smry <- merge(sTime_reg_smry, modCoef, by=c("reg","mod_call"))
 setnames(sTime_reg_smry, old=c("(Intercept)"), new=c("Int"))
 
@@ -508,9 +508,9 @@ o <- rangeTimeDT[nTime>=3,j={
 ]
 
 par(mfcol=c(3,2), mar=c(2,2,0.5,0.5), cex=1, ps=10, mgp=c(1,0.1,0), tcl=-0.1)
-o[,hist(Estimate)]
-o[,hist(Pr)]
-o[,hist(Rsquared)]
+hist(o[,Estimate])
+hist(o[,(Pr)])
+hist(o[,(Rsquared)])
 setorder(o, nTime)
 o[,j={plot(nTime,Pr); lines(spline(Pr~nTime),col='red',lwd=2)}]
 o[,j={plot(nTime,Estimate); ; lines(spline(Estimate~nTime),col='red',lwd=2)}]
@@ -529,4 +529,54 @@ o[,list(propSignificant=(sum(Pr<0.05)/sum(!is.na(Pr))),n=sum(!is.na(Pr))),by=c("
 #'   
 #' ***  
 #'   
+#'   
+#' #Supplement
+#' ##Bin Size
+#+ bin_size, fig.width=7, fig.height=7, fig.cap="**Bin Size** How Bin size (lon, lat, depth) affects the number of sites in a region. The vertical axis is the size of the depth bin in meters, horizontal axis is the size of the lon-lat bin in degrees, and the colors indicate the number of sites in that region that are sampled for at least 85% of years."
+load("../manuscript/manuscript_binSize.RData")
+par(mfrow=c(3,3), mar=c(3,3,0.5,3), oma=c(1,1,1,0.5))
+for(r in 1:length(regs)){
+	image(bin_sites[[r]], axes=FALSE, col=fields::tim.colors())
+	mtext(regs[r], side=3, line=0, font=2)
+	xl <- as.numeric(rownames(bin_sites[[r]]))
+	yl <- as.numeric(colnames(bin_sites[[r]]))
+	axis(1, at=seq(0,1, length.out=length(xl)), labels=xl)
+	axis(2, at=seq(0,1, length.out=length(yl)), labels=yl)
+	if(r==length(regs)){
+		mtext("Longitude-latitude bin size (degrees)", side=1, line=0, outer=TRUE)
+		mtext("Depth bin size (meters)", side=2, line=-0.5, outer=TRUE)
+	}
+	fields::image.plot(bin_sites[[r]], axes=FALSE, legend.only=TRUE, graphics.reset=TRUE)
+}
 
+#+ bin_size_scaled, fig.width=4, fig.height=7, fig.cap="**Bin Size** How Bin size (lon, lat, depth) affects the number of sites in a region. To compare across regions, we can first z-score each region, then take the cross-region average for each bin size combination."
+scaled_bin_sites <- lapply(bin_sites, function(x){x2 <- x; x2[,] <- scale(c(x)); x2})
+mean_sbs <- apply(simplify2array(scaled_bin_sites), c(1,2), mean, na.rm=TRUE)
+min_sbs <- apply(simplify2array(scaled_bin_sites), c(1,2), min, na.rm=TRUE)
+par(mfrow=c(2,1), mar=c(4,4,1,5))
+
+image(mean_sbs, axes=FALSE, col=fields::tim.colors())
+mtext("cross-region average of z-scores", side=3, line=0, font=2)
+xl <- as.numeric(rownames(bin_sites[[1]]))
+yl <- as.numeric(colnames(bin_sites[[1]]))
+axis(1, at=seq(0,1, length.out=length(xl)), labels=xl)
+axis(2, at=seq(0,1, length.out=length(yl)), labels=yl)
+mtext("Longitude-latitude bin size (degrees)", side=1, line=2)
+mtext("Depth bin size (meters)", side=2, line=2)
+fields::image.plot(mean_sbs, axes=FALSE, legend.only=TRUE, graphics.reset=TRUE)
+
+image(min_sbs, axes=FALSE, col=fields::tim.colors())
+mtext("cross-region minimum of z-scores", side=3, line=0, font=2)
+axis(1, at=seq(0,1, length.out=length(xl)), labels=xl)
+axis(2, at=seq(0,1, length.out=length(yl)), labels=yl)
+mtext("Longitude-latitude bin size (degrees)", side=1, line=2)
+mtext("Depth bin size (meters)", side=2, line=2)
+fields::image.plot(min_sbs, axes=FALSE, legend.only=TRUE, graphics.reset=TRUE)
+
+#' 
+#'   
+#' \FloatBarrier  
+#'   
+#' ***  
+#'   
+#'   
