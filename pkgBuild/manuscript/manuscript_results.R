@@ -573,6 +573,30 @@ mtext("Longitude-latitude bin size (degrees)", side=1, line=2)
 mtext("Depth bin size (meters)", side=2, line=2)
 fields::image.plot(min_sbs, axes=FALSE, legend.only=TRUE, graphics.reset=TRUE)
 
+
+#' ##Tows per site, sites per region
+#+ counts_years_sites_tows_spp
+sumry_counts <- data_all[reg!="wcann", 
+	j = {
+		yi <- table(diff(sort(unique(year))))
+		yi_form <- paste0(names(yi), paste("(",yi,")",sep=""))
+		data.table(
+			"Years" = trawlData::lu(year),
+			"Year Range" = paste(min(year),max(year),sep=" - "),
+			"Year Interval" = paste(yi_form,collapse=", "),
+			"Sites" = trawlData::lu(stratum), 
+			# .SD[,list("max. Tows"=max(trawlData::lu(haulid)), "Average Tows" = mean(trawlData::lu(haulid))),by=c("stratum","year")]
+			"Max. Tows" = .SD[,trawlData::lu(haulid),by=c("stratum","year")][,max(V1)],
+			"Average Tows" = .SD[,trawlData::lu(haulid),by=c("stratum","year")][,mean(V1)],
+			"Total Species" = trawlData::lu(spp)
+		)
+	}, 
+	by=c('reg')
+]
+setnames(sumry_counts, 'reg', "Region")
+knitr::kable(sumry_counts, caption="Years = Total number of years sampled, Year Range = the minimum and maximum of years sampled, Year Interval = the number of years elapsed between samples (and the frequency of this interval in parentheses), Sites = the total number of sites in the region, Max. Tows = maximum number of tows per site per year, Average Tows = the average number of tows per site per year, Total Species = the total number of species observed in the region across all sites and years.")
+
+
 #' 
 #'   
 #' \FloatBarrier  
