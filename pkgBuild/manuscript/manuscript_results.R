@@ -72,7 +72,7 @@ library(rbLib) # library(devtools); install_github("rBatt/rbLib")
 # ================
 # = Report Setup =
 # ================
-doc_type <- c("html", "pdf")[1]
+doc_type <- c("html", "pdf")[2]
 table_type <- c("html"="html", "pdf"="latex")[doc_type]
 options("digits"=3) # rounding output to 4 in kable() (non-regression tables)
 o_f <- paste(doc_type, "document", sep="_")
@@ -625,6 +625,121 @@ sumry_counts <- data_all[reg!="wcann",
 setnames(sumry_counts, 'reg', "Region")
 knitr::kable(sumry_counts, caption="Years = Total number of years sampled, Year Range = the minimum and maximum of years sampled, Year Interval = the number of years elapsed between samples (and the frequency of this interval in parentheses), Sites = the total number of sites in the region, Max. Tows = maximum number of tows per site per year, Average Tows = the average number of tows per site per year, Total Species = the total number of species observed in the region across all sites and years.")
 
+
+#' ##Years Excluded & Strata Sampled
+#+ excluding_years_strata, fig.width=7, fig.height=7, fig.cap="**Trimming Years b/c of Strata, Counts of Analyzed and Excluded Strata** Along the vertical axis is a stratum ID. Along the horizontal axis is a year of sampling. The colors are binary: the light color indicates that the stratum was sampled in that year, and the red color indicates that the stratum was not sampled. The vertical line indicates that years at the line or to the left (if the line is on the left half of graph) or to the right (if line is on right half of graph) were excluded from the analysis, inclusively. E.g., for E. Bering Sea (ebs), 1982 and 1983 were excluded. Three regions had no years excluded (ai = Aleutian Islands, goa = Gulf of Alaska, wctri West Coast US).  The last three regions had years excluded because of changes in the number or location of strata sampled: gmex = Gulf of Mexico 1983 < years < 2001; newf = Newfoundland 1995 < years; sa = Southeast US 1989 < years. Three regions had years excluded for reasons other than number of strata sampled: ebs = E. Bering Sea years < 1984, years excluded due to massive early increase in number of species sampled each year, change in identification suspected; neus = Northeast US 1981 < years < 2014; shelf = Scotian Shelf years < 2011, bottom temperature not available in final year (used as covariate in occupancy model). Finally, note that in GoA strata had to be present in 100% of years or else they were not included; this was done b/c in 2001 the western-most stratum that was sampled was much further to the east than in other years. Similarly, in E. Bering Sea strata had to be present in all years, otherwise the Northeastern extent of the sampled range was reduced substantially in several years."
+
+reg_depthStratum <- c(
+	"ebs" = 500,
+	"ai" = 100,
+	"goa" = 500,
+	"wctri" = 100, 
+	"wcann" = 500, 
+	"gmex" = 500, 
+	"sa" = 500, 
+	"neus" = 500, 
+	"shelf" = 500, 
+	"newf" = 500
+)
+
+reg_tolFraction <- c(
+	"ebs" = 0,
+	"ai" = 0.15,
+	"goa" = 0,
+	"wctri" = 0.15, 
+	"wcann" = 0.15, 
+	"gmex" = 0.15, 
+	"sa" = 0.15, 
+	"neus" = 0.15, 
+	"shelf" = 0.15, 
+	"newf" = 0.15
+)
+regs <- names(reg_tolFraction)
+
+yr_subs <- list(
+	ebs = bquote((year)>1983),
+	ai = NA,
+	goa = NA,
+	gmex = bquote((year)>1983 & (year)<2001),
+	neus = bquote((year)>1981 & (year)<2014),
+	newf = bquote((year)>1995),
+	sa = bquote((year)>=1990),
+	shelf = bquote((year)!=2011),
+	wctri = NA
+)
+yr_ablin <- list(
+	ebs = 1983,
+	ai = NA,
+	goa = NA,
+	gmex = c(1983,2001),
+	neus = c(1981,2014),
+	newf = 1995,
+	sa = 1989,
+	shelf = 2011,
+	wctri = NA
+)
+yregs <- names(yr_subs)
+par(mfrow=c(3, 3), mar=c(2,2,1,0.25), cex=1, mgp=c(1,0.15,0), tcl=-0.15, ps=8)
+for(r in 1:length(yregs)){
+	
+	b <- trim_msom(yregs[r], gridSize=0.5, grid_stratum=TRUE, depthStratum=reg_depthStratum[yregs[r]], tolFraction=0.5, plot=FALSE, cull_show_up=FALSE, trimYears=FALSE)
+	
+	b_tbl <- b[,table(year,stratum)>0]
+	b_tbl <- b_tbl[,order(colSums(b_tbl))]
+	image(b_tbl, axes=FALSE)
+	at_vals <- seq(0,1,length.out=nrow(b_tbl))
+	axis(1, at=at_vals, labels=rownames(b_tbl))
+	abline(v=at_vals[rownames(b_tbl)%in%yr_ablin[[r]]])
+	label_year_range <- paste(b[subList[[y]],range(year)], collapse=" - ")
+	mtext(yregs[r], side=3, line=0, adj=0, font=2)
+}
+
+#' ##Years Excluded & Strata Excluded, Part 2
+#+ excluding_years_strata_part2_allStrata, fig.width=5.5, fig.height=10, fig.cap="**Trimming Years b/c of Stratum Locations, Stats for Analyzed and Excluded Strata**  The number and coordinate extreme of strata in each region if all years had been included in the analysis, and if strata were only removed if they were absent in more than 15% of years. Note that the 15%  tolerance rule used here can differ from the implemented rule in two ways: 1) for regions with years excluded, the increased number of years may change whether or not a stratum meets the 15% cutoff; 2) two of the regions (E Bering Sea and Gulf of Alaska) had a 0% tolerance, therefore the same strata were sampled in each year for these regions (though the changes in coordinate extrema and stratum count illustrate the need for the unique tolerance rule in these regions)."
+par(mfrow=c(9, 5), mar=c(2,2,1,0.25), cex=1, mgp=c(1,0.15,0), tcl=-0.15, ps=8)
+for(r in 1:length(yregs)){
+	
+	b <- trim_msom(yregs[r], gridSize=0.5, grid_stratum=TRUE, depthStratum=reg_depthStratum[yregs[r]], tolFraction=0.15, plot=FALSE, cull_show_up=FALSE, trimYears=FALSE)
+	plot(b[,list("# strata sampled"=trawlData::lu(stratum)),by=c("year")])
+	mtext(yregs[r], side=3, line=0, adj=0, font=2)
+	abline(v=yr_ablin[[r]])
+	plot(b[,list("min latitude"=min(lat)),by=c("year")])
+	mtext(yregs[r], side=3, line=0, adj=0, font=2)
+	abline(v=yr_ablin[[r]])
+	plot(b[,list("max latitude"=max(lat)),by=c("year")])
+	mtext(yregs[r], side=3, line=0, adj=0, font=2)
+	abline(v=yr_ablin[[r]])
+	plot(b[,list("min longitude"=min(lon)),by=c("year")])
+	mtext(yregs[r], side=3, line=0, adj=0, font=2)
+	abline(v=yr_ablin[[r]])
+	plot(b[,list("max longitude"=max(lon)),by=c("year")])
+	mtext(yregs[r], side=3, line=0, adj=0, font=2)
+	abline(v=yr_ablin[[r]])
+}
+
+#+ excluding_years_strata_part2_analyzedStrata, fig.width=5.5, fig.height=10, fig.cap="**Trimming Years b/c of Stratum Locations, Stats for the Analyzed Strata** Changes in stratum statistics (number of strata, min/max lon/lat) for strata included in results in paper."
+par(mfrow=c(9, 5), mar=c(2,2,1,0.25), cex=1, mgp=c(1,0.15,0), tcl=-0.15, ps=8)
+for(r in 1:length(yregs)){
+	
+	# b <- trim_msom(yregs[r], gridSize=0.5, depthStratum=reg_depthStratum[yregs[r]], tolFraction=reg_tolFraction[yregs[r]], grid_stratum=TRUE, plot=FALSE, cull_show_up=FALSE)
+	b <- data_all[reg==yregs[r]]
+	
+	plot(b[,list("# strata sampled"=trawlData::lu(stratum)),by=c("year")])
+	mtext(yregs[r], side=3, line=0, adj=0, font=2)
+	abline(v=yr_ablin[[r]])
+	plot(b[,list("min latitude"=min(lat)),by=c("year")])
+	mtext(yregs[r], side=3, line=0, adj=0, font=2)
+	abline(v=yr_ablin[[r]])
+	plot(b[,list("max latitude"=max(lat)),by=c("year")])
+	mtext(yregs[r], side=3, line=0, adj=0, font=2)
+	abline(v=yr_ablin[[r]])
+	plot(b[,list("min longitude"=min(lon)),by=c("year")])
+	mtext(yregs[r], side=3, line=0, adj=0, font=2)
+	abline(v=yr_ablin[[r]])
+	plot(b[,list("max longitude"=max(lon)),by=c("year")])
+	mtext(yregs[r], side=3, line=0, adj=0, font=2)
+	abline(v=yr_ablin[[r]])
+}
 
 
 
