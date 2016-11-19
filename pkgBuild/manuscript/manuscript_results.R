@@ -72,7 +72,7 @@ library(rbLib) # library(devtools); install_github("rBatt/rbLib")
 # ================
 # = Report Setup =
 # ================
-doc_type <- c("html", "pdf")[2]
+doc_type <- c("html", "pdf")[1]
 table_type <- c("html"="html", "pdf"="latex")[doc_type]
 options("digits"=3) # rounding output to 4 in kable() (non-regression tables)
 o_f <- paste(doc_type, "document", sep="_")
@@ -189,6 +189,18 @@ categ_barplot()
 categ_tbl <- t(spp_master[!duplicated(paste(reg,ce_categ,spp)), table(reg, ce_categ)])[c(4,1,2,3),]
 kable(categ_tbl, caption = "Number of species in each category in each region.")
 #' It's the same pattern, whichever way you split it. However, AI is the only region that had more *colonizers* than *both* species. An interesting way to think about some of this is that the average sd in richness was `r comm_master[,stats::sd(reg_rich),by='reg'][,mean(V1)]`, so when the number of *colonizer* or *leaver* species exceed's that region's sd, the impact of those categories, which I consider to be dubious, might start being relevant (though it's not necessarily problematic, nor is this even close to an actual test for the significance of those categories to the trend). EBS and Shelf had significant positive trends in richness and very low numbers in the *colonizer* category. WCTRI and NEWF had similar numbers in the *both* and *colonizer* category.  
+#+ attribute_richness_categ, echo=FALSE
+categ_tbl <- t(spp_master[!duplicated(paste(reg,ce_categ,spp)), table(reg, ce_categ)])[c(4,1,2,3),]
+predRich <- function(sel=c("min","max","del")){
+	sel <- match.arg(sel)
+	switch(sel
+		
+	)
+	
+}
+
+comm_master[,list(minRich=min(reg_rich), maxRich=max(reg_rich), delRich=diff(range(reg_rich))),by=c('reg')]
+
 #'   
 #' ####Figure NotIncluded. Time series of colonizations and extinctions
 #+ Richness-col-ext-ts, include=TRUE, echo=TRUE, fig.height=3.5, fig.width=3.5, fig.cap="**Figure NotIncluded.** Number of colonizations (blue) and extinctions (red) over time in each region."
@@ -366,8 +378,8 @@ kable(
 #' The result that richness is predicted by geographic range implied an underlying association between range, colonization/ extinction, and richness itself. Above, richness was explained with range. Later, the results will explain how range changes near a colonization/ extinction event. Here, between the two, the results show how the number of colonizations is related to range.  
 #'   
 #' ####Figure S7. Total Colonizations/ Extinctions vs Georaphic Range
-#+ ceEvents-vs-rangeSizeDensity, fig.width=3.5, fig.height=6, fig.cap="**Figure S7.** Number of colonizations and extinctions as a function of range size and range density."
-ceEventRange()
+#+ ceEvents-vs-rangeSize, fig.width=3.5, fig.height=3.5, fig.cap="**Figure S7.** Number of colonizations and extinctions as a function of range size and range density."
+ceEventRange("mean_size")
 #' Yup, this is definitely a thing. Long-term average range size and range density predict how many colonizations and extinctions a species is likely to have. This will lead nicely into examing how range changes prior to an extinction or after a colonization.  
 #'   
 #' ###Range Change after Colonization/ before Extinction
@@ -610,20 +622,52 @@ sumry_counts <- data_all[reg!="wcann",
 		yi <- table(diff(sort(unique(year))))
 		yi_form <- paste0(names(yi), paste("(",yi,")",sep=""))
 		data.table(
-			"Years" = trawlData::lu(year),
-			"Year Range" = paste(min(year),max(year),sep=" - "),
-			"Year Interval" = paste(yi_form,collapse=", "),
+			"N" = trawlData::lu(year),
+			"Years" = paste(min(year),max(year),sep=" - "),
+			"Frequency" = paste(yi_form,collapse=", "),
 			"Sites" = trawlData::lu(stratum), 
 			# .SD[,list("max. Tows"=max(trawlData::lu(haulid)), "Average Tows" = mean(trawlData::lu(haulid))),by=c("stratum","year")]
-			"Max. Tows" = .SD[,trawlData::lu(haulid),by=c("stratum","year")][,max(V1)],
-			"Average Tows" = .SD[,trawlData::lu(haulid),by=c("stratum","year")][,mean(V1)],
-			"Total Species" = trawlData::lu(spp)
+			"Tows" = paste0(
+				.SD[,trawlData::lu(haulid),by=c("stratum","year")][,max(V1)],
+				paste0("(",.SD[,trawlData::lu(haulid),by=c("stratum","year")][,round(mean(V1),1)],")")
+				),
+			# "Max. Tows" = .SD[,trawlData::lu(haulid),by=c("stratum","year")][,max(V1)],
+# 			"Avg Tows" = .SD[,trawlData::lu(haulid),by=c("stratum","year")][,mean(V1)],
+			"Species" = trawlData::lu(spp)
 		)
 	}, 
 	by=c('reg')
 ]
 setnames(sumry_counts, 'reg', "Region")
-knitr::kable(sumry_counts, caption="Years = Total number of years sampled, Year Range = the minimum and maximum of years sampled, Year Interval = the number of years elapsed between samples (and the frequency of this interval in parentheses), Sites = the total number of sites in the region, Max. Tows = maximum number of tows per site per year, Average Tows = the average number of tows per site per year, Total Species = the total number of species observed in the region across all sites and years.")
+sumry_counts[,Region:=factor(Region, levels=c("ebs","ai","goa","wctri","gmex","sa","neus","shelf","newf"), labels=c("E. Bering Sea","Aleutian Islands","Gulf of Alaska","West Coast US","Gulf of Mexico","Southeast US", "Northeast US", "Scotian Shelf","Newfoundland"))]
+setkey(sumry_counts, Region)
+
+sumry_counts[,Org:=c("AFSC","AFSC","AFSC","NMFS","GSMFC","SCDNR","NEFSC","DFO","DFO")]
+# sumry_counts[,"Avg Tows":=round(eval(s2c("Avg Tows"))[[1]],1)]
+stargazer(sumry_counts, summary=FALSE, rownames=FALSE, column.sep.width="2pt", digits.extra=0, digits=NA)
+
+# \begin{table}[!htbp] \centering
+# %  \caption{}
+# %  \label{}
+# \begin{tabular}{@{\extracolsep{2pt}} cccccccc}
+# \\[-1.8ex]\hline
+# \hline \\[-1.8ex]
+# Region & N & Years & Frequency & Sites & Tows & Species & Org \\
+# \hline \\[-1.8ex]
+# E. Bering Sea & $31$ & 1984 - 2014 & 1(30) & $138$ & 4(1.6) & $110$ & $\text{AFSC}^{*}$ \\
+# Aleutian Islands & $12$ & 1983 - 2014 & 2(5), 3(4), 4(1), 5(1) & $82$ & 12(2.8) & $55$ & $\text{AFSC}^{*}$ \\
+# Gulf of Alaska & $13$ & 1984 - 2013 & 2(7), 3(5) & $89$ & 15(4.4) & $98$ & $\text{AFSC}^{*}$ \\
+# West Coast US & $10$ & 1977 - 2004 & 3(9) & $84$ & 91(4.7) & $92$ & $\text{NMFS}^{\dagger}$ \\
+# Gulf of Mexico & $17$ & 1984 - 2000 & 1(16) & $39$ & 39(5.7) & $144$ & $\text{GSMFC}^{\ddagger}$ \\
+# Southeast US & $25$ & 1990 - 2014 & 1(24) & $24$ & 13(3.9) & $104$ & $\text{SCDNR}^{\S}$ \\
+# Northeast US & $32$ & 1982 - 2013 & 1(31) & $100$ & 10(3) & $141$ & $\text{NEFSC}^{\Vert}$ \\
+# Scotian Shelf & $41$ & 1970 - 2010 & 1(40) & $48$ & 11(2.5) & $48$ &$\text{DFO}^{\P}$ \\
+# Newfoundland & $16$ & 1996 - 2011 & 1(15) & $191$ & 9(2.2) & $72$ & $\text{DFO}^{\P}$ \\
+# \hline \\[-1.8ex]
+# \end{tabular}
+# \end{table}
+
+# knitr::kable(sumry_counts, caption="Years = Total number of years sampled, Year Range = the minimum and maximum of years sampled, Year Interval = the number of years elapsed between samples (and the frequency of this interval in parentheses), Sites = the total number of sites in the region, Max. Tows = maximum number of tows per site per year, Average Tows = the average number of tows per site per year, Total Species = the total number of species observed in the region across all sites and years.")
 
 
 #' ##Years Excluded & Strata Sampled
@@ -690,7 +734,6 @@ for(r in 1:length(yregs)){
 	at_vals <- seq(0,1,length.out=nrow(b_tbl))
 	axis(1, at=at_vals, labels=rownames(b_tbl))
 	abline(v=at_vals[rownames(b_tbl)%in%yr_ablin[[r]]])
-	label_year_range <- paste(b[subList[[y]],range(year)], collapse=" - ")
 	mtext(yregs[r], side=3, line=0, adj=0, font=2)
 }
 
