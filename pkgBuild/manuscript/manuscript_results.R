@@ -191,15 +191,51 @@ kable(categ_tbl, caption = "Number of species in each category in each region.")
 #' It's the same pattern, whichever way you split it. However, AI is the only region that had more *colonizers* than *both* species. An interesting way to think about some of this is that the average sd in richness was `r comm_master[,stats::sd(reg_rich),by='reg'][,mean(V1)]`, so when the number of *colonizer* or *leaver* species exceed's that region's sd, the impact of those categories, which I consider to be dubious, might start being relevant (though it's not necessarily problematic, nor is this even close to an actual test for the significance of those categories to the trend). EBS and Shelf had significant positive trends in richness and very low numbers in the *colonizer* category. WCTRI and NEWF had similar numbers in the *both* and *colonizer* category.  
 #+ attribute_richness_categ, echo=FALSE
 categ_tbl <- t(spp_master[!duplicated(paste(reg,ce_categ,spp)), table(reg, ce_categ)])[c(4,1,2,3),]
-predRich <- function(sel=c("min","max","del")){
-	sel <- match.arg(sel)
-	switch(sel
-		
-	)
-	
-}
+predRich <- bquote(predict(lm(reg_rich~year)))
 
-comm_master[,list(minRich=min(reg_rich), maxRich=max(reg_rich), delRich=diff(range(reg_rich))),by=c('reg')]
+categ_tbl2 <- spp_master[!duplicated(paste(reg,ce_categ,spp)), table(reg, ce_categ, dnn=NULL)]
+class(categ_tbl2) <- "matrix"
+dels <- comm_master[,
+	list(
+		# minRich=min(reg_rich),
+		# maxRich=max(reg_rich), 
+		rangeRich=diff(range(reg_rich)),
+		# minPred=min(eval(predRich)),
+		# maxPred=max(eval(predRich)),
+		delPred=rev(eval(predRich))[1] - eval(predRich)[1]
+	),
+	by=c('reg')
+]
+att_categ <- merge(dels, data.table(reg=rownames(categ_tbl2),categ_tbl2))
+att_categ[,attr_col:=(delPred-colonizer)]
+att_categ[,attr_ext:=(delPred-leaver)]
+
+setnames(att_categ, 'reg', "Region")
+att_categ[,Region:=factor(Region, levels=c("ebs","ai","goa","wctri","gmex","sa","neus","shelf","newf"), labels=c("E. Bering Sea","Aleutian Islands","Gulf of Alaska","West Coast US","Gulf of Mexico","Southeast US", "Northeast US", "Scotian Shelf","Newfoundland"))]
+setkey(att_categ, Region)
+setnames(att_categ, c("delPred"), "Richness Change")
+att_categ_print <- att_categ[,c("Region", "Richness Change", "colonizer"), with=FALSE]
+stargazer(att_categ_print, summary=FALSE, rownames=FALSE, column.sep.width="2pt", digits=1, digits.extra=0)
+# \begin{table}[!htbp] \centering
+#   %\caption{}
+#   %\label{}
+# \begin{tabular}{@{\extracolsep{2pt}} ccc}
+# \\[-1.8ex]\hline
+# \hline \\[-1.8ex]
+# Region & Richness Change & Colonizers \\
+# \hline \\[-1.8ex]
+# E. Bering Sea & $12.5$ & $2$ \\
+# Aleutian Islands & $5.6$ & $9$ \\
+# Gulf of Alaska & $17.5$ & $18$ \\
+# West Coast US & $18.8$ & $12$ \\
+# Gulf of Mexico & $7.4$ & $8$ \\
+# Southeast US & $$-$5.0$ & $0$ \\
+# Northeast US & $9.5$ & $1$ \\
+# Scotian Shelf & $7.6$ & $1$ \\
+# Newfoundland & $12.7$ & $10$ \\
+# \hline \\[-1.8ex]
+# \end{tabular}
+# \end{table}
 
 #'   
 #' ####Figure NotIncluded. Time series of colonizations and extinctions
