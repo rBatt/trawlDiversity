@@ -204,8 +204,8 @@ rich_geoRange <- function(gR0=c("size", "density"), leg=TRUE, legPan=2, panLab=T
 			size = "propStrata_avg_ltAvg"
 		)	
 		xlab <- switch(gR0[g],
-			density = "Range density",
-			size = "Range size"
+			density = "Community-level range density",
+			size = "Community-level range size"
 		)
 		comm_master[,plot(eval(s2c(gR))[[1]], reg_rich, col=adjustcolor(pretty_col[reg],0.5), xlab=xlab, ylab="Species richness", pch=16)]
 		ur <- comm_master[,unique(reg)]
