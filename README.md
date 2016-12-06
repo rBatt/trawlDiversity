@@ -2,7 +2,7 @@
 
 ---
 
-## Long-term changes in coastal marine species' ranges and assemblage richness
+## Gradual changes in range size accompany long-term trends in species richness
 
 **Authors** Ryan D. Batt, James W. Morley, Rebecca L. Selden, Morgan W. Tingley, Malin L. Pinsky
 
