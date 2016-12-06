@@ -222,7 +222,7 @@ stargazer(att_categ_print, summary=FALSE, rownames=FALSE, column.sep.width="2pt"
 # \begin{tabular}{@{\extracolsep{2pt}} ccc}
 # \\[-1.8ex]\hline
 # \hline \\[-1.8ex]
-# Region & Richness Change & Colonizers \\
+# Region & Richness Change & Colonizing Species \\
 # \hline \\[-1.8ex]
 # E. Bering Sea & $12.5$ & $2$ \\
 # Aleutian Islands & $5.6$ & $9$ \\
@@ -484,27 +484,8 @@ kable(tbl_ColExtTime, caption="Same as above, but shows slightly different metri
 
 #' Range size seems to be important to include type as a fixed effect. It does not need an interaction between time*type. I did additional testing beyond what's presenting here, and I can confirm that having spp as a random factor is useful, too.  
 #'   
-#' ####Table. Regressions separate regions -- geographic range vs time until extinction or after colonization
-#+ rangeSizeDensity-ColExtTime-reg
-# Fit same model to each region separately 
-sTime_reg_mods <- list()
-ur <- range_reg[,unique(reg)]
-for(r in 1:length(ur)){
-	sTime_reg_mods[[r]] <- lme4::lmer(size ~ time + type + (time|spp), data=rangeTimeDT[reg==ur[r]])
-}
-sTime_reg_smry <- data.table(rbind(
-	rbindlist(structure(lapply(sTime_reg_mods, mod_smry2), .Names=ur), idcol=TRUE)
-))
-setnames(sTime_reg_smry, old=c(".id","Pr..Chisq.","Marginal","Conditional"), new=c('reg',"pval","MargR2","CondR2"))
-setkey(sTime_reg_smry, reg, Class, mod_call, predictor)
-
-# adjust p-values for multiple tests
-sTime_reg_smry[, BH:=round(p.adjust(pval, "BH"), 3), by=c("mod_call", "predictor")]
-
-# rearrange so each model on 1 line
-sTime_reg_smry <- dcast(sTime_reg_smry, reg+Class+mod_call+MargR2+CondR2+AIC~predictor, value.var=c("pval", "BH"))
-
-# add coefficients to the sTime_reg_smry data.table
+#' ####Table. Regressions separate regions -- range size vs time until, SIMPLE
+#+ rangeSizeDensity-ColExtTime-reg-simple
 getCoefs <- function(mList){
 	outList <- list()
 	for(r in 1:length(ur)){
@@ -521,6 +502,47 @@ getCoefs <- function(mList){
 	# setcolorder(outList, c("reg", "mod_call", "randomGroup", "(Intercept)", "time", "typepre_ext"))
 	outList
 }
+
+sTime_reg_mods3 <- list()
+ur <- range_reg[,unique(reg)]
+for(r in 1:length(ur)){
+	sTime_reg_mods3[[r]] <- lme4::lmer(size ~ time + (time|spp), data=rangeTimeDT[reg==ur[r]])
+}
+sTime_reg_smry3 <- data.table(rbind(
+	rbindlist(structure(lapply(sTime_reg_mods3, mod_smry2), .Names=ur), idcol=TRUE)
+))
+setnames(sTime_reg_smry3, old=c(".id","Pr..Chisq.","Marginal","Conditional"), new=c('reg',"pval","MargR2","CondR2"))
+setkey(sTime_reg_smry3, reg, Class, mod_call, predictor)
+sTime_reg_smry3[, BH:=round(p.adjust(pval, "BH"), 3), by=c("mod_call", "predictor")]# adjust p-values for multiple tests
+sTime_reg_smry3 <- dcast(sTime_reg_smry3, reg+Class+mod_call+MargR2+CondR2+AIC~predictor, value.var=c("pval", "BH"))# rearrange so each model on 1 line
+
+modCoef3 <- getCoefs(sTime_reg_mods3)
+sTime_reg_smry3 <- merge(sTime_reg_smry3, modCoef3, by=c("reg","mod_call"))
+setnames(sTime_reg_smry3, old=c("(Intercept)"), new=c("Int"))
+
+#+ rangeSizeDensity-ColExtTime-reg-simple-table, echo=FALSE
+capS3 <- sTime_reg_smry3[grepl("size",mod_call),mod_call[1]]
+sTime_reg_smry3 <- sTime_reg_smry3[grepl("size",mod_call)]
+sTime_reg_smry3[,c("mod_call","randomGroup","Class"):=NULL]
+kable(sTime_reg_smry3, caption=paste0("Summary statistics for fits of predicting range SIZE from years before extinction and years after colonization. These are mixed effect models of the form ", capS3))
+#'   
+#' ####Table. Regressions separate regions -- geographic range vs time until extinction or after colonization
+#+ rangeSizeDensity-ColExtTime-reg
+# Fit same model to each region separately 
+sTime_reg_mods <- list()
+ur <- range_reg[,unique(reg)]
+for(r in 1:length(ur)){
+	sTime_reg_mods[[r]] <- lme4::lmer(size ~ time + type + (time|spp), data=rangeTimeDT[reg==ur[r]])
+}
+sTime_reg_smry <- data.table(rbind(
+	rbindlist(structure(lapply(sTime_reg_mods, mod_smry2), .Names=ur), idcol=TRUE)
+))
+setnames(sTime_reg_smry, old=c(".id","Pr..Chisq.","Marginal","Conditional"), new=c('reg',"pval","MargR2","CondR2"))
+setkey(sTime_reg_smry, reg, Class, mod_call, predictor)
+sTime_reg_smry[, BH:=round(p.adjust(pval, "BH"), 3), by=c("mod_call", "predictor")]# adjust p-values for multiple tests
+sTime_reg_smry <- dcast(sTime_reg_smry, reg+Class+mod_call+MargR2+CondR2+AIC~predictor, value.var=c("pval", "BH"))# rearrange so each model on 1 line
+
+# add coefficients to the sTime_reg_smry data.table
 modCoef <- getCoefs(sTime_reg_mods)
 sTime_reg_smry <- merge(sTime_reg_smry, modCoef, by=c("reg","mod_call"))
 setnames(sTime_reg_smry, old=c("(Intercept)"), new=c("Int"))
@@ -530,7 +552,7 @@ capS <- sTime_reg_smry[grepl("size",mod_call),mod_call[1]]
 sTime_reg_smry <- sTime_reg_smry[grepl("size",mod_call)]
 sTime_reg_smry[,c("mod_call","randomGroup","Class"):=NULL]
 kable(sTime_reg_smry, caption=paste0("Summary statistics for fits of predicting range SIZE from years before extinction and years after colonization. These are mixed effect models of the form ", capS))
-
+#'   
 #' ####Table. Regressions separate regions -- range size vs time until, WITH INTERACTION
 #+ rangeSizeDensity-ColExtTime-reg-interaction
 sTime_reg_mods2 <- list()
@@ -543,26 +565,31 @@ sTime_reg_smry2 <- data.table(rbind(
 ))
 setnames(sTime_reg_smry2, old=c(".id","Pr..Chisq.","Marginal","Conditional"), new=c('reg',"pval","MargR2","CondR2"))
 setkey(sTime_reg_smry2, reg, Class, mod_call, predictor)
-
-# adjust p-values for multiple tests
-sTime_reg_smry2[, BH:=round(p.adjust(pval, "BH"), 3), by=c("mod_call", "predictor")]
-
-# rearrange so each model on 1 line
-sTime_reg_smry2 <- dcast(sTime_reg_smry2, reg+Class+mod_call+MargR2+CondR2+AIC~predictor, value.var=c("pval", "BH"))
-
+sTime_reg_smry2[, BH:=round(p.adjust(pval, "BH"), 3), by=c("mod_call", "predictor")]# adjust p-values for multiple tests
+sTime_reg_smry2 <- dcast(sTime_reg_smry2, reg+Class+mod_call+MargR2+CondR2+AIC~predictor, value.var=c("pval", "BH"))# rearrange so each model on 1 line
 modCoef2 <- getCoefs(sTime_reg_mods2)
 sTime_reg_smry2 <- merge(sTime_reg_smry2, modCoef2, by=c("reg","mod_call"))
 setnames(sTime_reg_smry2, old=c("(Intercept)"), new=c("Int"))
 
 #+ rangeSizeDensity-ColExtTime-reg-interaction-table, echo=FALSE
-capS <- sTime_reg_smry2[grepl("size",mod_call),mod_call[1]]
+capS2 <- sTime_reg_smry2[grepl("size",mod_call),mod_call[1]]
 sTime_reg_smry2 <- sTime_reg_smry2[grepl("size",mod_call)]
 sTime_reg_smry2[,c("mod_call","randomGroup","Class"):=NULL]
-kable(sTime_reg_smry2, caption=paste0("Summary statistics for fits of predicting range SIZE from years before extinction and years after colonization. These are mixed effect models of the form ", capS))
+kable(sTime_reg_smry2, caption=paste0("Summary statistics for fits of predicting range SIZE from years before extinction and years after colonization. These are mixed effect models of the form ", capS2))
+
+#+ rangeSizeDensity-ColExtTime-reg-compareModels, echo=FALSE
+compAIC <- rbind(
+	cbind(sTime_reg_smry3[,list(reg,MargR2,CondR2,AIC)], mod=capS3),
+	cbind(sTime_reg_smry[,list(reg,MargR2,CondR2,AIC)], mod=capS),
+	cbind(sTime_reg_smry2[,list(reg,MargR2,CondR2,AIC)], mod=capS2)
+)
+setkey(compAIC, reg)
+kable(compAIC)
+
 
 
 #' ###Conclusion for Range Change before Extinction/ after Colonization
-#' As stated with the larger (pooled regional data) regressions, range size respondes more consistently/ strongly to an approaching extinction/ departure from colonization than does range density. Range size shrinks as extinction approaches, increases as time since colonization increases. In both cases, there was only 1 region for which the direction (into extinction, out of colonization mattered): for range density, it was the Southeast US (effect of pre-extinction direction = 0.037, p=0.043 [BH correction], Table 12), and for range size it was Scotial Shelf (effect = -0.021, p = 0.002). Time was a significant predictor of range size in all regions; time was *not* a significant predictor of range density in Newfoundland (p = 0.846 [BH]), and the Scotial Shelf (p = 0.916).  
+#' As stated with the larger (pooled regional data) regressions, range size responds more consistently/ strongly to an approaching extinction/ departure from colonization than does range density. Range size shrinks as extinction approaches, increases as time since colonization increases. In both cases, there was only 1 region for which the direction (into extinction, out of colonization) mattered: for range density, it was the Southeast US (effect of pre-extinction direction = 0.037, p=0.043 [BH correction], Table 12), and for range size it was Scotial Shelf (effect = -0.021, p = 0.002). Time was a significant predictor of range size in all regions; time was *not* a significant predictor of range density in Newfoundland (p = 0.846 [BH]), and the Scotial Shelf (p = 0.916).  
 #'  
 #' These results support the hypothesis that species rarity is closely associated with proximity to extinction/ colonization, and therefore the probability that the species will contribute to a change in species richness. Furthermore, these relationships have not been directly quantified for entire assemblages. Competing hypotheses exist regarding how range should change approaching extinction and after colonization. We find that the change in range is similar regardless of direction. However, spatial scale was important. Although slopes were similar, the intercept for density was far larger than for range size --- the fraction of tows containing a species in occupied sites may remain high even when extinction is imminent, and may similar be large even if colonization was recent. Range size, on the other hand, was much closer to 0 near an absence.  
 #'   
@@ -592,9 +619,8 @@ setorder(o, nTime)
 o[,j={plot(nTime,Pr); lines(spline(Pr~nTime),col='red',lwd=2)}]
 o[,j={plot(nTime,Estimate); ; lines(spline(Estimate~nTime),col='red',lwd=2)}]
 
-
-o[,list(propSignificant=(sum(Pr<0.05)/sum(!is.na(Pr))),n=sum(!is.na(Pr))),by=c("reg","type")]
-o[,list(propSignificant=(sum(Pr<0.05)/sum(!is.na(Pr))),n=sum(!is.na(Pr))),by=c("reg","type")][,mean(propSignificant),by=c("type")]
+kable(o[,list(propSignificant=(sum(Pr<0.05)/sum(!is.na(Pr))),n=sum(!is.na(Pr))),by=c("reg","type")])
+kable(o[,list(propSignificant=(sum(Pr<0.05)/sum(!is.na(Pr))),n=sum(!is.na(Pr))),by=c("reg","type")][,mean(propSignificant),by=c("type")])
 
 #' 
 #' The mixed effect models show a strong tendency for range size to be smaller near an absence. I figured that this relationship wouldn't be apparent for all cases, which ended up being the result. However, the significance of these relationships depends on the number of years for each event stretch. So sample size matters. On one hand, this could hold implications for the rate of decline, so excluding short stretches might also exclude more cases with abrupt declines/ increases (although, these may well be preceded by long durations of stability, so not all abrupt declines/ increases would be excluded necessarily). However, the slope estimate doesnt change a whole lot across sample size: from 0 to ~10 years, increasing sample size (duration) also increases the slope (going from slightly negative to pretty consistently positive). Then it levels out, and doesn't continue increasing. So it is *not* the case that longer stretches are long because they have more gradual slopes, necessarily. Actually, in the range of data for which there does appear to be a trend (0-10 samples), the slope becomes larger which is the opposite of "longer stretches result from more gradual processes" notion (thinking in terms of extinction).  
@@ -696,9 +722,9 @@ stargazer(sumry_counts, summary=FALSE, rownames=FALSE, column.sep.width="2pt", d
 # West Coast US & $10$ & 1977 - 2004 & 3(9) & $84$ & 91(4.7) & $92$ & $\text{NMFS}^{\dagger}$ \\
 # Gulf of Mexico & $17$ & 1984 - 2000 & 1(16) & $39$ & 39(5.7) & $144$ & $\text{GSMFC}^{\ddagger}$ \\
 # Southeast US & $25$ & 1990 - 2014 & 1(24) & $24$ & 13(3.9) & $104$ & $\text{SCDNR}^{\S}$ \\
-# Northeast US & $32$ & 1982 - 2013 & 1(31) & $100$ & 10(3) & $141$ & $\text{NEFSC}^{\Vert}$ \\
-# Scotian Shelf & $41$ & 1970 - 2010 & 1(40) & $48$ & 11(2.5) & $48$ &$\text{DFO}^{\P}$ \\
-# Newfoundland & $16$ & 1996 - 2011 & 1(15) & $191$ & 9(2.2) & $72$ & $\text{DFO}^{\P}$ \\
+# Northeast US & $32$ & 1982 - 2013 & 1(31) & $100$ & 10(3) & $141$ & $\text{NEFSC}^{\P}$ \\
+# Scotian Shelf & $41$ & 1970 - 2010 & 1(40) & $48$ & 11(2.5) & $48$ &$\text{DFO}^{\nabla}$ \\
+# Newfoundland & $16$ & 1996 - 2011 & 1(15) & $191$ & 9(2.2) & $72$ & $\text{DFO}^{\nabla}$ \\
 # \hline \\[-1.8ex]
 # \end{tabular}
 # \end{table}

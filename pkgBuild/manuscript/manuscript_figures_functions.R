@@ -34,7 +34,23 @@ richness_ts <- function(){
 	for(r in 1:length(regs)){
 		comm_master[reg==regs[r],j={lines(year, reg_rich, lwd=0.5, col=adjustcolor(pretty_col[reg], 0.5))}]
 	}
-	comm_master[,lines(year,fitted(lm(reg_rich~year))),by='reg']
+	reg_line <- function(r){
+		lty_out <- switch(r,
+			"ai" = 2,
+			"ebs" = 1,
+			"gmex" = 2,
+			"goa" = 2,
+			"neus" = 2,
+			"newf" = 1,
+			"seus" = 2,
+			"shelf" = 1,
+			"wctri" = 1,
+			"wc" = 1,
+			0
+		)
+		return(as.integer(lty_out))
+	}
+	comm_master[,lines(year,fitted(lm(reg_rich~year)), lty=reg_line(unique(reg))),by='reg']
 	comm_master[,legend("topleft",ncol=1,legend=pretty_reg[una(reg)],text.col=pretty_col[una(reg)], inset=c(-0.085,-0.01), bty='n')]
 	invisible(NULL)
 }
@@ -246,6 +262,7 @@ naive_msom_scatter <- function(){
 		comm_master[reg==regs[r],j={
 			plot(naive_rich, reg_rich, main=pretty_reg[una(reg)], type='p', xlab="", ylab="", cex.main=1)
 			abline(a=0, b=1)
+			mtext(paste("r",round(cor(naive_rich,reg_rich,use="na.or.complete"),2),sep="="),side=3, line=-0.75, adj=0.05)
 		}]
 	}
 
@@ -260,6 +277,7 @@ categ_barplot <- function(){
 	categ_table <- t(spp_master[!duplicated(paste(reg,ce_categ,spp)), table(reg, ce_categ)])[c(4,1,2,3),]
 	colnames(categ_table) <- pretty_reg[colnames(categ_table)]
 	colnames(categ_table) <- gsub("^(.*) (.*)$", "\\1\n\\2", colnames(categ_table))
+	rownames(categ_table) <- c("neither"="Neither","both"="Both","colonizer"="Colonizing","leaver"="Leaving")[rownames(categ_table)]
 	par(cex=1, mar=c(3,2,1,0.1), ps=8)
 	bp <- barplot(categ_table, beside=T, legend=T, names.arg=rep("",ncol(categ_table)), args.legend=list(bty='n'))
 	text(colMeans(bp)-1, -11, labels=colnames(categ_table), srt=45, xpd=TRUE)
