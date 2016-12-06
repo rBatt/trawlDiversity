@@ -2,4 +2,4 @@
 .Rhistory
 .DS_Store
 .Rapp.history
-pkgBuild/manuscript/manuscript_report
+pkgBuild/manuscript/manuscript_report/*
