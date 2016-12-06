@@ -42,6 +42,7 @@ richness_ts <- function(){
 			"goa" = 2,
 			"neus" = 2,
 			"newf" = 1,
+			"sa" = 2,
 			"seus" = 2,
 			"shelf" = 1,
 			"wctri" = 1,
