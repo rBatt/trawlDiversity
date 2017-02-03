@@ -101,7 +101,7 @@ rangeSize_absenceTime <- function(pred_var=c("rangeSize","rangeDensity")){
 }
 
 # ---- Colonization Rate ----
-ceRate_map <- function(ce=c("colonization","extinction")){
+ceRate_map <- function(ce=c("colonization","extinction","richness")){
 	ce <- match.arg(ce)
 	eval(figure_setup())
 	map_layout <- trawl_layout()
@@ -139,6 +139,8 @@ ceRate_map <- function(ce=c("colonization","extinction")){
 			# mapPPP_ce[[r]] <- spatstat::ppp(x=td[,lon], y=td[,lat], marks=td[,n_spp_col_unique], window=mapOwin[[r]]) # /avgRich
 		}else if(ce=="extinction"){
 			mapPPP_ce[[r]] <- spatstat::ppp(x=td[,lon], y=td[,lat], marks=td[,n_spp_ext_weighted], window=mapOwin[[r]])
+		}else if(ce=="richness"){
+			mapPPP_ce[[r]] <- spatstat::ppp(x=td[,lon], y=td[,lat], marks=td[,avgRich], window=mapOwin[[r]])
 		}
 		
 		t_idw <- spatstat::Smooth(mapPPP_ce[[r]], hmax=1)
@@ -174,6 +176,8 @@ ceRate_map <- function(ce=c("colonization","extinction")){
 		mtext(bquote(Colonization~Rate~(C[w]~~decade^-1)), side=3, outer=TRUE, font=2, line=-0.3)
 	}else if(ce=="extinction"){
 		mtext(bquote(Extinction~Rate~(E[w]~~decade^-1)), side=3, outer=TRUE, font=2, line=-0.3)
+	}else if(ce=="richness"){
+		mtext(bquote(Observed~Richness), side=3, outer=TRUE, font=2, line=-0.3)
 	}
 	mtext(bquote(Longitude~(phantom()*degree*E)), side=1, line=0.15, outer=TRUE)
 	mtext(bquote(Latitude~(phantom()*degree*N)), side=2, line=-0.4, outer=TRUE)
