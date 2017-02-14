@@ -72,6 +72,12 @@ get_colonizers <- function(d){
 
 		ce_tbl <- cet[,table(year, stratum,spp,eval(s2c(ce))[[1]])>0][,,,as.character(1)]
 		ce_dt <- data.table(reshape2::melt(ce_tbl, value.name="col_logic"))
+		if(!"col_logic"%in%names(ce_dt)){
+			if("value"%in%names(ce_dt)){
+				setnames(ce_dt, "value", "col_logic")
+				warning("reshape2::melt() did not correctly assign value.name to col_logic; changing name via setnames(). This can happen if the reshape package was loaded, likely through a package that is not directly depended upon, suggested, or imported by trawlDiversity.")
+			}
+		}
 		ce_dt[,c("stratum","spp"):=list(as.character(stratum),as.character(spp))]
 		setkey(ce_dt, year, stratum, spp)
 		ce_dt[,n_spp_col:=sum(col_logic),by=c("year","stratum")]
