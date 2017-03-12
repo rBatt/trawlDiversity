@@ -23,7 +23,7 @@ process_obsRich <- function(X, msom_yrs){
 	rd_yr <- rd[,sort(una(year))]
 	
 	# naive_rich
-	naive_rich <- rd[,list(naive_rich=lu(spp)), keyby=c("year")]
+	naive_rich <- rd[,list(naive_rich=trawlData::lu(spp)), keyby=c("year")]
 	
 	# beta diversity
 	bd_methods <- c("hellinger","jaccard", "sorensen", "ochiai")[1]
