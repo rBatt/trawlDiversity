@@ -912,3 +912,32 @@ mtext("Observed Regional (red) and Mean Local (black) Richness", side=3, line=-0
 #' ***  
 #'   
 #'   
+#' ##All Years All Species Present or Absent
+#+ pres-abs-allSpp-time
+# dev.new(width=5, height=7)
+# pdf("~/Desktop/pres-abs-allSpp-time.pdf",width=5, height=7)
+ureg <- spp_master[,unique(reg)]
+for(r in 1:length(ureg)){
+	t_table <- spp_master[reg==ureg[r] & present==1, table(spp,year)]
+	t_table2 <- t(t_table)#[ncol(t_table):1,]
+	t_table3 <- t_table2[,order(colSums(t_table2))]
+	
+	par(mar=c(1,5,0.5,1), ps=8, mgp=c(0.75,0.2,0), tcl=-0.15)
+	image(t_table3, axes=FALSE)
+	# grid(ny=ncol(t_table3)+1, nx=nrow(t_table3)+1)
+	abline(h=seq(0,1,length.out=ncol(t_table3)), v=seq(0,1,length.out=nrow(t_table3)), col='gray', lty='dotted', lwd=0.5)
+	axis(side=2, at=seq(0,1,length.out=ncol(t_table3)), label=colnames(t_table3), las=1, cex.axis=0.5)
+	axis(side=1, at=seq(0,1,length.out=nrow(t_table3)), label=rownames(t_table3))
+	text(0.95,0.95, label=ureg[r], font=2)
+}
+# dev.off()
+
+
+
+#' 
+#'   
+#' \FloatBarrier  
+#'   
+#' ***  
+#'   
+#'   
