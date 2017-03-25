@@ -885,3 +885,30 @@ blah[,j={boxplot(propSlope~ce_categ, main=reg[1], outline=FALSE);abline(h=0);NUL
 #' ***  
 #'   
 #'   
+
+#+ local-richness, fig.width=7, fig.height=7
+#' ##Local Richness Compared to Regional Richness
+localR <- data_all[,list(lR=length(unique(spp))),by=c("reg","stratum","year")]
+bothR <- merge(localR, comm_master[,list(reg,year,naive_rich,reg_rich)],by=c("reg","year"))
+par(mfrow=c(3,3), cex=1, ps=8, mar=c(2,2,2,2), mgp=c(1,0.2,0), tcl=-0.2)
+bothR[,list(mu_lR=mean(lR),naive_rich=naive_rich[1],reg_rich=reg_rich[1]),by=c("reg","year")][,j={
+	plot(year, mu_lR, type='l')
+	mtext(reg[1], side=3, line=0, adj=0.1, font=2)
+	# par(new=TRUE)
+	# plot(year, reg_rich, type='l', col='blue', xaxt='n', yaxt='n', xlab='',ylab='')
+	par(new=TRUE)
+	plot(year, naive_rich, type='l', col='red', xaxt='n', yaxt='n', xlab='',ylab='')
+	axis(side=4, col='red')
+},by=c("reg")]
+# mtext("Observed Regional (red), MSOM Regional (blue), and Mean Local (black) Richness", side=3, line=-0.75, outer=TRUE, font=2)
+mtext("Observed Regional (red) and Mean Local (black) Richness", side=3, line=-0.75, outer=TRUE, font=2)
+#' In general, local richness and regional richness are similar. There are differences, possibly in some cases the regional slope might be significant whereas local would not be (I haven't checked, though). However, the trends aren't in opposite directions at the two scales.
+
+
+#' 
+#'   
+#' \FloatBarrier  
+#'   
+#' ***  
+#'   
+#'   
