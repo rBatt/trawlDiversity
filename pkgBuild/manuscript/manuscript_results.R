@@ -846,6 +846,36 @@ for(r in 1:length(yregs)){
 	abline(v=yr_ablin[[r]])
 }
 
+#' 
+#'   
+#' \FloatBarrier  
+#'   
+#' ***  
+#'   
+#'   
+#+ rare-more-common, fig.width=7, fig.height=7 
+#' ##Are rare species becoming more common?
+blah <- spp_master[present==1, j={
+	# if(any(col==1) | any(ext==1)){
+	# 	list(propSlope=NA_real_, mu_propStrat=mean(propStrata))
+	# }else{
+	# 	list(propSlope=summary(lm(propStrata~year))$coeff[2,1], mu_propStrat=mean(propStrata))
+	# }
+	list(propSlope=summary(lm(propStrata~year))$coeff[2,1], mu_propStrat=mean(propStrata), ce_categ=ce_categ[1])
+} ,by=c("reg","spp")]
+
+# par(mfrow=c(3,3))
+# blah[,plot(mu_propStrat, propSlope, main=reg[1]),by='reg']
+
+par(mfrow=c(3,3))
+blah[,j={boxplot(propSlope~ce_categ, main=reg[1], outline=FALSE);abline(h=0);NULL},by='reg']
+#' I wanted to determine if species in the region are becoming more widespread over time. In other words, when the species is present, what fraction of the region does it occupy? Does that fraction change over time? This slope is the y-axis for the boxplots. It indicates the long-term slope of the proportion of sites occupied (excluding any year when that proportion was 0). The x-axis represents the categories of colonization-extinction patterns. Species in the "both" category experienced both colonization and extinction events at some point in the time series. 
+#' 
+#' Other figures and analyses suggest that species in the "both" category play an important role in *increases* in species richness. In other words, the coming-and-going of these organisms is not neutral in the long term. This conjecture is supported by 1) the magnitude of increase for regions with increasing richness cannot be explained by "colonizing" species alone; 2) geographically constrained species have more colonizations and extinctions that widespread species.  
+#' 
+#' Looking at the different box categories, if historically rare species (i.e., those that were in the both category and had most of the colonizations/ extinctions) were appearing more consistently in the time series because they were becoming more geogrpahically widespread (and therefore less likely to go extinct), then we'd expect to see that the "both" category to have more-positive slopes in their annual range sizes.  
+#' 
+#' That's kinda? what I see. It's definitely not a very strong relationship. One issue with this analysis is that you wouldn't expect any given species in the "both" category to become more prevalent. In fact, it should only be a small fraction of those species that are becomign more widespread and thus contributing to long-term increases in species richness.
 
 
 #' 
