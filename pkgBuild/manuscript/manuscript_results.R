@@ -72,7 +72,7 @@ library(rbLib) # library(devtools); install_github("rBatt/rbLib")
 # ================
 # = Report Setup =
 # ================
-doc_type <- c("html", "pdf")[1]
+doc_type <- c("html", "pdf")[2]
 table_type <- c("html"="html", "pdf"="latex")[doc_type]
 options("digits"=3) # rounding output to 4 in kable() (non-regression tables)
 o_f <- paste(doc_type, "document", sep="_")
@@ -913,7 +913,7 @@ mtext("Observed Regional (red) and Mean Local (black) Richness", side=3, line=-0
 #'   
 #'   
 #' ##All Years All Species Present or Absent
-#+ pres-abs-allSpp-time
+#+ pres-abs-allSpp-time, fig.width=5, fig.height=7
 # dev.new(width=5, height=7)
 # pdf("~/Desktop/pres-abs-allSpp-time.pdf",width=5, height=7)
 ureg <- spp_master[,unique(reg)]
