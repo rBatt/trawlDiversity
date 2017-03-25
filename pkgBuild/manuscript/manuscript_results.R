@@ -853,8 +853,8 @@ for(r in 1:length(yregs)){
 #' ***  
 #'   
 #'   
-#+ rare-more-common, fig.width=7, fig.height=7 
 #' ##Are rare species becoming more common?
+#+ rare-more-common, fig.width=7, fig.height=7 
 blah <- spp_master[present==1, j={
 	# if(any(col==1) | any(ext==1)){
 	# 	list(propSlope=NA_real_, mu_propStrat=mean(propStrata))
@@ -885,9 +885,8 @@ blah[,j={boxplot(propSlope~ce_categ, main=reg[1], outline=FALSE);abline(h=0);NUL
 #' ***  
 #'   
 #'   
-
-#+ local-richness, fig.width=7, fig.height=7
 #' ##Local Richness Compared to Regional Richness
+#+ local-richness, fig.width=7, fig.height=7
 localR <- data_all[,list(lR=length(unique(spp))),by=c("reg","stratum","year")]
 bothR <- merge(localR, comm_master[,list(reg,year,naive_rich,reg_rich)],by=c("reg","year"))
 par(mfrow=c(3,3), cex=1, ps=8, mar=c(2,2,2,2), mgp=c(1,0.2,0), tcl=-0.2)
@@ -899,6 +898,7 @@ bothR[,list(mu_lR=mean(lR),naive_rich=naive_rich[1],reg_rich=reg_rich[1]),by=c("
 	par(new=TRUE)
 	plot(year, naive_rich, type='l', col='red', xaxt='n', yaxt='n', xlab='',ylab='')
 	axis(side=4, col='red')
+	NULL
 },by=c("reg")]
 # mtext("Observed Regional (red), MSOM Regional (blue), and Mean Local (black) Richness", side=3, line=-0.75, outer=TRUE, font=2)
 mtext("Observed Regional (red) and Mean Local (black) Richness", side=3, line=-0.75, outer=TRUE, font=2)
