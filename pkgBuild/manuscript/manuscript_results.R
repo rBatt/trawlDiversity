@@ -912,25 +912,63 @@ mtext("Observed Regional (red) and Mean Local (black) Richness", side=3, line=-0
 #' ***  
 #'   
 #'   
-#' ##All Years All Species Present or Absent
-#+ pres-abs-allSpp-time, fig.width=5, fig.height=7
-# dev.new(width=5, height=7)
-# pdf("~/Desktop/pres-abs-allSpp-time.pdf",width=5, height=7)
-ureg <- spp_master[,unique(reg)]
-for(r in 1:length(ureg)){
-	t_table <- spp_master[reg==ureg[r] & present==1, table(spp,year)]
-	t_table2 <- t(t_table)#[ncol(t_table):1,]
-	t_table3 <- t_table2[,order(colSums(t_table2))]
+# #' ##All Years All Species Present or Absent
+# #+ pres-abs-allSpp-time, fig.width=5, fig.height=7
+# # dev.new(width=5, height=7)
+# # pdf("~/Desktop/pres-abs-allSpp-time.pdf",width=5, height=7)
+# ureg <- spp_master[,unique(reg)]
+# for(r in 1:length(ureg)){
+# 	t_table <- spp_master[reg==ureg[r] & present==1, table(spp,year)]
+# 	t_table2 <- t(t_table)#[ncol(t_table):1,]
+# 	t_table3 <- t_table2[,order(colSums(t_table2))]
+#
+# 	par(mar=c(1,5,0.5,1), ps=8, mgp=c(0.75,0.2,0), tcl=-0.15)
+# 	image(t_table3, axes=FALSE)
+# 	# grid(ny=ncol(t_table3)+1, nx=nrow(t_table3)+1)
+# 	abline(h=seq(0,1,length.out=ncol(t_table3)), v=seq(0,1,length.out=nrow(t_table3)), col='gray', lty='dotted', lwd=0.5)
+# 	axis(side=2, at=seq(0,1,length.out=ncol(t_table3)), label=colnames(t_table3), las=1, cex.axis=0.5)
+# 	axis(side=1, at=seq(0,1,length.out=nrow(t_table3)), label=rownames(t_table3))
+# 	text(0.95,0.95, label=ureg[r], font=2)
+# }
+# # # dev.off()
 	
-	par(mar=c(1,5,0.5,1), ps=8, mgp=c(0.75,0.2,0), tcl=-0.15)
-	image(t_table3, axes=FALSE)
-	# grid(ny=ncol(t_table3)+1, nx=nrow(t_table3)+1)
-	abline(h=seq(0,1,length.out=ncol(t_table3)), v=seq(0,1,length.out=nrow(t_table3)), col='gray', lty='dotted', lwd=0.5)
-	axis(side=2, at=seq(0,1,length.out=ncol(t_table3)), label=colnames(t_table3), las=1, cex.axis=0.5)
-	axis(side=1, at=seq(0,1,length.out=nrow(t_table3)), label=rownames(t_table3))
-	text(0.95,0.95, label=ureg[r], font=2)
-}
-# dev.off()
+}]
+comm_master[,j={
+	plot(propStrata_avg, reg_rich, col=adjustcolor(pretty_col[reg],0.5), pch=16)
+	.SD[order(propStrata_avg),j={
+		lines(propStrata_avg, predict(lm(reg_rich~propStrata_avg)))
+	},by='reg']
+}]
+cmNN[,j={
+	plot(propStrata_noNeither_avg_ltAvg, reg_rich, col=adjustcolor(pretty_col[reg],0.5), pch=16)
+	.SD[order(propStrata_noNeither_avg_ltAvg),j={
+		lines(propStrata_noNeither_avg_ltAvg, predict(lm(reg_rich~propStrata_noNeither_avg_ltAvg)))
+	},by='reg']
+}]
+cmNN[,j={
+	plot(propStrata_noNeither_avg, reg_rich, col=adjustcolor(pretty_col[reg],0.5), pch=16)
+	.SD[order(propStrata_noNeither_avg),j={
+		lines(propStrata_noNeither_avg, predict(lm(reg_rich~propStrata_noNeither_avg)))
+	},by='reg']
+}]
+
+
+# CHECKnoNeither <- spp_master[,j={
+# 	td <- .SD[present==1]
+# 	td1.0 <- td[,list(propStrata_CHECKnoNeither_ltAvg=mean(propStrata)),keyby=c("reg","spp")]
+# 	setkey(td, reg, spp)
+# 	td1.1 <- td[td1.0]
+# 	td1.2 <- td1.1[,list(propStrata_CHECKnoNeither_avg_ltAvg=mean(propStrata_CHECKnoNeither_ltAvg)),by=c("reg","year")]
+# 	td2 <- td[,list(propStrata_CHECKnoNeither_avg=mean(propStrata)),by=c("reg","year")]
+# 	td_out <- merge(td1.2, td2, by=c('reg','year'))
+# }]
+# CHECKcmNN <- merge(comm_master, CHECKnoNeither)
+# CHECKcmNN[,j={
+# 	plot(propStrata_CHECKnoNeither_avg_ltAvg, reg_rich, col=adjustcolor(pretty_col[reg],0.5), pch=16)
+# 	.SD[order(propStrata_CHECKnoNeither_avg_ltAvg),j={
+# 		lines(propStrata_CHECKnoNeither_avg_ltAvg, predict(lm(reg_rich~propStrata_CHECKnoNeither_avg_ltAvg)))
+# 	},by='reg']
+# }]
 
 
 
