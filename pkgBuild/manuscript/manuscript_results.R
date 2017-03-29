@@ -1042,23 +1042,6 @@ cmNN[,j={
 }]
 
 
-# CHECKnoNeither <- spp_master[,j={
-# 	td <- .SD[present==1]
-# 	td1.0 <- td[,list(propStrata_CHECKnoNeither_ltAvg=mean(propStrata)),keyby=c("reg","spp")]
-# 	setkey(td, reg, spp)
-# 	td1.1 <- td[td1.0]
-# 	td1.2 <- td1.1[,list(propStrata_CHECKnoNeither_avg_ltAvg=mean(propStrata_CHECKnoNeither_ltAvg)),by=c("reg","year")]
-# 	td2 <- td[,list(propStrata_CHECKnoNeither_avg=mean(propStrata)),by=c("reg","year")]
-# 	td_out <- merge(td1.2, td2, by=c('reg','year'))
-# }]
-# CHECKcmNN <- merge(comm_master, CHECKnoNeither)
-# CHECKcmNN[,j={
-# 	plot(propStrata_CHECKnoNeither_avg_ltAvg, reg_rich, col=adjustcolor(pretty_col[reg],0.5), pch=16)
-# 	.SD[order(propStrata_CHECKnoNeither_avg_ltAvg),j={
-# 		lines(propStrata_CHECKnoNeither_avg_ltAvg, predict(lm(reg_rich~propStrata_CHECKnoNeither_avg_ltAvg)))
-# 	},by='reg']
-# }]
-
 
 
 #' 
