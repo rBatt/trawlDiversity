@@ -931,6 +931,95 @@ mtext("Observed Regional (red) and Mean Local (black) Richness", side=3, line=-0
 # 	text(0.95,0.95, label=ureg[r], font=2)
 # }
 # # # dev.off()
+#' 
+#'   
+#' \FloatBarrier  
+#'   
+#' ***  
+#'   
+#'   
+#' ##Relationships between beta diversity and regional and local richness
+#+ betaDiv-localRegRich, fig.width=3.5, fig.height=5
+localR <- data_all[,list(lR=length(unique(spp))),by=c("reg","stratum","year")]
+bothR <- merge(localR, comm_master[,list(reg,year,naive_rich,reg_rich)],by=c("reg","year"))
+bothR_mu <- bothR[,list(lR_mu=mean(lR)),by=c("reg","year")]
+cm2 <- merge(comm_master, bothR_mu)
+eval(figure_setup())
+dev.new(width=3.5, height=7)
+par(mfrow=c(3,1), mar=c(1.75,1.5,0.25,0.25),mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
+cm2[,j={
+	plot(reg_rich, beta_div_mu, col=adjustcolor(pretty_col[reg],0.5), pch=16, xlab="Regional Richness", ylab="Beta Diversity")
+	.SD[order(reg_rich),j={
+		lines(reg_rich,predict(lm(beta_div_mu~reg_rich)),col='black')
+	},by='reg']
+}]
+cm2[,j={
+	plot(lR_mu, beta_div_mu, col=adjustcolor(pretty_col[reg],0.5), pch=16, xlab="Average Local Richness", ylab="Beta Diversity")
+	.SD[order(lR_mu),j={
+		lines(lR_mu,predict(lm(beta_div_mu~lR_mu)),col='black')
+	},by='reg']
+}]
+cm2[,legend("topright",ncol=2,legend=pretty_reg[una(reg)],text.col=pretty_col[una(reg)], inset=c(-0.01, -0.03), bty='n', x.intersp=0.15, y.intersp=0.65)]
+cm2[,j={
+	plot(reg_rich, lR_mu, col=adjustcolor(pretty_col[reg],0.5), pch=16, ylab="Average Local Richness", xlab="Regional Richness")
+	.SD[order(reg_rich),j={
+		lines(reg_rich,predict(lm(lR_mu~reg_rich)),col='black')
+	},by='reg']
+}]
+
+localR <- data_all[,list(lR=length(unique(spp))),by=c("reg","stratum","year")]
+bothR <- merge(localR, comm_master[,list(reg,year,naive_rich,naive_rich)],by=c("reg","year"))
+bothR_mu <- bothR[,list(lR_mu=mean(lR)),by=c("reg","year")]
+cm2 <- merge(comm_master, bothR_mu)
+eval(figure_setup())
+dev.new(width=3.5, height=7)
+par(mfrow=c(3,1), mar=c(1.75,1.5,0.25,0.25),mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
+cm2[,j={
+	plot(naive_rich, beta_div_mu, col=adjustcolor(pretty_col[reg],0.5), pch=16, xlab="Observed Regional Richness", ylab="Beta Diversity")
+	.SD[order(naive_rich),j={
+		lines(naive_rich,predict(lm(beta_div_mu~naive_rich)),col='black')
+	},by='reg']
+}]
+cm2[,j={
+	plot(lR_mu, beta_div_mu, col=adjustcolor(pretty_col[reg],0.5), pch=16, xlab="Average Local Richness", ylab="Beta Diversity")
+	.SD[order(lR_mu),j={
+		lines(lR_mu,predict(lm(beta_div_mu~lR_mu)),col='black')
+	},by='reg']
+}]
+cm2[,legend("topright",ncol=2,legend=pretty_reg[una(reg)],text.col=pretty_col[una(reg)], inset=c(-0.01, -0.03), bty='n', x.intersp=0.15, y.intersp=0.65)]
+cm2[,j={
+	plot(naive_rich, lR_mu, col=adjustcolor(pretty_col[reg],0.5), pch=16, ylab="Average Local Richness", xlab="Observed Regional Richness")
+	.SD[order(naive_rich),j={
+		lines(naive_rich,predict(lm(lR_mu~naive_rich)),col='black')
+	},by='reg']
+}]
+
+#' 
+#'   
+#' \FloatBarrier  
+#'   
+#' ***  
+#'   
+#'   
+#' ##Relationships between beta diversity and regional and local richness
+#+ annualLongTerm-allSppNoNeitherSpp, fig.width=7, fig.height=7
+noNeither <- spp_master[,j={
+	td <- .SD[ce_categ!="neither" & present==1]
+	td1.0 <- td[,list(propStrata_noNeither_ltAvg=mean(propStrata)),keyby=c("reg","spp")]
+	setkey(td, reg, spp)
+	td1.1 <- td[td1.0]
+	td1.2 <- td1.1[,list(propStrata_noNeither_avg_ltAvg=mean(propStrata_noNeither_ltAvg)),by=c("reg","year")]
+	td2 <- td[,list(propStrata_noNeither_avg=mean(propStrata)),by=c("reg","year")]
+	td_out <- merge(td1.2, td2, by=c('reg','year'))
+}]
+cmNN <- merge(comm_master, noNeither)
+
+par(mfrow=c(2,2))
+comm_master[,j={
+	plot(propStrata_avg_ltAvg, reg_rich, col=adjustcolor(pretty_col[reg],0.5), pch=16)
+	.SD[order(propStrata_avg_ltAvg),j={
+		lines(propStrata_avg_ltAvg, predict(lm(reg_rich~propStrata_avg_ltAvg)))
+	},by='reg']
 	
 }]
 comm_master[,j={
