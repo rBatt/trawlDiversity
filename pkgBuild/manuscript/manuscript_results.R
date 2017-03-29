@@ -1041,6 +1041,62 @@ cmNN[,j={
 	},by='reg']
 }]
 
+#' 
+#'   
+#' \FloatBarrier  
+#'   
+#' ***  
+#'   
+#'   
+#' ##Range Size Over Time For Community vs Transients
+#+ rareExpansion, fig.width=9, fig.height=5
+
+rE_logic1 <- bquote(reg==rr & ce_categ!="neither" & present==1)
+rE_logic2 <- bquote(reg==rr & ce_categ!="neither")
+colQ <- bquote(adjustcolor(c("pre_ext"="red","post_col"="blue")[stretch_type],0.5))
+colQ2 <- bquote(adjustcolor(c("pre_ext"="red","post_col"="blue")[stretch_type],1))
+
+dev.new(width=6.5, height=6.5)
+par(mfrow=c(3,3), mgp=c(0.85,0.2,0), ps=8, cex=1, mar=c(1.75,1.75,0.5,0.5), tcl=-0.15)
+ur <- spp_master[,unique(reg)]
+for(r in 1:length(ur)){
+	rr <- ur[r]
+	# rr='ebs'
+	rEl2 <- spp_master[order(year)][eval(rE_logic2)]
+	rEl1 <- rEl2[order(year)][eval(rE_logic1)]
+	u_spp <- rEl1[, unique(spp)]
+
+	rEl1[,plot(year, propStrata, type='n')]
+	# rEl1[,j={beanplot(propStrata~year, add=TRUE, at=unique(year), col=adjustcolor('gray',0.75), what=c(0,1,1,0), axes=FALSE); NULL}]
+	rEl1[,j={boxplot(propStrata~year, add=TRUE, at=unique(year), col=adjustcolor('gray',0.75), outline=FALSE, axes=FALSE); NULL}]
+	rEl1[,lines(year,propStrata, lwd=0.25, col=eval(colQ)),by=c("spp","stretch_type")]
+	# rEl1[,j={beanplot(propStrata~year, add=TRUE, at=unique(year), col='white', what=c(0,1,0,0), axes=FALSE); NULL}]
+	# rEl1[,points(year,propStrata, cex=0.25, pch=20, col=eval(colQ)),by=c("spp","stretch_type")]
+	# rEl1[,lines(.SD[,mean(propStrata),by='year'], lwd=1, col=eval(colQ2)), by=c("stretch_type")]
+	mtext(pretty_reg[rr], line=-0.75, side=3, adj=0.1, font=2)
+}
+
+
+# for(us in 1:length(u_spp)){
+# 	td <- rEl2[spp==u_spp[us]]
+# 	td[,lines(year, propStrata, lwd=0.5)]
+# }
+
+par(mgp=c(3,1,0))
+# rEl1[,j={boxplot(propStrata~year, at=unique(year), add=TRUE, col=adjustcolor('red',0.5), outcol='blue')}]
+rEl1[,j={boxplot(propStrata~year, add=TRUE, at=year, col=adjustcolor('red',0.5), outcol='blue'); NULL}]
+boxplot(propStrata~year, data=rEl1, at=rEl1[,unique(year)], add=TRUE, col=adjustcolor('red',0.5), outcol='blue')
+
+spp_master[eval(rE_logic1),j={lines(year,propStrata)},by="spp"]
+spp_master[eval(rE_logic1),j={
+	bb<<-boxplot(propStrata~year, at=(unique(year)), add=TRUE, col='red')
+	NULL
+}]
+par(new=TRUE)
+comm_master[reg== rr, plot(year, reg_rich, type='l', lwd=3, col='blue', xaxt='n', yaxt='n', xlab='',ylab='')]
+axis(side=4, col='blue')
+
+
 
 
 
