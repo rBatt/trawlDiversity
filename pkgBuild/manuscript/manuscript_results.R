@@ -72,7 +72,7 @@ library(rbLib) # library(devtools); install_github("rBatt/rbLib")
 # ================
 # = Report Setup =
 # ================
-doc_type <- c("html", "pdf")[2]
+doc_type <- c("html", "pdf")[1]
 table_type <- c("html"="html", "pdf"="latex")[doc_type]
 options("digits"=3) # rounding output to 4 in kable() (non-regression tables)
 o_f <- paste(doc_type, "document", sep="_")
@@ -855,7 +855,7 @@ for(r in 1:length(yregs)){
 #'   
 #' #Revision Exploration
 #' ##Are rare species becoming more common?
-#+ rare-more-common, fig.width=7, fig.height=7 
+#+ rare-more-common, fig.width=7, fig.height=7
 blah <- spp_master[present==1, j={
 	# if(any(col==1) | any(ext==1)){
 	# 	list(propSlope=NA_real_, mu_propStrat=mean(propStrata))
@@ -869,7 +869,13 @@ blah <- spp_master[present==1, j={
 # blah[,plot(mu_propStrat, propSlope, main=reg[1]),by='reg']
 
 par(mfrow=c(3,3))
-blah[,j={boxplot(propSlope~ce_categ, main=reg[1], outline=FALSE);abline(h=0);NULL},by='reg']
+ureg <- blah[,unique(reg)]
+nreg <- length(ureg)
+for(r in 1:nreg){
+	blah[reg==ureg[r],j={boxplot(propSlope~ce_categ, main=reg[1], outline=FALSE);abline(h=0);NULL}]
+}
+
+#'   
 #' I wanted to determine if species in the region are becoming more widespread over time. In other words, when the species is present, what fraction of the region does it occupy? Does that fraction change over time? This slope is the y-axis for the boxplots. It indicates the long-term slope of the proportion of sites occupied (excluding any year when that proportion was 0). The x-axis represents the categories of colonization-extinction patterns. Species in the "both" category experienced both colonization and extinction events at some point in the time series. 
 #' 
 #' Other figures and analyses suggest that species in the "both" category play an important role in *increases* in species richness. In other words, the coming-and-going of these organisms is not neutral in the long term. This conjecture is supported by 1) the magnitude of increase for regions with increasing richness cannot be explained by "colonizing" species alone; 2) geographically constrained species have more colonizations and extinctions that widespread species.  
@@ -891,16 +897,21 @@ blah[,j={boxplot(propSlope~ce_categ, main=reg[1], outline=FALSE);abline(h=0);NUL
 localR <- data_all[,list(lR=length(unique(spp))),by=c("reg","stratum","year")]
 bothR <- merge(localR, comm_master[,list(reg,year,naive_rich,reg_rich)],by=c("reg","year"))
 par(mfrow=c(3,3), cex=1, ps=8, mar=c(2,2,2,2), mgp=c(1,0.2,0), tcl=-0.2)
-bothR[,list(mu_lR=mean(lR),naive_rich=naive_rich[1],reg_rich=reg_rich[1]),by=c("reg","year")][,j={
-	plot(year, mu_lR, type='l')
-	mtext(reg[1], side=3, line=0, adj=0.1, font=2)
-	# par(new=TRUE)
-	# plot(year, reg_rich, type='l', col='blue', xaxt='n', yaxt='n', xlab='',ylab='')
-	par(new=TRUE)
-	plot(year, naive_rich, type='l', col='red', xaxt='n', yaxt='n', xlab='',ylab='')
-	axis(side=4, col='red')
-	NULL
-},by=c("reg")]
+ureg <- bothR[,unique(reg)]
+nreg <- length(ureg)
+for(r in 1:nreg){
+	bothR[reg==ureg[r],list(mu_lR=mean(lR),naive_rich=naive_rich[1],reg_rich=reg_rich[1]),by=c("reg","year")][,j={
+		plot(year, mu_lR, type='l')
+		mtext(reg[1], side=3, line=0, adj=0.1, font=2)
+		# par(new=TRUE)
+		# plot(year, reg_rich, type='l', col='blue', xaxt='n', yaxt='n', xlab='',ylab='')
+		par(new=TRUE)
+		plot(year, naive_rich, type='l', col='red', xaxt='n', yaxt='n', xlab='',ylab='')
+		axis(side=4, col='red')
+		NULL
+	}]
+}
+
 # mtext("Observed Regional (red), MSOM Regional (blue), and Mean Local (black) Richness", side=3, line=-0.75, outer=TRUE, font=2)
 mtext("Observed Regional (red) and Mean Local (black) Richness", side=3, line=-0.75, outer=TRUE, font=2)
 #' In general, local richness and regional richness are similar. There are differences, possibly in some cases the regional slope might be significant whereas local would not be (I haven't checked, though). However, the trends aren't in opposite directions at the two scales.
@@ -948,24 +959,32 @@ cm2 <- merge(comm_master, bothR_mu)
 eval(figure_setup())
 # dev.new(width=3.5, height=7)
 par(mfrow=c(3,1), mar=c(1.75,1.5,0.25,0.25),mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
+ureg <- cm2[,unique(reg)]
+nreg <- length(ureg)
 cm2[,j={
 	plot(reg_rich, beta_div_mu, col=adjustcolor(pretty_col[reg],0.5), pch=16, xlab="Regional Richness", ylab="Beta Diversity")
-	.SD[order(reg_rich),j={
-		lines(reg_rich,predict(lm(beta_div_mu~reg_rich)),col='black')
-	},by='reg']
+	for(r in 1:nreg){
+		.SD[reg==ureg[r]][order(reg_rich),j={
+			lines(reg_rich,predict(lm(beta_div_mu~reg_rich)),col='black')
+		}]
+	}
 }]
 cm2[,j={
 	plot(lR_mu, beta_div_mu, col=adjustcolor(pretty_col[reg],0.5), pch=16, xlab="Average Local Richness", ylab="Beta Diversity")
-	.SD[order(lR_mu),j={
-		lines(lR_mu,predict(lm(beta_div_mu~lR_mu)),col='black')
-	},by='reg']
+	for(r in 1:nreg){
+		.SD[reg==ureg[r]][order(reg_rich),j={
+			lines(lR_mu,predict(lm(beta_div_mu~lR_mu)),col='black')
+		}]
+	}
 }]
 cm2[,legend("topright",ncol=2,legend=pretty_reg[una(reg)],text.col=pretty_col[una(reg)], inset=c(-0.01, -0.03), bty='n', x.intersp=0.15, y.intersp=0.65)]
 cm2[,j={
 	plot(reg_rich, lR_mu, col=adjustcolor(pretty_col[reg],0.5), pch=16, ylab="Average Local Richness", xlab="Regional Richness")
-	.SD[order(reg_rich),j={
-		lines(reg_rich,predict(lm(lR_mu~reg_rich)),col='black')
-	},by='reg']
+	for(r in 1:nreg){
+		.SD[reg==ureg[r]][order(reg_rich),j={
+			lines(reg_rich,predict(lm(lR_mu~reg_rich)),col='black')
+		}]
+	}
 }]
 
 #' ##Relationships between alpha, beta, and gamma (Naive) diversity
@@ -977,24 +996,32 @@ cm2 <- merge(comm_master, bothR_mu)
 eval(figure_setup())
 # dev.new(width=3.5, height=7)
 par(mfrow=c(3,1), mar=c(1.75,1.5,0.25,0.25),mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
+ureg <- cm2[,unique(reg)]
+nreg <- length(ureg)
 cm2[,j={
 	plot(naive_rich, beta_div_mu, col=adjustcolor(pretty_col[reg],0.5), pch=16, xlab="Observed Regional Richness", ylab="Beta Diversity")
-	.SD[order(naive_rich),j={
-		lines(naive_rich,predict(lm(beta_div_mu~naive_rich)),col='black')
-	},by='reg']
+	for(r in 1:nreg){
+		.SD[reg==ureg[r]][order(naive_rich),j={
+			lines(naive_rich,predict(lm(beta_div_mu~naive_rich)),col='black')
+		}]
+	}
 }]
 cm2[,j={
 	plot(lR_mu, beta_div_mu, col=adjustcolor(pretty_col[reg],0.5), pch=16, xlab="Average Local Richness", ylab="Beta Diversity")
-	.SD[order(lR_mu),j={
-		lines(lR_mu,predict(lm(beta_div_mu~lR_mu)),col='black')
-	},by='reg']
+	for(r in 1:nreg){
+		.SD[reg==ureg[r]][order(naive_rich),j={
+			lines(lR_mu,predict(lm(beta_div_mu~lR_mu)),col='black')
+		}]
+	}
 }]
 cm2[,legend("topright",ncol=2,legend=pretty_reg[una(reg)],text.col=pretty_col[una(reg)], inset=c(-0.01, -0.03), bty='n', x.intersp=0.15, y.intersp=0.65)]
 cm2[,j={
 	plot(naive_rich, lR_mu, col=adjustcolor(pretty_col[reg],0.5), pch=16, ylab="Average Local Richness", xlab="Observed Regional Richness")
-	.SD[order(naive_rich),j={
-		lines(naive_rich,predict(lm(lR_mu~naive_rich)),col='black')
-	},by='reg']
+	for(r in 1:nreg){
+		.SD[reg==ureg[r]][order(naive_rich),j={
+			lines(naive_rich,predict(lm(lR_mu~naive_rich)),col='black')
+		}]
+	}
 }]
 
 #' 
@@ -1019,30 +1046,39 @@ noNeither <- spp_master[,j={
 cmNN <- merge(comm_master, noNeither)
 
 par(mfrow=c(2,2))
+ureg <- comm_master[,unique(reg)]
+nreg <- length(ureg)
 comm_master[,j={
 	plot(propStrata_avg_ltAvg, reg_rich, col=adjustcolor(pretty_col[reg],0.5), pch=16)
-	.SD[order(propStrata_avg_ltAvg),j={
-		lines(propStrata_avg_ltAvg, predict(lm(reg_rich~propStrata_avg_ltAvg)))
-	},by='reg']
-	
+	for(r in 1:nreg){
+		.SD[reg==ureg[r]][order(propStrata_avg_ltAvg),j={
+			lines(propStrata_avg_ltAvg, predict(lm(reg_rich~propStrata_avg_ltAvg)))
+		}]
+	}
 }]
 comm_master[,j={
 	plot(propStrata_avg, reg_rich, col=adjustcolor(pretty_col[reg],0.5), pch=16)
-	.SD[order(propStrata_avg),j={
-		lines(propStrata_avg, predict(lm(reg_rich~propStrata_avg)))
-	},by='reg']
+	for(r in 1:nreg){
+		.SD[reg==ureg[r]][order(propStrata_avg),j={
+			lines(propStrata_avg, predict(lm(reg_rich~propStrata_avg)))
+		}]
+	}
 }]
 cmNN[,j={
 	plot(propStrata_noNeither_avg_ltAvg, reg_rich, col=adjustcolor(pretty_col[reg],0.5), pch=16)
-	.SD[order(propStrata_noNeither_avg_ltAvg),j={
-		lines(propStrata_noNeither_avg_ltAvg, predict(lm(reg_rich~propStrata_noNeither_avg_ltAvg)))
-	},by='reg']
+	for(r in 1:nreg){
+		.SD[reg==ureg[r]][order(propStrata_noNeither_avg_ltAvg),j={
+			lines(propStrata_noNeither_avg_ltAvg, predict(lm(reg_rich~propStrata_noNeither_avg_ltAvg)))
+		}]
+	}
 }]
 cmNN[,j={
 	plot(propStrata_noNeither_avg, reg_rich, col=adjustcolor(pretty_col[reg],0.5), pch=16)
-	.SD[order(propStrata_noNeither_avg),j={
-		lines(propStrata_noNeither_avg, predict(lm(reg_rich~propStrata_noNeither_avg)))
-	},by='reg']
+	for(r in 1:nreg){
+		.SD[reg==ureg[r]][order(propStrata_noNeither_avg),j={
+			lines(propStrata_noNeither_avg, predict(lm(reg_rich~propStrata_noNeither_avg)))
+		}]
+	}
 }]
 
 #' 
@@ -1053,7 +1089,7 @@ cmNN[,j={
 #'   
 #'   
 #' ##Range Size Over Time For Community vs Transients
-#+ rareExpansion, fig.width=9, fig.height=5
+#+ rareExpansion, fig.width=6.5, fig.height=6.5
 
 rE_logic1 <- bquote(reg==rr & ce_categ!="neither" & present==1)
 rE_logic2 <- bquote(reg==rr & ce_categ!="neither")
@@ -1156,8 +1192,12 @@ mtext("Year", side=1, line=-0.75, outer=TRUE, font=2)
 #'   
 #' #Time Series of Tows per Site
 #+ towsPerSite-timeSeries, width=6.5, height=6.5
-par(mfrow=c(3,3))
-data_all[reg!='wcann',list(Kmax=unique(Kmax)),by=c("reg","year","stratum")][,j={boxplot(Kmax~year, main=reg[1]);NULL},by='reg']
+par(mfrow=c(3,3), mar=c(4,3.5,1,1))
+ureg <- data_all[reg!='wcann',unique(reg)]
+nreg <- length(ureg)
+for(r in 1:nreg){
+	data_all[reg==ureg[r],list(Kmax=unique(Kmax)),by=c("reg","year","stratum")][,j={boxplot(Kmax~year, main=reg[1]);NULL},by='reg']
+}
 mtext("Tows per site", side=2, line=-1.25, outer=TRUE)
 
 #' 
