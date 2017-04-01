@@ -853,6 +853,7 @@ for(r in 1:length(yregs)){
 #' ***  
 #'   
 #'   
+#' #Revision Exploration
 #' ##Are rare species becoming more common?
 #+ rare-more-common, fig.width=7, fig.height=7 
 blah <- spp_master[present==1, j={
@@ -885,8 +886,8 @@ blah[,j={boxplot(propSlope~ce_categ, main=reg[1], outline=FALSE);abline(h=0);NUL
 #' ***  
 #'   
 #'   
-#' ##Local Richness Compared to Regional Richness
-#+ local-richness, fig.width=7, fig.height=7
+#' ##Time Series of Local and Regional Richness
+#+ alpha-gamma-TimeSeries, fig.width=7, fig.height=7
 localR <- data_all[,list(lR=length(unique(spp))),by=c("reg","stratum","year")]
 bothR <- merge(localR, comm_master[,list(reg,year,naive_rich,reg_rich)],by=c("reg","year"))
 par(mfrow=c(3,3), cex=1, ps=8, mar=c(2,2,2,2), mgp=c(1,0.2,0), tcl=-0.2)
@@ -938,14 +939,14 @@ mtext("Observed Regional (red) and Mean Local (black) Richness", side=3, line=-0
 #' ***  
 #'   
 #'   
-#' ##Relationships between beta diversity and regional and local richness
-#+ betaDiv-localRegRich, fig.width=3.5, fig.height=5
+#' ##Relationships between alpha, beta, and gamma (MSOM) diversity
+#+ abgDiversity-MSOM, fig.width=3.5, fig.height=7
 localR <- data_all[,list(lR=length(unique(spp))),by=c("reg","stratum","year")]
 bothR <- merge(localR, comm_master[,list(reg,year,naive_rich,reg_rich)],by=c("reg","year"))
 bothR_mu <- bothR[,list(lR_mu=mean(lR)),by=c("reg","year")]
 cm2 <- merge(comm_master, bothR_mu)
 eval(figure_setup())
-dev.new(width=3.5, height=7)
+# dev.new(width=3.5, height=7)
 par(mfrow=c(3,1), mar=c(1.75,1.5,0.25,0.25),mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
 cm2[,j={
 	plot(reg_rich, beta_div_mu, col=adjustcolor(pretty_col[reg],0.5), pch=16, xlab="Regional Richness", ylab="Beta Diversity")
@@ -967,12 +968,14 @@ cm2[,j={
 	},by='reg']
 }]
 
+#' ##Relationships between alpha, beta, and gamma (Naive) diversity
+#+ abgDiversity-Naive, fig.width=3.5, fig.height=7
 localR <- data_all[,list(lR=length(unique(spp))),by=c("reg","stratum","year")]
-bothR <- merge(localR, comm_master[,list(reg,year,naive_rich,naive_rich)],by=c("reg","year"))
+bothR <- merge(localR, comm_master[,list(reg,year,naive_rich,reg_rich)],by=c("reg","year"))
 bothR_mu <- bothR[,list(lR_mu=mean(lR)),by=c("reg","year")]
 cm2 <- merge(comm_master, bothR_mu)
 eval(figure_setup())
-dev.new(width=3.5, height=7)
+# dev.new(width=3.5, height=7)
 par(mfrow=c(3,1), mar=c(1.75,1.5,0.25,0.25),mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
 cm2[,j={
 	plot(naive_rich, beta_div_mu, col=adjustcolor(pretty_col[reg],0.5), pch=16, xlab="Observed Regional Richness", ylab="Beta Diversity")
@@ -1001,8 +1004,9 @@ cm2[,j={
 #' ***  
 #'   
 #'   
-#' ##Relationships between beta diversity and regional and local richness
-#+ annualLongTerm-allSppNoNeitherSpp, fig.width=7, fig.height=7
+#' ##Richness-range size, varying long-term and annual, all spp and transients only
+#' By transient I mean species that weren't present in every year.  
+#+ annualLongTerm-allSppNoNeitherSpp, fig.width=6.5, fig.height=6.5
 noNeither <- spp_master[,j={
 	td <- .SD[ce_categ!="neither" & present==1]
 	td1.0 <- td[,list(propStrata_noNeither_ltAvg=mean(propStrata)),keyby=c("reg","spp")]
