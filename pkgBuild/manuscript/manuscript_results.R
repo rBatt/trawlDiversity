@@ -1057,52 +1057,108 @@ cmNN[,j={
 
 rE_logic1 <- bquote(reg==rr & ce_categ!="neither" & present==1)
 rE_logic2 <- bquote(reg==rr & ce_categ!="neither")
+rE_logic3 <- bquote(reg==rr & ce_categ=="neither")
 colQ <- bquote(adjustcolor(c("pre_ext"="red","post_col"="blue")[stretch_type],0.5))
 colQ2 <- bquote(adjustcolor(c("pre_ext"="red","post_col"="blue")[stretch_type],1))
 
-dev.new(width=6.5, height=6.5)
+# dev.new(width=6.5, height=6.5)
 par(mfrow=c(3,3), mgp=c(0.85,0.2,0), ps=8, cex=1, mar=c(1.75,1.75,0.5,0.5), tcl=-0.15)
 ur <- spp_master[,unique(reg)]
 for(r in 1:length(ur)){
 	rr <- ur[r]
-	# rr='ebs'
+	rEl3 <- spp_master[order(year)][eval(rE_logic3)]
 	rEl2 <- spp_master[order(year)][eval(rE_logic2)]
 	rEl1 <- rEl2[order(year)][eval(rE_logic1)]
 	u_spp <- rEl1[, unique(spp)]
 
-	rEl1[,plot(year, propStrata, type='n')]
-	# rEl1[,j={beanplot(propStrata~year, add=TRUE, at=unique(year), col=adjustcolor('gray',0.75), what=c(0,1,1,0), axes=FALSE); NULL}]
-	rEl1[,j={boxplot(propStrata~year, add=TRUE, at=unique(year), col=adjustcolor('gray',0.75), outline=FALSE, axes=FALSE); NULL}]
-	rEl1[,lines(year,propStrata, lwd=0.25, col=eval(colQ)),by=c("spp","stretch_type")]
-	# rEl1[,j={beanplot(propStrata~year, add=TRUE, at=unique(year), col='white', what=c(0,1,0,0), axes=FALSE); NULL}]
-	# rEl1[,points(year,propStrata, cex=0.25, pch=20, col=eval(colQ)),by=c("spp","stretch_type")]
-	# rEl1[,lines(.SD[,mean(propStrata),by='year'], lwd=1, col=eval(colQ2)), by=c("stretch_type")]
+	rEl1[,j={bp_dat <<- boxplot(propStrata~year,plot=FALSE);NULL}]
+	bp_ylim <- unlist(bp_dat[c("stats")], use.names=FALSE)
+	medRange_pres0 <- rEl2[,list(propStrata=median(propStrata)),by='year']
+	medRange_noNeith <- rEl3[,list(propStrata=median(propStrata)),by='year']
+	rEl1_qylim <- rEl1[,quantile(propStrata,c(0.25,0.75)),by='year'][,range(V1)]
+	rEl3_qylim <- rEl3[,quantile(propStrata,c(0.25,0.75)),by='year'][,range(V1)]
+	ylim <- range(c(
+		bp_ylim,
+		rEl1_qylim,
+		rEl3_qylim,
+		# medRange_pres0[,propStrata],
+		medRange_noNeith[,propStrata]#,
+	))
+	rEl1[,j={boxplot(propStrata~year, add=FALSE, at=unique(year), outline=FALSE, axes=TRUE, ylim=ylim); NULL}]
+	
+	
+	lines(rEl1[,median(propStrata),by='year'], lwd=2, col='red')
+	lines(rEl1[,quantile(propStrata,0.75),by='year'], lwd=1, col='red')
+	lines(rEl1[,quantile(propStrata,0.25),by='year'], lwd=1, col='red')
+	
+	lines(rEl3[,median(propStrata),by='year'], lwd=2, col='blue')
+	lines(rEl3[,quantile(propStrata,0.75),by='year'], lwd=1, col='blue')
+	lines(rEl3[,quantile(propStrata,0.25),by='year'], lwd=1, col='blue')
+
+	comm_master[reg==rr, lines(year,propStrata_avg_ltAvg, col='black')]
 	mtext(pretty_reg[rr], line=-0.75, side=3, adj=0.1, font=2)
 }
 
+#' 
+#'   
+#' \FloatBarrier  
+#'   
+#' ***  
+#'   
+#'   
+#' ##Time Series of Range Size, Color is Local Richness
+#+ rangeTS-colorAlpha, fig.width=6.5, fig.height=6.5
+rE_logic1 <- bquote(reg==rr & ce_categ!="neither" & present==1)
+rE_logic2 <- bquote(reg==rr & ce_categ!="neither")
+rE_logic3 <- bquote(reg==rr & ce_categ=="neither")
+colQ <- bquote(adjustcolor(c("pre_ext"="red","post_col"="blue")[stretch_type],0.5))
+colQ2 <- bquote(adjustcolor(c("pre_ext"="red","post_col"="blue")[stretch_type],1))
 
-# for(us in 1:length(u_spp)){
-# 	td <- rEl2[spp==u_spp[us]]
-# 	td[,lines(year, propStrata, lwd=0.5)]
-# }
+# dev.new(width=6.5, height=6.5)
+par(mfrow=c(3,3), mgp=c(0.85,0.2,0), ps=8, cex=1, mar=c(1.75,1.75,0.5,0.5), tcl=-0.15, oma=c(0.25,0.1,0.1,0.1))
+ur <- spp_master[,unique(reg)]
+for(r in 1:length(ur)){
+	rr <- ur[r]
+	rEl3 <- spp_master[order(year)][eval(rE_logic3)]
+	rEl2 <- spp_master[order(year)][eval(rE_logic2)]
+	rEl1 <- rEl2[order(year)][eval(rE_logic1)]
+	u_spp <- rEl1[, unique(spp)]
+	
+	nCols <- rEl1[,length(unique(year))]
+	cols <- viridis(nCols)
+	nTrans <- rEl1[,colSums(table(spp,year))]
+	nTrans <- nTrans[order(as.integer(names(nTrans)))]
+	colVec_ind <- cut(nTrans, breaks=nCols)
+	colVec <- cols[colVec_ind]
+	
+	rEl1[,j={bp_dat <<- boxplot(propStrata~year,plot=FALSE);NULL}]
+	bp_ylim <- unlist(bp_dat[c("stats")], use.names=FALSE)
+	ylim <- range(c(
+		bp_ylim
+	))
+	rEl1[,j={boxplot(propStrata~year, add=FALSE, at=unique(year), col=colVec, outline=FALSE, axes=TRUE, ylim=ylim); NULL}]
+	if(rr=="sa"){
+		mapLegend(x=0.3, y=0.78, zlim=range(nTrans),cols=cols)
+	}else{
+		mapLegend(x=0.05, y=0.78, zlim=range(nTrans),cols=cols)
+	}
+	mtext(pretty_reg[rr], line=-0.75, side=3, adj=0.1, font=2)
+}
+mtext("Range Size of Transient Species", side=2, line=-0.75, outer=TRUE, font=2)
+mtext("Year", side=1, line=-0.75, outer=TRUE, font=2)
 
-par(mgp=c(3,1,0))
-# rEl1[,j={boxplot(propStrata~year, at=unique(year), add=TRUE, col=adjustcolor('red',0.5), outcol='blue')}]
-rEl1[,j={boxplot(propStrata~year, add=TRUE, at=year, col=adjustcolor('red',0.5), outcol='blue'); NULL}]
-boxplot(propStrata~year, data=rEl1, at=rEl1[,unique(year)], add=TRUE, col=adjustcolor('red',0.5), outcol='blue')
-
-spp_master[eval(rE_logic1),j={lines(year,propStrata)},by="spp"]
-spp_master[eval(rE_logic1),j={
-	bb<<-boxplot(propStrata~year, at=(unique(year)), add=TRUE, col='red')
-	NULL
-}]
-par(new=TRUE)
-comm_master[reg== rr, plot(year, reg_rich, type='l', lwd=3, col='blue', xaxt='n', yaxt='n', xlab='',ylab='')]
-axis(side=4, col='blue')
-
-
-
-
+#' 
+#'   
+#' \FloatBarrier  
+#'   
+#' ***  
+#'   
+#'   
+#' #Time Series of Tows per Site
+#+ towsPerSite-timeSeries, width=6.5, height=6.5
+par(mfrow=c(3,3))
+data_all[reg!='wcann',list(Kmax=unique(Kmax)),by=c("reg","year","stratum")][,j={boxplot(Kmax~year, main=reg[1]);NULL},by='reg']
+mtext("Tows per site", side=2, line=-1.25, outer=TRUE)
 
 #' 
 #'   
