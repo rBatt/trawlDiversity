@@ -169,7 +169,7 @@ process_msomStatic <- function(reg_out, save_mem=TRUE, obs_yrs){
 			if(save_mem){rm(list="t_Z_big")}
 				
 			# ---- Get Beta Diversity ----
-			bd_methods <- c("hellinger","jaccard", "sorensen", "ochiai")[1]
+			bd_methods <- c("hellinger","jaccard", "sorensen", "ochiai")[2]
 			qbd <- function(m, t_mat){beta_div_quick(t_mat, method=m)}
 			bd_full <- t_Z_big_long[, j={
 				t_mat <- matrix(value, ncol=lu(sppID))
