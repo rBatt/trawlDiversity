@@ -999,18 +999,18 @@ par(mfrow=c(3,1), mar=c(1.75,1.5,0.25,0.25),mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, 
 ureg <- cm2[,unique(reg)]
 nreg <- length(ureg)
 cm2[,j={
-	plot(naive_rich, beta_div_mu, col=adjustcolor(pretty_col[reg],0.5), pch=16, xlab="Observed Regional Richness", ylab="Beta Diversity")
+	plot(naive_rich, beta_div_obs, col=adjustcolor(pretty_col[reg],0.5), pch=16, xlab="Observed Regional Richness", ylab="Observed Beta Diversity")
 	for(r in 1:nreg){
 		.SD[reg==ureg[r]][order(naive_rich),j={
-			lines(naive_rich,predict(lm(beta_div_mu~naive_rich)),col='black')
+			lines(naive_rich,predict(lm(beta_div_obs~naive_rich)),col='black')
 		}]
 	}
 }]
 cm2[,j={
-	plot(lR_mu, beta_div_mu, col=adjustcolor(pretty_col[reg],0.5), pch=16, xlab="Average Local Richness", ylab="Beta Diversity")
+	plot(lR_mu, beta_div_obs, col=adjustcolor(pretty_col[reg],0.5), pch=16, xlab="Average Local Richness", ylab="Observed Beta Diversity")
 	for(r in 1:nreg){
 		.SD[reg==ureg[r]][order(naive_rich),j={
-			lines(lR_mu,predict(lm(beta_div_mu~lR_mu)),col='black')
+			lines(lR_mu,predict(lm(beta_div_obs~lR_mu)),col='black')
 		}]
 	}
 }]
