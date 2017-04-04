@@ -26,7 +26,7 @@ process_obsRich <- function(X, msom_yrs){
 	naive_rich <- rd[,list(naive_rich=trawlData::lu(spp)), keyby=c("year")]
 	
 	# beta diversity
-	bd_methods <- c("hellinger","jaccard", "sorensen", "ochiai")[1]
+	bd_methods <- c("hellinger","jaccard", "sorensen", "ochiai")[2]
 	qbd <- function(m, t_mat){beta_div_quick(t_mat, method=m)}
 	bd_wide <- rd[,j={
 		Y_tbl <- as.matrix(table(stratum, spp))
