@@ -453,8 +453,13 @@ rangeTimeDT <- rangeTimeDT[,list(
 mod_smry2 <- function(m){
 	mod_call <- switch(class(m), lmerMod=m@call, lm=m$call)
 	mod_call <- as.character(mod_call)[2]
-	fits <- sem.model.fits(m)
-	fits[,c("estimate","p.value","Marginal","Conditional")] <- lapply(fits[,c("Marginal","Conditional")], signif, 4)
+	fits <- tryCatch(sem.model.fits(m), error=function(cond)NA)
+	if(all(is.na(fits))){
+		warning("Error in sem.model.fits")
+		fits <- data.frame(Class=class(m), Family="gaussian", Link="identity", N=as.numeric(nobs(m)),"Marginal"=NA_real_,"Conditional"=NA_real_) # family always gaussian for lmer and lm
+	}else{
+		fits[,c("Marginal","Conditional")] <- lapply(fits[,c("Marginal","Conditional")], signif, 4)
+	}
 	anova_sum <- car::Anova(m)
 	
 	out <- data.frame(
