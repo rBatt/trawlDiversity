@@ -1112,31 +1112,49 @@ for(r in 1:length(ur)){
 	rEl1 <- rEl2[order(year)][eval(rE_logic1)]
 	u_spp <- rEl1[, unique(spp)]
 
-	rEl1[,j={bp_dat <<- boxplot(range_size_mu~year,plot=FALSE);NULL}]
+	rEl1[,j={bp_dat <<- boxplot(range_size_samp~year,plot=FALSE);NULL}]
 	bp_ylim <- unlist(bp_dat[c("stats")], use.names=FALSE)
-	medRange_pres0 <- rEl2[,list(range_size_mu=median(range_size_mu)),by='year']
-	medRange_noNeith <- rEl3[,list(range_size_mu=median(range_size_mu)),by='year']
-	rEl1_qylim <- rEl1[,quantile(range_size_mu,c(0.25,0.75)),by='year'][,range(V1)]
-	rEl3_qylim <- rEl3[,quantile(range_size_mu,c(0.25,0.75)),by='year'][,range(V1)]
+	medRange_pres0 <- rEl2[,list(range_size_samp=median(range_size_samp)),by='year']
+	medRange_noNeith <- rEl3[,list(range_size_samp=median(range_size_samp)),by='year']
+	rEl1_qylim <- rEl1[,quantile(range_size_samp,c(0.25,0.75)),by='year'][,range(V1)]
+	rEl3_qylim <- rEl3[,quantile(range_size_samp,c(0.25,0.75)),by='year'][,range(V1)]
 	ylim <- range(c(
-		bp_ylim,
+		# bp_ylim,
 		rEl1_qylim,
 		rEl3_qylim,
-		# medRange_pres0[,propStrata],
-		medRange_noNeith[,range_size_mu]#,
+		# medRange_pres0[,range_size_samp],
+		medRange_noNeith[,range_size_samp]#,
 	))
-	rEl1[,j={boxplot(range_size_mu~year, add=FALSE, at=unique(year), outline=FALSE, axes=TRUE, ylim=ylim); NULL}]
+	# rEl1[,j={boxplot(range_size_samp~year, add=FALSE, at=unique(year), outline=FALSE, axes=TRUE, ylim=ylim); NULL}]
+	
+	rEl1[,plot(year, range_size_samp, type='n', ylim=ylim)]
+	grid()
+	
+	r11 <- rEl1[,median(range_size_samp),by='year']
+	r12 <- rEl1[,quantile(range_size_samp,0.75),by='year']
+	r13 <- rEl1[,quantile(range_size_samp,0.25),by='year']
+	# lines(r11, lwd=2, col='red')
+	# lines(r12, lwd=1, col='red')
+	# lines(r13, lwd=1, col='red')
+	poly1y <- c(r12[,V1], r13[,rev(V1)])
+	poly1x <- c(r12[,year],r13[,rev(year)])
 	
 	
-	lines(rEl1[,median(range_size_mu),by='year'], lwd=2, col='red')
-	lines(rEl1[,quantile(range_size_mu,0.75),by='year'], lwd=1, col='red')
-	lines(rEl1[,quantile(range_size_mu,0.25),by='year'], lwd=1, col='red')
+	r21 <- rEl3[,median(range_size_samp),by='year']
+	r22 <- rEl3[,quantile(range_size_samp,0.75),by='year']
+	r23 <- rEl3[,quantile(range_size_samp,0.25),by='year']
+	# lines(r21, lwd=2, col='blue')
+	# lines(r22, lwd=1, col='blue')
+	# lines(r23, lwd=1, col='blue')
+	poly2y <- c(r22[,V1], r23[,rev(V1)])
+	poly2x <- c(r22[,year],r23[,rev(year)])
 	
-	lines(rEl3[,median(range_size_mu),by='year'], lwd=2, col='blue')
-	lines(rEl3[,quantile(range_size_mu,0.75),by='year'], lwd=1, col='blue')
-	lines(rEl3[,quantile(range_size_mu,0.25),by='year'], lwd=1, col='blue')
-
-	comm_master[reg==rr, lines(year,range_size_mu_avg_ltAvg, col='black')]
+	
+	polygon(poly2x, poly2y, col=adjustcolor('blue',0.15), border=NA)
+	polygon(poly1x, poly1y, col=adjustcolor('red',0.15), border=NA)
+	lines(r21, lwd=2, col='blue')
+	lines(r11, lwd=2, col='red')
+	comm_master[reg==rr, lines(year,range_size_samp_avg_ltAvg, col='black')]
 	mtext(pretty_reg[rr], line=-0.75, side=3, adj=0.1, font=2)
 }
 
