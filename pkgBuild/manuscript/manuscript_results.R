@@ -1244,6 +1244,55 @@ mtext("Year", side=1, line=-0.75, outer=TRUE, font=2)
 #' ***  
 #'   
 #'   
+#' ##Time Series of Range Size, Color is Local Richness (Resampled)
+#+ rangeTS-colorAlpha-samp, fig.width=6.5, fig.height=6.5
+eval(figure_setup())
+rE_logic1 <- bquote(reg==rr & ce_categ!="neither" & present==1)
+rE_logic2 <- bquote(reg==rr & ce_categ!="neither")
+rE_logic3 <- bquote(reg==rr & ce_categ=="neither")
+colQ <- bquote(adjustcolor(c("pre_ext"="red","post_col"="blue")[stretch_type],0.5))
+colQ2 <- bquote(adjustcolor(c("pre_ext"="red","post_col"="blue")[stretch_type],1))
+
+# dev.new(width=6.5, height=6.5)
+par(mfrow=c(3,3), mgp=c(0.85,0.2,0), ps=8, cex=1, mar=c(1.75,1.75,0.5,0.5), tcl=-0.15, oma=c(0.25,0.1,0.1,0.1))
+ur <- spp_master[,unique(reg)]
+for(r in 1:length(ur)){
+	rr <- ur[r]
+	rEl3 <- spp_master[order(year)][eval(rE_logic3)]
+	rEl2 <- spp_master[order(year)][eval(rE_logic2)]
+	rEl1 <- rEl2[order(year)][eval(rE_logic1)]
+	u_spp <- rEl1[, unique(spp)]
+	
+	nCols <- rEl1[,length(unique(year))]
+	cols <- viridis(nCols)
+	nTrans <- rEl1[,colSums(table(spp,year))]
+	nTrans <- nTrans[order(as.integer(names(nTrans)))]
+	colVec_ind <- cut(nTrans, breaks=nCols)
+	colVec <- cols[colVec_ind]
+	
+	rEl1[,j={bp_dat <<- boxplot(range_size_samp~year,plot=FALSE);NULL}]
+	bp_ylim <- unlist(bp_dat[c("stats")], use.names=FALSE)
+	ylim <- range(c(
+		bp_ylim
+	))
+	rEl1[,j={boxplot(range_size_samp~year, add=FALSE, at=unique(year), col=colVec, outline=FALSE, axes=TRUE, ylim=ylim); NULL}]
+	if(rr=="sa"){
+		mapLegend(x=0.3, y=0.78, zlim=range(nTrans),cols=cols)
+	}else{
+		mapLegend(x=0.05, y=0.78, zlim=range(nTrans),cols=cols)
+	}
+	mtext(pretty_reg[rr], line=-0.75, side=3, adj=0.1, font=2)
+}
+mtext("Range Size (MSOM) of Transient Species", side=2, line=-0.75, outer=TRUE, font=2)
+mtext("Year", side=1, line=-0.75, outer=TRUE, font=2)
+
+#' 
+#'   
+#' \FloatBarrier  
+#'   
+#' ***  
+#'   
+#'   
 #' #Time Series of Tows per Site
 #+ towsPerSite-timeSeries, width=6.5, height=6.5
 par(mfrow=c(3,3), mar=c(4,3.5,1,1))
