@@ -350,8 +350,11 @@ mod_smry <- function(m, pred_name=c("density","size","time","type","time:type"))
 }
 
 # Make a data set that is useful for these regressions (short variable names, etc):  
+# range_reg <- comm_master[,list(
+# 	reg, year, rich=reg_rich, density=propTow_occ_avg, size=propStrata_avg_ltAvg
+# )]
 range_reg <- comm_master[,list(
-	reg, year, rich=reg_rich, density=propTow_occ_avg, size=propStrata_avg_ltAvg
+	reg, year, rich=reg_rich, density=propTow_occ_avg, size=range_size_mu_avg_ltAvg
 )]
 
 # Fit different models to the whole data set
@@ -441,7 +444,8 @@ rangeTimeDT <- rangeTimeDT[,list(
 	spp=spp, 
 	type=as.character(stretch_type),
 	time=ext_dist, 
-	size=propStrata, 
+	# size=propStrata,
+	size=range_size_mu,
 	density=propTow_occ
 )]
 
@@ -857,12 +861,8 @@ for(r in 1:length(yregs)){
 #' ##Are rare species becoming more common?
 #+ rare-more-common, fig.width=7, fig.height=7
 blah <- spp_master[present==1, j={
-	# if(any(col==1) | any(ext==1)){
-	# 	list(propSlope=NA_real_, mu_propStrat=mean(propStrata))
-	# }else{
-	# 	list(propSlope=summary(lm(propStrata~year))$coeff[2,1], mu_propStrat=mean(propStrata))
-	# }
-	list(propSlope=summary(lm(propStrata~year))$coeff[2,1], mu_propStrat=mean(propStrata), ce_categ=ce_categ[1])
+	# list(propSlope=summary(lm(propStrata~year))$coeff[2,1], mu_propStrat=mean(propStrata), ce_categ=ce_categ[1])
+	list(propSlope=summary(lm(range_size_mu~year))$coeff[2,1], mu_propStrat=mean(range_size_mu), ce_categ=ce_categ[1])
 } ,by=c("reg","spp")]
 
 # par(mfrow=c(3,3))
@@ -1036,11 +1036,11 @@ cm2[,j={
 #+ annualLongTerm-allSppNoNeitherSpp, fig.width=6.5, fig.height=6.5
 noNeither <- spp_master[,j={
 	td <- .SD[ce_categ!="neither" & present==1]
-	td1.0 <- td[,list(propStrata_noNeither_ltAvg=mean(propStrata)),keyby=c("reg","spp")]
+	td1.0 <- td[,list(propStrata_noNeither_ltAvg=mean(range_size_mu)),keyby=c("reg","spp")]
 	setkey(td, reg, spp)
 	td1.1 <- td[td1.0]
 	td1.2 <- td1.1[,list(propStrata_noNeither_avg_ltAvg=mean(propStrata_noNeither_ltAvg)),by=c("reg","year")]
-	td2 <- td[,list(propStrata_noNeither_avg=mean(propStrata)),by=c("reg","year")]
+	td2 <- td[,list(propStrata_noNeither_avg=mean(range_size_mu)),by=c("reg","year")]
 	td_out <- merge(td1.2, td2, by=c('reg','year'))
 }]
 cmNN <- merge(comm_master, noNeither)
@@ -1049,18 +1049,18 @@ par(mfrow=c(2,2))
 ureg <- comm_master[,unique(reg)]
 nreg <- length(ureg)
 comm_master[,j={
-	plot(propStrata_avg_ltAvg, reg_rich, col=adjustcolor(pretty_col[reg],0.5), pch=16)
+	plot(range_size_mu_avg_ltAvg, reg_rich, col=adjustcolor(pretty_col[reg],0.5), pch=16)
 	for(r in 1:nreg){
-		.SD[reg==ureg[r]][order(propStrata_avg_ltAvg),j={
-			lines(propStrata_avg_ltAvg, predict(lm(reg_rich~propStrata_avg_ltAvg)))
+		.SD[reg==ureg[r]][order(range_size_mu_avg_ltAvg),j={
+			lines(range_size_mu_avg_ltAvg, predict(lm(reg_rich~range_size_mu_avg_ltAvg)))
 		}]
 	}
 }]
 comm_master[,j={
-	plot(propStrata_avg, reg_rich, col=adjustcolor(pretty_col[reg],0.5), pch=16)
+	plot(range_size_mu_avg, reg_rich, col=adjustcolor(pretty_col[reg],0.5), pch=16)
 	for(r in 1:nreg){
-		.SD[reg==ureg[r]][order(propStrata_avg),j={
-			lines(propStrata_avg, predict(lm(reg_rich~propStrata_avg)))
+		.SD[reg==ureg[r]][order(range_size_mu_avg),j={
+			lines(range_size_mu_avg, predict(lm(reg_rich~range_size_mu_avg)))
 		}]
 	}
 }]
@@ -1107,31 +1107,31 @@ for(r in 1:length(ur)){
 	rEl1 <- rEl2[order(year)][eval(rE_logic1)]
 	u_spp <- rEl1[, unique(spp)]
 
-	rEl1[,j={bp_dat <<- boxplot(propStrata~year,plot=FALSE);NULL}]
+	rEl1[,j={bp_dat <<- boxplot(range_size_mu~year,plot=FALSE);NULL}]
 	bp_ylim <- unlist(bp_dat[c("stats")], use.names=FALSE)
-	medRange_pres0 <- rEl2[,list(propStrata=median(propStrata)),by='year']
-	medRange_noNeith <- rEl3[,list(propStrata=median(propStrata)),by='year']
-	rEl1_qylim <- rEl1[,quantile(propStrata,c(0.25,0.75)),by='year'][,range(V1)]
-	rEl3_qylim <- rEl3[,quantile(propStrata,c(0.25,0.75)),by='year'][,range(V1)]
+	medRange_pres0 <- rEl2[,list(range_size_mu=median(range_size_mu)),by='year']
+	medRange_noNeith <- rEl3[,list(range_size_mu=median(range_size_mu)),by='year']
+	rEl1_qylim <- rEl1[,quantile(range_size_mu,c(0.25,0.75)),by='year'][,range(V1)]
+	rEl3_qylim <- rEl3[,quantile(range_size_mu,c(0.25,0.75)),by='year'][,range(V1)]
 	ylim <- range(c(
 		bp_ylim,
 		rEl1_qylim,
 		rEl3_qylim,
 		# medRange_pres0[,propStrata],
-		medRange_noNeith[,propStrata]#,
+		medRange_noNeith[,range_size_mu]#,
 	))
-	rEl1[,j={boxplot(propStrata~year, add=FALSE, at=unique(year), outline=FALSE, axes=TRUE, ylim=ylim); NULL}]
+	rEl1[,j={boxplot(range_size_mu~year, add=FALSE, at=unique(year), outline=FALSE, axes=TRUE, ylim=ylim); NULL}]
 	
 	
-	lines(rEl1[,median(propStrata),by='year'], lwd=2, col='red')
-	lines(rEl1[,quantile(propStrata,0.75),by='year'], lwd=1, col='red')
-	lines(rEl1[,quantile(propStrata,0.25),by='year'], lwd=1, col='red')
+	lines(rEl1[,median(range_size_mu),by='year'], lwd=2, col='red')
+	lines(rEl1[,quantile(range_size_mu,0.75),by='year'], lwd=1, col='red')
+	lines(rEl1[,quantile(range_size_mu,0.25),by='year'], lwd=1, col='red')
 	
-	lines(rEl3[,median(propStrata),by='year'], lwd=2, col='blue')
-	lines(rEl3[,quantile(propStrata,0.75),by='year'], lwd=1, col='blue')
-	lines(rEl3[,quantile(propStrata,0.25),by='year'], lwd=1, col='blue')
+	lines(rEl3[,median(range_size_mu),by='year'], lwd=2, col='blue')
+	lines(rEl3[,quantile(range_size_mu,0.75),by='year'], lwd=1, col='blue')
+	lines(rEl3[,quantile(range_size_mu,0.25),by='year'], lwd=1, col='blue')
 
-	comm_master[reg==rr, lines(year,propStrata_avg_ltAvg, col='black')]
+	comm_master[reg==rr, lines(year,range_size_mu_avg_ltAvg, col='black')]
 	mtext(pretty_reg[rr], line=-0.75, side=3, adj=0.1, font=2)
 }
 
@@ -1181,6 +1181,55 @@ for(r in 1:length(ur)){
 	mtext(pretty_reg[rr], line=-0.75, side=3, adj=0.1, font=2)
 }
 mtext("Range Size of Transient Species", side=2, line=-0.75, outer=TRUE, font=2)
+mtext("Year", side=1, line=-0.75, outer=TRUE, font=2)
+
+#' 
+#'   
+#' \FloatBarrier  
+#'   
+#' ***  
+#'   
+#'   
+#' ##Time Series of Range Size, Color is Local Richness (MSOM!)
+#+ rangeTS-colorAlpha-MSOM, fig.width=6.5, fig.height=6.5
+eval(figure_setup())
+rE_logic1 <- bquote(reg==rr & ce_categ!="neither" & present==1)
+rE_logic2 <- bquote(reg==rr & ce_categ!="neither")
+rE_logic3 <- bquote(reg==rr & ce_categ=="neither")
+colQ <- bquote(adjustcolor(c("pre_ext"="red","post_col"="blue")[stretch_type],0.5))
+colQ2 <- bquote(adjustcolor(c("pre_ext"="red","post_col"="blue")[stretch_type],1))
+
+# dev.new(width=6.5, height=6.5)
+par(mfrow=c(3,3), mgp=c(0.85,0.2,0), ps=8, cex=1, mar=c(1.75,1.75,0.5,0.5), tcl=-0.15, oma=c(0.25,0.1,0.1,0.1))
+ur <- spp_master[,unique(reg)]
+for(r in 1:length(ur)){
+	rr <- ur[r]
+	rEl3 <- spp_master[order(year)][eval(rE_logic3)]
+	rEl2 <- spp_master[order(year)][eval(rE_logic2)]
+	rEl1 <- rEl2[order(year)][eval(rE_logic1)]
+	u_spp <- rEl1[, unique(spp)]
+	
+	nCols <- rEl1[,length(unique(year))]
+	cols <- viridis(nCols)
+	nTrans <- rEl1[,colSums(table(spp,year))]
+	nTrans <- nTrans[order(as.integer(names(nTrans)))]
+	colVec_ind <- cut(nTrans, breaks=nCols)
+	colVec <- cols[colVec_ind]
+	
+	rEl1[,j={bp_dat <<- boxplot(range_size_mu~year,plot=FALSE);NULL}]
+	bp_ylim <- unlist(bp_dat[c("stats")], use.names=FALSE)
+	ylim <- range(c(
+		bp_ylim
+	))
+	rEl1[,j={boxplot(range_size_mu~year, add=FALSE, at=unique(year), col=colVec, outline=FALSE, axes=TRUE, ylim=ylim); NULL}]
+	if(rr=="sa"){
+		mapLegend(x=0.3, y=0.78, zlim=range(nTrans),cols=cols)
+	}else{
+		mapLegend(x=0.05, y=0.78, zlim=range(nTrans),cols=cols)
+	}
+	mtext(pretty_reg[rr], line=-0.75, side=3, adj=0.1, font=2)
+}
+mtext("Range Size (MSOM) of Transient Species", side=2, line=-0.75, outer=TRUE, font=2)
 mtext("Year", side=1, line=-0.75, outer=TRUE, font=2)
 
 #' 
