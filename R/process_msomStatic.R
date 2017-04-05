@@ -157,7 +157,11 @@ process_msomStatic <- function(reg_out, save_mem=TRUE, obs_yrs){
 		z_j <- function(x){gsub("Z\\[([0-9]+)\\,[0-9]+\\]$", "\\1", x)}
 		reg_rich_iter <- list()
 		reg_rich <- rep(NA, length(out))
+		local_rich_iter <- list()
+		local_rich <- rep(NA, length(out))
 		bd_list <- list()
+		range_size_iter <- list()
+		range_size <- list() #rep(NA, length(out))
 		for(i in 1:length(out)){
 			
 			# ---- Get Z Iters ----
@@ -181,7 +185,29 @@ process_msomStatic <- function(reg_out, save_mem=TRUE, obs_yrs){
 			bd_list[[i]] <- bd_full_long[, list(year=info_yrs[i], beta_div_mu=mean(beta_div), beta_div_sd=sd(beta_div)), by="method"]
 			if(save_mem){rm(list=c("bd_full","bd_full_long"))}
 			
-			# ---- Get Richness ----
+			# ---- Range Size ----
+			nJ <- t_Z_big_long[,length(unique(jID))]
+			range_size_iter[[i]] <- t_Z_big_long[,j={list(range_size=sum(value)/nJ)},by=c("iter","chain","sppID")]
+			sppNames <- dimnames(inputData[[i]]$X)$spp
+			range_size_iter[[i]][,spp:=sppNames[as.integer(sppID)]]
+			range_size_iter[[i]] <- range_size_iter[[i]][!grepl("Unknown_[0-9]+", spp)]
+			range_size_iter[[i]][,chain:=NULL]
+			range_size_iter[[i]][,sppID:=NULL]
+			range_size_iter[[i]][,year:=info_yrs[i]]
+			
+			range_size[[i]] <- range_size_iter[[i]][,j={list(range_size_mu=mean(range_size), range_size_sd=sd(range_size))},by=c("year","spp")]
+			
+			range_size_iter[[i]] <- reshape2::acast(data=range_size_iter[[i]], formula=year~spp~reg~iter, value.var="range_size")
+			names(dimnames(range_size_iter[[i]])) <- c("year","spp","reg", "iter")
+			
+			# ---- Local Richness ----
+			local_rich_iter0 <- t_Z_big_long[,j={list(local_rich=sum(value))},by=c("iter","chain","jID")]
+			local_rich_iter[[i]] <- local_rich_iter0[,j={list(local_rich=mean(local_rich))},by=c("iter","chain")]
+			local_rich_iter[[i]][,chain:=NULL]
+			local_rich_iter[[i]][,year:=info_yrs[i]]
+			local_rich[i] <- local_rich_iter[[i]][,j={mean(local_rich)}]
+			
+			# ---- Get Regional Richness ----
 			mu_site_Z <- t_Z_big_long[,j={ list(mu_site_Z = max(value)) }, by=c("iter","chain","sppID")]
 			reg_rich_iter[[i]] <- mu_site_Z[, j={list(reg_rich = sum(mu_site_Z))}, by=c("iter","chain")]
 			reg_rich[i] <- reg_rich_iter[[i]][,mean(reg_rich)]
@@ -194,7 +220,7 @@ process_msomStatic <- function(reg_out, save_mem=TRUE, obs_yrs){
 	}
 	
 	# create processed object
-	processed <- data.table(reg = reg, year=info_yrs, Omega=Omega_mean, reg_rich=reg_rich)
+	processed <- data.table(reg = reg, year=info_yrs, Omega=Omega_mean, reg_rich=reg_rich, local_rich=local_rich)
 	
 	# create beta_div object
 	beta_div <- rbindlist(bd_list)
@@ -203,8 +229,16 @@ process_msomStatic <- function(reg_out, save_mem=TRUE, obs_yrs){
 	reg_rich_iter <- rbindlist(reg_rich_iter)
 	reg_rich_iter[,c("reg"):=list(reg=reg)]
 	
+	local_rich_iter <- rbindlist(local_rich_iter)
+	local_rich_iter[,c("reg"):=list(reg=reg)]
+	
+	# range_size_iter <- rbindlist(range_size_iter)
+	# range_size_iter[,c("reg"):=list(reg=reg)]
+	range_size <- rbindlist(range_size)
+	range_size[,c("reg"):=list(reg=reg)]
+	
 	# return
-	return(list(param_iters=param_iters, processed=processed, ab=ab, alpha_unscale=alpha_unscale, beta_div=beta_div, reg_rich_iter=reg_rich_iter))  # reg_rich_iter only in JAGS)
+	return(list(param_iters=param_iters, processed=processed, ab=ab, alpha_unscale=alpha_unscale, beta_div=beta_div, reg_rich_iter=reg_rich_iter, local_rich_iter=local_rich_iter, range_size=range_size, range_size_iter=range_size_iter))  # reg_rich_iter, local_rich_iter, range_size, and range_size_iter only in JAGS
 	
 }
 	
