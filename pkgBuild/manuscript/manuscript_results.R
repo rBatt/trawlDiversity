@@ -104,6 +104,7 @@ opts_chunk$set(
 
 # setwd("~/Documents/School&Work/pinskyPost/trawlDiversity/pkgBuild/manuscript")
 source("../manuscript/manuscript_figures_functions.R")
+source("../manuscript/manuscript_stats_functioans.R")
 # source("../manuscript/fig_tbl_number.R")
 # eval(fig_tbl_number())
 
@@ -197,11 +198,7 @@ categ_tbl2 <- spp_master[!duplicated(paste(reg,ce_categ,spp)), table(reg, ce_cat
 class(categ_tbl2) <- "matrix"
 dels <- comm_master[,
 	list(
-		# minRich=min(reg_rich),
-		# maxRich=max(reg_rich), 
 		rangeRich=diff(range(reg_rich)),
-		# minPred=min(eval(predRich)),
-		# maxPred=max(eval(predRich)),
 		delPred=rev(eval(predRich))[1] - eval(predRich)[1]
 	),
 	by=c('reg')
@@ -328,31 +325,6 @@ rich_geoRange("size", leg=TRUE, legPan=1, panLab=FALSE)
 #'   
 #' ####Table. Regressions relating richness to range size
 #+ rich-rangeSize
-# This is a function that'll help summarize model fit and coeffs and parameter significance:  
-mod_smry <- function(m, pred_name=c("density","size","time","type","time:type")){
-	pred_name <- match.arg(pred_name)
-	sc <- sem.coefs(m)
-	sc[,c("estimate","p.value")] <- lapply(sc[,c("estimate","p.value")], signif, 4)
-	mod_call <- switch(class(m), lmerMod=m@call, lm=m$call)
-	mod_call <- as.character(mod_call)[2]
-	fits <- sem.model.fits(m)
-	fits[,c("estimate","p.value","Marginal","Conditional")] <- lapply(fits[,c("Marginal","Conditional")], signif, 4)
-	out <- cbind(
-		mod_call = mod_call,
-		sc[sc[,"predictor"]==pred_name,],
-		fits, 
-		AIC=round(AIC(m), getOption("digits"))
-	)
-	out[,c(
-		# "std.error","N",
-		"Class","mod_call","predictor","estimate","p.value","Marginal","Conditional","AIC"
-	)]
-}
-
-# Make a data set that is useful for these regressions (short variable names, etc):  
-# range_reg <- comm_master[,list(
-# 	reg, year, rich=reg_rich, density=propTow_occ_avg, size=propStrata_avg_ltAvg
-# )]
 range_reg <- comm_master[,list(
 	reg, year, rich=reg_rich, density=propTow_occ_avg, size=range_size_mu_avg_ltAvg
 )]
@@ -373,12 +345,8 @@ for(r in 1:length(ur)){
 }
 rich_s_reg_smry <- data.table(
 	reg=ur, 
-	rbind(
-		rbindlist(lapply(rSize_reg_mods, mod_smry, pred_name="size"))
-	)
+	rbind(rbindlist(lapply(rSize_reg_mods, mod_smry, pred_name="size")))
 )
-setkey(rich_s_reg_smry, reg, Class, predictor)
-
 setnames(rich_s_reg_smry, old=c("Marginal","Conditional","p.value"), new=c("MargR2","CondR2","pval"))
 setkey(rich_s_reg_smry, reg, Class, mod_call, predictor)
 rich_s_reg_smry[, BH:=round(p.adjust(pval, "BH"), 3), by=c("mod_call", "predictor")]
@@ -449,28 +417,6 @@ rangeTimeDT <- rangeTimeDT[,list(
 	density=propTow_occ
 )]
 
-# summary function used in tables
-mod_smry2 <- function(m){
-	mod_call <- switch(class(m), lmerMod=m@call, lm=m$call)
-	mod_call <- as.character(mod_call)[2]
-	fits <- tryCatch(sem.model.fits(m), error=function(cond)NA)
-	if(all(is.na(fits))){
-		warning("Error in sem.model.fits")
-		fits <- data.frame(Class=class(m), Family="gaussian", Link="identity", N=as.numeric(nobs(m)),"Marginal"=NA_real_,"Conditional"=NA_real_) # family always gaussian for lmer and lm
-	}else{
-		fits[,c("Marginal","Conditional")] <- lapply(fits[,c("Marginal","Conditional")], signif, 4)
-	}
-	anova_sum <- car::Anova(m)
-	
-	out <- data.frame(
-		mod_call = mod_call,
-		data.frame(predictor=rownames(anova_sum), anova_sum)[,c("predictor","Pr..Chisq.")],
-		fits, 
-		AIC=AIC(m)#signif(AIC(m), getOption("digits"))
-	)
-	out[,c("Class","mod_call", "predictor", "Pr..Chisq.","Marginal","Conditional","AIC")]
-}
-
 #+ rangeSize-ColExtTime-models, results='markup'
 # models for range size
 sizeCE_mods <- list()
@@ -495,23 +441,6 @@ kable(tbl_ColExtTime, caption="Same as above, but shows slightly different metri
 #'   
 #' ####Table. Regressions separate regions -- range size vs time until, SIMPLE
 #+ rangeSizeDensity-ColExtTime-reg-simple
-getCoefs <- function(mList){
-	outList <- list()
-	for(r in 1:length(ur)){
-		outList[[ur[r]]] <- rbindlist(lapply(
-			coef(mList[[r]]), function(x)as.list(colMeans(x))
-		), idcol=TRUE)
-		setnames(outList[[ur[r]]], c(".id"), c("randomGroup"))
-		mod_call <- switch(class(mList[[r]]), lmerMod=mList[[r]]@call, lm=mList[[r]]$call)
-		mod_call <- as.character(mod_call)[2]
-		outList[[ur[r]]][,mod_call:=mod_call]
-	}
-	outList <- rbindlist(outList, idcol=TRUE)
-	setnames(outList, c(".id"), c("reg"))
-	# setcolorder(outList, c("reg", "mod_call", "randomGroup", "(Intercept)", "time", "typepre_ext"))
-	outList
-}
-
 sTime_reg_mods3 <- list()
 ur <- range_reg[,unique(reg)]
 for(r in 1:length(ur)){
@@ -607,14 +536,6 @@ kable(compAIC)
 #' ####Exploring Range size vs absence time as individual regressions
 #+ rangeSize_time_sepRegs, fig.width=5, fig.height=6, fig.cap="**Exploration Figure** histograms of separate regressions of size ~ time; this is for each run-up to an extinction and reach follow-up to a colonization. Trying to understand how regularly the pattern might be observed. Hard to answer because adjusting the restriction on number of events in the run-up or follow-up (nTime) greatly affects the proportion that are significant."
 rangeTimeDT[,nTime:=length(time),by=c("reg","type","event","spp")]
-getEPR <- function(x){
-	col_select <- c("Estimate","Pr(>|t|)")
-	sx <- summary(x)
-	EP <- sx$coefficients[2,col_select]
-	names(EP) <- c("Estimate","Pr")
-	R <- sx$r.squared
-	data.table(as.data.table(as.list(EP)), Rsquared=R)
-}
 o <- rangeTimeDT[nTime>=3,j={
 	getEPR(lm(size~time))
 	} ,by=c("reg","type","event","nTime","spp")
