@@ -18,7 +18,7 @@ mod_smry <- function(m, pred_name=c("density","size","time","type","time:type"))
 	mod_call <- switch(class(m), lmerMod=m@call, lm=m$call)
 	mod_call <- as.character(mod_call)[2]
 	fits <- sem.model.fits(m)
-	fits[,c("estimate","p.value","Marginal","Conditional")] <- lapply(fits[,c("Marginal","Conditional")], signif, 4)
+	fits[,c("Marginal","Conditional")] <- lapply(fits[,c("Marginal","Conditional")], signif, 4)
 	out <- cbind(
 		mod_call = mod_call,
 		sc[sc[,"predictor"]==pred_name,],
