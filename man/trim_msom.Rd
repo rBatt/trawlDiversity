@@ -5,7 +5,8 @@
 \title{Trim trawl data for msom}
 \usage{
 trim_msom(reg, gridSize = 1, grid_stratum = TRUE, depthStratum = NULL,
-  tolFraction = 1/3, plot = FALSE, cull_show_up = FALSE)
+  tolFraction = 1/3, plot = FALSE, cull_show_up = FALSE,
+  trimYears = TRUE, trimDOY = TRUE)
 }
 \arguments{
 \item{reg}{Character name of region or data.table to be passed to \code{\link{trawlTrim}}.}
@@ -21,6 +22,10 @@ trim_msom(reg, gridSize = 1, grid_stratum = TRUE, depthStratum = NULL,
 \item{plot}{Logical, default FALSE; for \code{check_strat}, should the stratum tolerance be plotted?}
 
 \item{cull_show_up}{Logical, default \code{FALSE}; should spp in \code{\link{show_up_spp}} be removed when trimming?}
+
+\item{trimYears}{Default \code{TRUE}; trim data set to a pre-determined range of years?}
+
+\item{trimDOY}{Default \code{TRUE}; trim data set to hauls occurring within a certain range of day of year?}
 }
 \value{
 A data.table
