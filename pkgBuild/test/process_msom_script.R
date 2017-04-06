@@ -101,6 +101,8 @@ for(i in 1:length(reg_file)){
 	t_proc <- merge(t_proc, p_obs$colonization$n_cep, by="year", all=TRUE)
 	t_proc <- merge(t_proc, p_obs$bt[,list(bt_ann=mean(bt,na.rm=TRUE)), by="year"], by="year", all=TRUE)
 	t_proc <- merge(t_proc, p[[i]]$naive_rich, by="year", all=TRUE)
+	t_proc <- merge(t_proc, p[[i]]$local_rich_obs, by="year", all=TRUE)
+	t_proc <- merge(t_proc, p[[i]]$local_rich_samp, by="year", all=TRUE)
 	p[[i]]$processed <- t_proc
 	
 	rm(list="rm_out")
