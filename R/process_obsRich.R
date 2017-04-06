@@ -25,6 +25,11 @@ process_obsRich <- function(X, msom_yrs){
 	# naive_rich
 	naive_rich <- rd[,list(naive_rich=trawlData::lu(spp)), keyby=c("year")]
 	
+	# local naive rich
+	local_rich_obs <- rd[,list(local_rich_obs=length(unique(spp))), keyby=c("year","stratum")][,list(local_rich_obs=mean(local_rich_obs)),keyby=c("year")]
+	local_rich_samp <- rd[,list(local_rich_samp=local_rich_sample(.SD)),by=c('year')]
+	# plot(local_rich_obs[,local_rich_obs], local_rich_samp[,local_rich_samp]); abline(a=0, b=1)
+	
 	# beta diversity
 	bd_methods <- c("hellinger","jaccard", "sorensen", "ochiai")[2]
 	qbd <- function(m, t_mat){beta_div_quick(t_mat, method=m)}
@@ -50,7 +55,7 @@ process_obsRich <- function(X, msom_yrs){
 	bt <- bt_depth
 	
 	
-	output <- list(rd_yr=rd_yr, rd=rd, naive_rich=naive_rich, colonization=colonization, bt=bt, beta_div_obs=beta_div_obs)
+	output <- list(rd_yr=rd_yr, rd=rd, naive_rich=naive_rich, local_rich_obs=local_rich_obs, local_rich_samp=local_rich_samp, colonization=colonization, bt=bt, beta_div_obs=beta_div_obs)
 	
 	return(output)
 	
