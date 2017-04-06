@@ -245,56 +245,6 @@ col_ext_ts()
 #' **Manuscript paragraph:**  
 #' A time series of richness can be decomposed into the colonizations and extinctions of individual species over time. We categorized species according to the following colonization extinction patterns: present in all years = neither (536 species), colonized and went extinct = both (263 species),  initially absent but present every year after its colonization = colonizer (61 species), initially present but absent every year after its extinction = leaver (4 species). Most regions had the same overall ranking (neither > both > colonizer > leaver), except in the Northeast US where both was the most common and neither second, and in the Aleutian Islands where colonizer was the second most common and both third (**Figure S2**). In general, changes in richness were not due to permanent departures or introductions of species to the region. Furthermore, colonization and extinction rates did not become more dissimilar over time for any region (**Figure NotIncluded**). Colonizations were initially greater than extinctions in Aleutian Islands, Gulf of Alaska, and Gulf of Mexico, but this difference disappeared in the latter portion of these time series, as evidenced by these regions’ initially rapid increase in richness that later plateaued. The other regions did not show strong trends in the difference between colonizations and extinctions over time, making it difficult to attribute the long-term trends in richness to changes in just colonization or just extinction rates.
 #'   
-#' \FloatBarrier  
-#'   
-#' ***  
-#'   
-#' ##Spatial Clustering of Colonization and Extinction
-#' ###Heat Maps
-#' ####Figure 2. Colonization map
-#+ col-map, echo=TRUE, fig.width=7, fig.height=3, fig.cap="**Figure 2.** Maps of long-term averages of colonizations per site per decade for each region: A) E. Bering Sea, B) Gulf of Alaska, C) Aleutian Islands, D) Scotian Shelf, E) West Coast US, F) Newfoundland, G) Gulf of Mexico, H) Northeast US, I) Southeast US. Values of colonization rate were smoothed using a Gaussian kernel smoother. The smoothed colonization rate is indicated by the color bars in each panel; colors are scaled independently for each region."
-ceRate_map(ce="colonization")
-#'   
-#' ####Figure S3. Extinction map
-#+ ext-map, echo=TRUE, fig.width=7, fig.height=3, fig.cap="**Figure S3.** Maps of long-term averages of extinctions per site per decade for each region: A) E. Bering Sea, B) Gulf of Alaska, C) Aleutian Islands, D) Scotian Shelf, E) West Coast US, F) Newfoundland, G) Gulf of Mexico, H) Northeast US, I) Southeast US. Values of extinction rate were smoothed using a Gaussian kernel smoother. The smoothed extinction rate is indicated by the color bars in each panel; colors are scaled independently for each region."
-ceRate_map(ce="extinction")
-#' Hotspots can be seen in most regions. Newfoundland also has high values around its edge (as opposed to interior), it seems. NEUS and Gmex show very strong hotspots, and other locations tend to be much much lower. Other regions show more of a continuum.  
-#'     
-#+ col-ext-intensities, echo=TRUE,  cache=FALSE
-rel_col_ext_rate <- mapDat[,j={
-	map_smooth_col <- spatstat::Smooth(spatstat::ppp(
-		x=.SD[,lon], y=.SD[,lat], 
-		marks=.SD[,n_spp_col_weighted], window=mapOwin[[reg]]
-	), hmax=1)
-	mark_range_col <- range(map_smooth_col, na.rm=TRUE)*10
-	
-	map_smooth_ext <- spatstat::Smooth(spatstat::ppp(
-		x=.SD[,lon], y=.SD[,lat], 
-		marks=.SD[,n_spp_ext_weighted], window=mapOwin[[reg]]
-	), hmax=1)
-	mark_range_ext <- range(map_smooth_ext, na.rm=TRUE)*10
-	ol <- list(
-		minval_col=mark_range_col[1], maxval_col=mark_range_col[2], 
-		max_o_min_col=do.call("/",as.list(rev(mark_range_col))),
-		minval_ext=mark_range_ext[1], maxval_ext=mark_range_ext[2], 
-		max_o_min_ext=do.call("/",as.list(rev(mark_range_ext)))
-	)
-	lapply(ol, function(x)if(is.numeric(x)){signif(x,3)}else{x})
-},by=c("reg")]
-#+ col-ext-intensities-table, echo=FALSE
-kable(
-	rbind(rel_col_ext_rate, rel_col_ext_rate[,lapply(.SD, median)][,reg:="MEDIAN"]), 
-	caption="The colonization and extinction intensity range and max/min ratio, and median among regions. Useful for assessing how big of a difference there is between red and blue for each region."
-)
-#'   
-#' ###Neighborhoods and Local Moran's I
-#' ####Figure S4. Colonization neighborhood
-#+ col-nb, echo=TRUE, fig.width=7, fig.height=3, fig.cap="**Figure S4.** Connectivity and local spatial autocorrelation of colonization events in each region. Each site is represented by a point. Points connected by a line are neighbors. For each region, neighbors were determined by first calculating the minimum distance required to allow each site to have at least 1 neighbor. Neighbors of a focal point were then defined as the points within this minimum distance from the focal point. Local spatial autocorrelation is local Moran’s I, significant LMI is indicated by a solid point, the color of which indicates the value of the LMI statistic. The outline is the region boundary used for smoothing in Figure 3 (main text), but does not affect calculations of LMI."
-nb_moranI(ce="colonization")
-#'   
-#' ####Figure S5. Extinction neighborhood
-#+ ext-nb, echo=TRUE, fig.width=7, fig.height=3, fig.cap="**Figure S5.** Connectivity and local spatial autocorrelation of extinction events in each region. Each site is represented by a point. Points connected by a line are neighbors. For each region, neighbors were determined by first calculating the minimum distance required to allow each site to have at least 1 neighbor. Neighbors of a focal point were then defined as the points within this minimum distance from the focal point. Local spatial autocorrelation is local Moran’s I, significant LMI is indicated by a solid point, the color of which indicates the value of the LMI statistic. The outline is the region boundary used for smoothing in Figure 3 (main text), but does not affect calculations of LMI."
-nb_moranI(ce="extinction")
 #'   
 #' \FloatBarrier  
 #'   
