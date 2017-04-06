@@ -127,6 +127,34 @@ propTows <- rbindlist(propTows)[reg!="wcann"]
 setkey(propTows, reg, year, spp)
 
 
+# ---- Range Size from MSOM ----
+range_size_dt <- list()
+for(i in 1:length(p)){
+	t_range_size <- p[[i]][["range_size"]]
+	range_size_dt[[i]] <- t_range_size
+}
+range_size_dt <- rbindlist(range_size_dt)[reg!="wcann"]
+setkey(range_size_dt, reg, year, spp)
+setcolorder(range_size_dt, c("reg","year","spp","range_size_mu","range_size_sd"))
+
+
+# ---- Range Size from Resampling ----
+range_size_samp <- list()
+for(i in 1:length(p)){
+	t_reg <- p[[i]]$processed[,una(reg)]
+	t_rd <- p[[i]]$rd
+	if(t_reg=="wcann"){next}
+	range_size_samp[[i]] <- t_rd[,j={
+		uspp <- unique(spp)
+		tf <- function(x){range_sample(X=.SD, sppName=x, nPerm=100)}
+		rs <- sapply(uspp, tf)
+		data.table(spp=names(rs), range_size_samp=unname(rs))
+	},by=c("reg","year")]
+}
+range_size_samp <- rbindlist(range_size_samp)
+range_size_dt <- merge(range_size_dt, range_size_samp, by=c("reg","year","spp"))
+
+
 # ---- Response Metrics ----
 if(file.exists("~/Documents/School&Work/pinskyPost/trawl/trawlDiversity/pkgBuild/results/resp_metrics.RData")){
 	load("~/Documents/School&Work/pinskyPost/trawl/trawlDiversity/pkgBuild/results/resp_metrics.RData")
@@ -196,7 +224,7 @@ spp_master <- merge(spp_master, stretches, all=TRUE, by=c("reg","spp","year"))
 spp_master[stretch_id==-1 | hybrid_part==2, stretch_type:="pre_ext"]
 spp_master[stretch_id==-2 | hybrid_part==1, stretch_type:="post_col"]
 spp_master[!is.na(stretch_type),event_year:=c(post_col=min(year), pre_ext=max(year))[stretch_type[1]],by=c("reg","spp","stretch_type", "stretch_id", "hybrid_part")]
-spp_master[!is.na(stretch_type), stretch_length:=(lu(year)-(stretch_type=="pre_ext")), by=c("reg","spp","stretch_type", "event_year")]
+spp_master[!is.na(stretch_type), stretch_length:=(length(unique(year))-(stretch_type=="pre_ext")), by=c("reg","spp","stretch_type", "event_year")]
 
 spp_master <- merge(spp_master, resp_metrics, by=c("reg","spp","year"), all=TRUE)
 
@@ -221,11 +249,15 @@ define_ce_categ <- function(X){
 spp_master[,ce_categ:=define_ce_categ(.SD),by=c("reg","spp")]
 
 spp_master <- merge(spp_master, propTows, by=c("reg","spp","year"), all=TRUE)
+#' #Check This, It Is New (below)
+spp_master <- merge(spp_master, range_size_dt, by=c("reg","spp","year"), all=TRUE)
+spp_master[,c("range_size_mu_ltAvg","range_size_samp_ltAvg"):=list(mean(range_size_mu, na.rm=TRUE),mean(range_size_samp, na.rm=TRUE)),by=c("reg","spp")]
 
 # ---- Community Master Data Set ----
 comm_metrics <- spp_master[present==1,j={
 	lapply(.SD, mean, na.rm=TRUE)
-},by=c("reg","year"), .SDcols=c("bt_opt_avg","bt_tol_avg","detect_mu_avg","detect_mu")]
+},by=c("reg","year"), .SDcols=c("bt_opt_avg","bt_tol_avg","detect_mu_avg","detect_mu","range_size_mu","range_size_mu_ltAvg","range_size_samp","range_size_samp_ltAvg")]
+setnames(comm_metrics, old=c("range_size_mu","range_size_mu_ltAvg","range_size_samp","range_size_samp_ltAvg"), new=c("range_size_mu_avg","range_size_mu_avg_ltAvg","range_size_samp_avg","range_size_samp_avg_ltAvg"))
 
 comm_tows <- spp_master[present==1,j={
 	lapply(.SD, mean, na.rm=TRUE)
