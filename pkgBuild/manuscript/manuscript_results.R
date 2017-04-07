@@ -56,6 +56,7 @@ library('raster')
 library('spatstat')
 library("spdep")
 library("piecewiseSEM")
+library("viridis")
 
 # Report
 library(knitr)
@@ -580,61 +581,16 @@ stargazer(sumry_counts, summary=FALSE, rownames=FALSE, column.sep.width="2pt", d
 #' ##Years Excluded & Strata Sampled
 #+ excluding_years_strata, fig.width=7, fig.height=7, fig.cap="**Trimming Years b/c of Strata, Counts of Analyzed and Excluded Strata** Along the vertical axis is a stratum ID. Along the horizontal axis is a year of sampling. The colors are binary: the light color indicates that the stratum was sampled in that year, and the red color indicates that the stratum was not sampled. The vertical line indicates that years at the line or to the left (if the line is on the left half of graph) or to the right (if line is on right half of graph) were excluded from the analysis, inclusively. E.g., for E. Bering Sea (ebs), 1982 and 1983 were excluded. Three regions had no years excluded (ai = Aleutian Islands, goa = Gulf of Alaska, wctri West Coast US).  The last three regions had years excluded because of changes in the number or location of strata sampled: gmex = Gulf of Mexico 1983 < years < 2001; newf = Newfoundland 1995 < years; sa = Southeast US 1989 < years. Three regions had years excluded for reasons other than number of strata sampled: ebs = E. Bering Sea years < 1984, years excluded due to massive early increase in number of species sampled each year, change in identification suspected; neus = Northeast US 1981 < years < 2014; shelf = Scotian Shelf years < 2011, bottom temperature not available in final year (used as covariate in occupancy model). Finally, note that in GoA strata had to be present in 100% of years or else they were not included; this was done b/c in 2001 the western-most stratum that was sampled was much further to the east than in other years. Similarly, in E. Bering Sea strata had to be present in all years, otherwise the Northeastern extent of the sampled range was reduced substantially in several years."
 
-reg_depthStratum <- c(
-	"ebs" = 500,
-	"ai" = 100,
-	"goa" = 500,
-	"wctri" = 100, 
-	"wcann" = 500, 
-	"gmex" = 500, 
-	"sa" = 500, 
-	"neus" = 500, 
-	"shelf" = 500, 
-	"newf" = 500
-)
-
-reg_tolFraction <- c(
-	"ebs" = 0,
-	"ai" = 0.15,
-	"goa" = 0,
-	"wctri" = 0.15, 
-	"wcann" = 0.15, 
-	"gmex" = 0.15, 
-	"sa" = 0.15, 
-	"neus" = 0.15, 
-	"shelf" = 0.15, 
-	"newf" = 0.15
-)
+reg_depthStratum <- trim_msom_settings('depth')
+reg_tolFraction <- trim_msom_settings('tolerance')
+yr_subs <- trim_msom_settings('years_logic')
+yr_ablin <- trim_msom_settings('years_cutoff')
 regs <- names(reg_tolFraction)
-
-yr_subs <- list(
-	ebs = bquote((year)>1983),
-	ai = NA,
-	goa = NA,
-	gmex = bquote((year)>1983 & (year)<2001),
-	neus = bquote((year)>1981 & (year)<2014),
-	newf = bquote((year)>1995),
-	sa = bquote((year)>=1990),
-	shelf = bquote((year)!=2011),
-	wctri = NA
-)
-yr_ablin <- list(
-	ebs = 1983,
-	ai = NA,
-	goa = NA,
-	gmex = c(1983,2001),
-	neus = c(1981,2014),
-	newf = 1995,
-	sa = 1989,
-	shelf = 2011,
-	wctri = NA
-)
 yregs <- names(yr_subs)
+
 par(mfrow=c(3, 3), mar=c(2,2,1,0.25), cex=1, mgp=c(1,0.15,0), tcl=-0.15, ps=8)
 for(r in 1:length(yregs)){
-	
 	b <- trim_msom(yregs[r], gridSize=0.5, grid_stratum=TRUE, depthStratum=reg_depthStratum[yregs[r]], tolFraction=0.5, plot=FALSE, cull_show_up=FALSE, trimYears=FALSE)
-	
 	b_tbl <- b[,table(year,stratum)>0]
 	b_tbl <- b_tbl[,order(colSums(b_tbl))]
 	image(b_tbl, axes=FALSE)
@@ -646,50 +602,11 @@ for(r in 1:length(yregs)){
 
 #' ##Years Excluded & Strata Excluded, Part 2
 #+ excluding_years_strata_part2_allStrata, fig.width=5.5, fig.height=10, fig.cap="**Trimming Years b/c of Stratum Locations, Stats for Analyzed and Excluded Strata**  The number and coordinate extreme of strata in each region if all years had been included in the analysis, and if strata were only removed if they were absent in more than 15% of years. Note that the 15%  tolerance rule used here can differ from the implemented rule in two ways: 1) for regions with years excluded, the increased number of years may change whether or not a stratum meets the 15% cutoff; 2) two of the regions (E Bering Sea and Gulf of Alaska) had a 0% tolerance, therefore the same strata were sampled in each year for these regions (though the changes in coordinate extrema and stratum count illustrate the need for the unique tolerance rule in these regions)."
-par(mfrow=c(9, 5), mar=c(2,2,1,0.25), cex=1, mgp=c(1,0.15,0), tcl=-0.15, ps=8)
-for(r in 1:length(yregs)){
-	
-	b <- trim_msom(yregs[r], gridSize=0.5, grid_stratum=TRUE, depthStratum=reg_depthStratum[yregs[r]], tolFraction=0.15, plot=FALSE, cull_show_up=FALSE, trimYears=FALSE)
-	plot(b[,list("# strata sampled"=trawlData::lu(stratum)),by=c("year")])
-	mtext(yregs[r], side=3, line=0, adj=0, font=2)
-	abline(v=yr_ablin[[r]])
-	plot(b[,list("min latitude"=min(lat)),by=c("year")])
-	mtext(yregs[r], side=3, line=0, adj=0, font=2)
-	abline(v=yr_ablin[[r]])
-	plot(b[,list("max latitude"=max(lat)),by=c("year")])
-	mtext(yregs[r], side=3, line=0, adj=0, font=2)
-	abline(v=yr_ablin[[r]])
-	plot(b[,list("min longitude"=min(lon)),by=c("year")])
-	mtext(yregs[r], side=3, line=0, adj=0, font=2)
-	abline(v=yr_ablin[[r]])
-	plot(b[,list("max longitude"=max(lon)),by=c("year")])
-	mtext(yregs[r], side=3, line=0, adj=0, font=2)
-	abline(v=yr_ablin[[r]])
-}
+plot_excludeYearsStrata(TRIM=FALSE)
+
 
 #+ excluding_years_strata_part2_analyzedStrata, fig.width=5.5, fig.height=10, fig.cap="**Trimming Years b/c of Stratum Locations, Stats for the Analyzed Strata** Changes in stratum statistics (number of strata, min/max lon/lat) for strata included in results in paper."
-par(mfrow=c(9, 5), mar=c(2,2,1,0.25), cex=1, mgp=c(1,0.15,0), tcl=-0.15, ps=8)
-for(r in 1:length(yregs)){
-	
-	# b <- trim_msom(yregs[r], gridSize=0.5, depthStratum=reg_depthStratum[yregs[r]], tolFraction=reg_tolFraction[yregs[r]], grid_stratum=TRUE, plot=FALSE, cull_show_up=FALSE)
-	b <- data_all[reg==yregs[r]]
-	
-	plot(b[,list("# strata sampled"=trawlData::lu(stratum)),by=c("year")])
-	mtext(yregs[r], side=3, line=0, adj=0, font=2)
-	abline(v=yr_ablin[[r]])
-	plot(b[,list("min latitude"=min(lat)),by=c("year")])
-	mtext(yregs[r], side=3, line=0, adj=0, font=2)
-	abline(v=yr_ablin[[r]])
-	plot(b[,list("max latitude"=max(lat)),by=c("year")])
-	mtext(yregs[r], side=3, line=0, adj=0, font=2)
-	abline(v=yr_ablin[[r]])
-	plot(b[,list("min longitude"=min(lon)),by=c("year")])
-	mtext(yregs[r], side=3, line=0, adj=0, font=2)
-	abline(v=yr_ablin[[r]])
-	plot(b[,list("max longitude"=max(lon)),by=c("year")])
-	mtext(yregs[r], side=3, line=0, adj=0, font=2)
-	abline(v=yr_ablin[[r]])
-}
+plot_excludeYearsStrata(TRIM=TRUE)
 
 #' 
 #'   
@@ -702,12 +619,8 @@ for(r in 1:length(yregs)){
 #' ##Are rare species becoming more common?
 #+ rare-more-common, fig.width=7, fig.height=7
 blah <- spp_master[present==1, j={
-	# list(propSlope=summary(lm(propStrata~year))$coeff[2,1], mu_propStrat=mean(propStrata), ce_categ=ce_categ[1])
 	list(propSlope=summary(lm(range_size_mu~year))$coeff[2,1], mu_propStrat=mean(range_size_mu), ce_categ=ce_categ[1])
 } ,by=c("reg","spp")]
-
-# par(mfrow=c(3,3))
-# blah[,plot(mu_propStrat, propSlope, main=reg[1]),by='reg']
 
 par(mfrow=c(3,3))
 ureg <- blah[,unique(reg)]
@@ -744,16 +657,12 @@ for(r in 1:nreg){
 	bothR[reg==ureg[r],list(mu_lR=mean(lR),naive_rich=naive_rich[1],reg_rich=reg_rich[1]),by=c("reg","year")][,j={
 		plot(year, mu_lR, type='l')
 		mtext(reg[1], side=3, line=0, adj=0.1, font=2)
-		# par(new=TRUE)
-		# plot(year, reg_rich, type='l', col='blue', xaxt='n', yaxt='n', xlab='',ylab='')
 		par(new=TRUE)
 		plot(year, naive_rich, type='l', col='red', xaxt='n', yaxt='n', xlab='',ylab='')
 		axis(side=4, col='red')
 		NULL
 	}]
 }
-
-# mtext("Observed Regional (red), MSOM Regional (blue), and Mean Local (black) Richness", side=3, line=-0.75, outer=TRUE, font=2)
 mtext("Observed Regional (red) and Mean Local (black) Richness", side=3, line=-0.75, outer=TRUE, font=2)
 #' In general, local richness and regional richness are similar. There are differences, possibly in some cases the regional slope might be significant whereas local would not be (I haven't checked, though). However, the trends aren't in opposite directions at the two scales.
 
@@ -767,8 +676,8 @@ mtext("Observed Regional (red) and Mean Local (black) Richness", side=3, line=-0
 #'   
 #' ##All Years All Species Present or Absent
 #+ pres-abs-allSpp-time, fig.width=5, fig.height=7
-# # dev.new(width=5, height=7)
-# # pdf("~/Desktop/pres-abs-allSpp-time.pdf",width=5, height=7)
+# pdf("~/Desktop/pres-abs-allSpp-time.pdf",width=5, height=7)
+par(mfrow=c(3,3)) # remove this line for separate images; names then readable
 ureg <- spp_master[,unique(reg)]
 for(r in 1:length(ureg)){
 	t_table <- spp_master[reg==ureg[r] & present==1, table(spp,year)]
@@ -777,13 +686,12 @@ for(r in 1:length(ureg)){
 
 	par(mar=c(1,5,0.5,1), ps=8, mgp=c(0.75,0.2,0), tcl=-0.15)
 	image(t_table3, axes=FALSE)
-	# grid(ny=ncol(t_table3)+1, nx=nrow(t_table3)+1)
 	abline(h=seq(0,1,length.out=ncol(t_table3)), v=seq(0,1,length.out=nrow(t_table3)), col='gray', lty='dotted', lwd=0.5)
 	axis(side=2, at=seq(0,1,length.out=ncol(t_table3)), label=colnames(t_table3), las=1, cex.axis=0.5)
 	axis(side=1, at=seq(0,1,length.out=nrow(t_table3)), label=rownames(t_table3))
 	text(0.95,0.95, label=ureg[r], font=2)
 }
-# # # dev.off()
+# dev.off()
 #' 
 #'   
 #' \FloatBarrier  
@@ -791,79 +699,31 @@ for(r in 1:length(ureg)){
 #' ***  
 #'   
 #'   
-#' ##Relationships between alpha, beta, and gamma (MSOM) diversity
-#+ abgDiversity-MSOM, fig.width=3.5, fig.height=7
-localR <- data_all[,list(lR=length(unique(spp))),by=c("reg","stratum","year")]
-bothR <- merge(localR, comm_master[,list(reg,year,naive_rich,reg_rich)],by=c("reg","year"))
-bothR_mu <- bothR[,list(lR_mu=mean(lR)),by=c("reg","year")]
-cm2 <- merge(comm_master, bothR_mu)
+#' ##Alpha, beta, and gamma diversity (Naive)
+#+ abgDiversity-Naive, fig.width=3.5, fig.height=7, caption="Alpha, beta, gamma diversity."
 eval(figure_setup())
-# dev.new(width=3.5, height=7)
 par(mfrow=c(3,1), mar=c(1.75,1.5,0.25,0.25),mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
-ureg <- cm2[,unique(reg)]
+ureg <- comm_master[,unique(reg)]
 nreg <- length(ureg)
-cm2[,j={
-	plot(reg_rich, beta_div_mu, col=adjustcolor(pretty_col[reg],0.5), pch=16, xlab="Regional Richness", ylab="Beta Diversity")
-	for(r in 1:nreg){
-		.SD[reg==ureg[r]][order(reg_rich),j={
-			lines(reg_rich,predict(lm(beta_div_mu~reg_rich)),col='black')
-		}]
-	}
-}]
-cm2[,j={
-	plot(lR_mu, beta_div_mu, col=adjustcolor(pretty_col[reg],0.5), pch=16, xlab="Average Local Richness", ylab="Beta Diversity")
-	for(r in 1:nreg){
-		.SD[reg==ureg[r]][order(reg_rich),j={
-			lines(lR_mu,predict(lm(beta_div_mu~lR_mu)),col='black')
-		}]
-	}
-}]
-cm2[,legend("topright",ncol=2,legend=pretty_reg[una(reg)],text.col=pretty_col[una(reg)], inset=c(-0.01, -0.03), bty='n', x.intersp=0.15, y.intersp=0.65)]
-cm2[,j={
-	plot(reg_rich, lR_mu, col=adjustcolor(pretty_col[reg],0.5), pch=16, ylab="Average Local Richness", xlab="Regional Richness")
-	for(r in 1:nreg){
-		.SD[reg==ureg[r]][order(reg_rich),j={
-			lines(reg_rich,predict(lm(lR_mu~reg_rich)),col='black')
-		}]
-	}
-}]
+ptCol <- bquote(adjustcolor(pretty_col[reg],0.5))
+scatterLine(Data=comm_master, x="naive_rich", y="beta_div_obs", lineBy="reg", ptCol=ptCol)
+scatterLine(Data=comm_master, x="local_rich_obs", y="beta_div_obs", lineBy="reg", ptCol=ptCol)
+comm_master[,legend("topright",ncol=2,legend=pretty_reg[una(reg)],text.col=pretty_col[una(reg)], inset=c(-0.01, -0.03), bty='n', x.intersp=0.15, y.intersp=0.65)]
+scatterLine(Data=comm_master, x="naive_rich", y="local_rich_obs", lineBy="reg", ptCol=ptCol)
 
-#' ##Relationships between alpha, beta, and gamma (Naive) diversity
-#+ abgDiversity-Naive, fig.width=3.5, fig.height=7
-localR <- data_all[,list(lR=length(unique(spp))),by=c("reg","stratum","year")]
-bothR <- merge(localR, comm_master[,list(reg,year,naive_rich,reg_rich)],by=c("reg","year"))
-bothR_mu <- bothR[,list(lR_mu=mean(lR)),by=c("reg","year")]
-cm2 <- merge(comm_master, bothR_mu)
+
+#' ##Alpha, beta, and gamma diversity (MSOM)
+#+ abgDiversity-MSOM, fig.width=3.5, fig.height=7, caption="Alpha, beta, gamma diversity."
 eval(figure_setup())
-# dev.new(width=3.5, height=7)
 par(mfrow=c(3,1), mar=c(1.75,1.5,0.25,0.25),mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
-ureg <- cm2[,unique(reg)]
+ureg <- comm_master[,unique(reg)]
 nreg <- length(ureg)
-cm2[,j={
-	plot(naive_rich, beta_div_obs, col=adjustcolor(pretty_col[reg],0.5), pch=16, xlab="Observed Regional Richness", ylab="Observed Beta Diversity")
-	for(r in 1:nreg){
-		.SD[reg==ureg[r]][order(naive_rich),j={
-			lines(naive_rich,predict(lm(beta_div_obs~naive_rich)),col='black')
-		}]
-	}
-}]
-cm2[,j={
-	plot(lR_mu, beta_div_obs, col=adjustcolor(pretty_col[reg],0.5), pch=16, xlab="Average Local Richness", ylab="Observed Beta Diversity")
-	for(r in 1:nreg){
-		.SD[reg==ureg[r]][order(naive_rich),j={
-			lines(lR_mu,predict(lm(beta_div_obs~lR_mu)),col='black')
-		}]
-	}
-}]
-cm2[,legend("topright",ncol=2,legend=pretty_reg[una(reg)],text.col=pretty_col[una(reg)], inset=c(-0.01, -0.03), bty='n', x.intersp=0.15, y.intersp=0.65)]
-cm2[,j={
-	plot(naive_rich, lR_mu, col=adjustcolor(pretty_col[reg],0.5), pch=16, ylab="Average Local Richness", xlab="Observed Regional Richness")
-	for(r in 1:nreg){
-		.SD[reg==ureg[r]][order(naive_rich),j={
-			lines(naive_rich,predict(lm(lR_mu~naive_rich)),col='black')
-		}]
-	}
-}]
+ptCol <- bquote(adjustcolor(pretty_col[reg],0.5))
+scatterLine(Data=comm_master, x="reg_rich", y="beta_div_mu", lineBy="reg", ptCol=ptCol)
+scatterLine(Data=comm_master, x="local_rich", y="beta_div_mu", lineBy="reg", ptCol=ptCol)
+comm_master[,legend("topright",ncol=2,legend=pretty_reg[una(reg)],text.col=pretty_col[una(reg)], inset=c(-0.01, -0.03), bty='n', x.intersp=0.15, y.intersp=0.65)]
+scatterLine(Data=comm_master, x="reg_rich", y="local_rich", lineBy="reg", ptCol=ptCol)
+
 
 #' 
 #'   
@@ -889,38 +749,11 @@ cmNN <- merge(comm_master, noNeither)
 par(mfrow=c(2,2))
 ureg <- comm_master[,unique(reg)]
 nreg <- length(ureg)
-comm_master[,j={
-	plot(range_size_mu_avg_ltAvg, reg_rich, col=adjustcolor(pretty_col[reg],0.5), pch=16)
-	for(r in 1:nreg){
-		.SD[reg==ureg[r]][order(range_size_mu_avg_ltAvg),j={
-			lines(range_size_mu_avg_ltAvg, predict(lm(reg_rich~range_size_mu_avg_ltAvg)))
-		}]
-	}
-}]
-comm_master[,j={
-	plot(range_size_mu_avg, reg_rich, col=adjustcolor(pretty_col[reg],0.5), pch=16)
-	for(r in 1:nreg){
-		.SD[reg==ureg[r]][order(range_size_mu_avg),j={
-			lines(range_size_mu_avg, predict(lm(reg_rich~range_size_mu_avg)))
-		}]
-	}
-}]
-cmNN[,j={
-	plot(propStrata_noNeither_avg_ltAvg, reg_rich, col=adjustcolor(pretty_col[reg],0.5), pch=16)
-	for(r in 1:nreg){
-		.SD[reg==ureg[r]][order(propStrata_noNeither_avg_ltAvg),j={
-			lines(propStrata_noNeither_avg_ltAvg, predict(lm(reg_rich~propStrata_noNeither_avg_ltAvg)))
-		}]
-	}
-}]
-cmNN[,j={
-	plot(propStrata_noNeither_avg, reg_rich, col=adjustcolor(pretty_col[reg],0.5), pch=16)
-	for(r in 1:nreg){
-		.SD[reg==ureg[r]][order(propStrata_noNeither_avg),j={
-			lines(propStrata_noNeither_avg, predict(lm(reg_rich~propStrata_noNeither_avg)))
-		}]
-	}
-}]
+ptCol <- bquote(adjustcolor(pretty_col[reg],0.5))
+scatterLine(Data=cmNN, x="range_size_mu_avg_ltAvg", y="reg_rich", lineBy="reg", ptCol=ptCol)
+scatterLine(Data=cmNN, x="range_size_mu_avg", y="reg_rich", lineBy="reg", ptCol=ptCol)
+scatterLine(Data=cmNN, x="propStrata_noNeither_avg_ltAvg", y="reg_rich", lineBy="reg", ptCol=ptCol)
+scatterLine(Data=cmNN, x="propStrata_noNeither_avg", y="reg_rich", lineBy="reg", ptCol=ptCol)
 
 #' 
 #'   
@@ -931,68 +764,8 @@ cmNN[,j={
 #'   
 #' ##Range Size Over Time For Community vs Transients
 #+ rareExpansion, fig.width=6.5, fig.height=6.5
-
-rE_logic1 <- bquote(reg==rr & ce_categ!="neither" & present==1)
-rE_logic2 <- bquote(reg==rr & ce_categ!="neither")
-rE_logic3 <- bquote(reg==rr & ce_categ=="neither")
-colQ <- bquote(adjustcolor(c("pre_ext"="red","post_col"="blue")[stretch_type],0.5))
-colQ2 <- bquote(adjustcolor(c("pre_ext"="red","post_col"="blue")[stretch_type],1))
-
-# dev.new(width=6.5, height=6.5)
-par(mfrow=c(3,3), mgp=c(0.85,0.2,0), ps=8, cex=1, mar=c(1.75,1.75,0.5,0.5), tcl=-0.15)
-ur <- spp_master[,unique(reg)]
-for(r in 1:length(ur)){
-	rr <- ur[r]
-	rEl3 <- spp_master[order(year)][eval(rE_logic3)]
-	rEl2 <- spp_master[order(year)][eval(rE_logic2)]
-	rEl1 <- rEl2[order(year)][eval(rE_logic1)]
-	u_spp <- rEl1[, unique(spp)]
-
-	rEl1[,j={bp_dat <<- boxplot(range_size_samp~year,plot=FALSE);NULL}]
-	bp_ylim <- unlist(bp_dat[c("stats")], use.names=FALSE)
-	medRange_pres0 <- rEl2[,list(range_size_samp=median(range_size_samp)),by='year']
-	medRange_noNeith <- rEl3[,list(range_size_samp=median(range_size_samp)),by='year']
-	rEl1_qylim <- rEl1[,quantile(range_size_samp,c(0.25,0.75)),by='year'][,range(V1)]
-	rEl3_qylim <- rEl3[,quantile(range_size_samp,c(0.25,0.75)),by='year'][,range(V1)]
-	ylim <- range(c(
-		# bp_ylim,
-		rEl1_qylim,
-		rEl3_qylim,
-		# medRange_pres0[,range_size_samp],
-		medRange_noNeith[,range_size_samp]#,
-	))
-	# rEl1[,j={boxplot(range_size_samp~year, add=FALSE, at=unique(year), outline=FALSE, axes=TRUE, ylim=ylim); NULL}]
-	
-	rEl1[,plot(year, range_size_samp, type='n', ylim=ylim)]
-	grid()
-	
-	r11 <- rEl1[,median(range_size_samp),by='year']
-	r12 <- rEl1[,quantile(range_size_samp,0.75),by='year']
-	r13 <- rEl1[,quantile(range_size_samp,0.25),by='year']
-	# lines(r11, lwd=2, col='red')
-	# lines(r12, lwd=1, col='red')
-	# lines(r13, lwd=1, col='red')
-	poly1y <- c(r12[,V1], r13[,rev(V1)])
-	poly1x <- c(r12[,year],r13[,rev(year)])
-	
-	
-	r21 <- rEl3[,median(range_size_samp),by='year']
-	r22 <- rEl3[,quantile(range_size_samp,0.75),by='year']
-	r23 <- rEl3[,quantile(range_size_samp,0.25),by='year']
-	# lines(r21, lwd=2, col='blue')
-	# lines(r22, lwd=1, col='blue')
-	# lines(r23, lwd=1, col='blue')
-	poly2y <- c(r22[,V1], r23[,rev(V1)])
-	poly2x <- c(r22[,year],r23[,rev(year)])
-	
-	
-	polygon(poly2x, poly2y, col=adjustcolor('blue',0.15), border=NA)
-	polygon(poly1x, poly1y, col=adjustcolor('red',0.15), border=NA)
-	lines(r21, lwd=2, col='blue')
-	lines(r11, lwd=2, col='red')
-	comm_master[reg==rr, lines(year,range_size_samp_avg_ltAvg, col='black')]
-	mtext(pretty_reg[rr], line=-0.75, side=3, adj=0.1, font=2)
-}
+eval(neitherPres_subColor())
+plot_rangeSize_FullTrans(range_type="range_size_samp")
 
 #' 
 #'   
@@ -1001,46 +774,11 @@ for(r in 1:length(ur)){
 #' ***  
 #'   
 #'   
-#' ##Time Series of Range Size, Color is Local Richness
+#' ##Boxplot Time Series of Range Size, Color is Richness of Transient Species (Observed)
 #+ rangeTS-colorAlpha, fig.width=6.5, fig.height=6.5
-rE_logic1 <- bquote(reg==rr & ce_categ!="neither" & present==1)
-rE_logic2 <- bquote(reg==rr & ce_categ!="neither")
-rE_logic3 <- bquote(reg==rr & ce_categ=="neither")
-colQ <- bquote(adjustcolor(c("pre_ext"="red","post_col"="blue")[stretch_type],0.5))
-colQ2 <- bquote(adjustcolor(c("pre_ext"="red","post_col"="blue")[stretch_type],1))
-
-# dev.new(width=6.5, height=6.5)
-par(mfrow=c(3,3), mgp=c(0.85,0.2,0), ps=8, cex=1, mar=c(1.75,1.75,0.5,0.5), tcl=-0.15, oma=c(0.25,0.1,0.1,0.1))
-ur <- spp_master[,unique(reg)]
-for(r in 1:length(ur)){
-	rr <- ur[r]
-	rEl3 <- spp_master[order(year)][eval(rE_logic3)]
-	rEl2 <- spp_master[order(year)][eval(rE_logic2)]
-	rEl1 <- rEl2[order(year)][eval(rE_logic1)]
-	u_spp <- rEl1[, unique(spp)]
-	
-	nCols <- rEl1[,length(unique(year))]
-	cols <- viridis(nCols)
-	nTrans <- rEl1[,colSums(table(spp,year))]
-	nTrans <- nTrans[order(as.integer(names(nTrans)))]
-	colVec_ind <- cut(nTrans, breaks=nCols)
-	colVec <- cols[colVec_ind]
-	
-	rEl1[,j={bp_dat <<- boxplot(propStrata~year,plot=FALSE);NULL}]
-	bp_ylim <- unlist(bp_dat[c("stats")], use.names=FALSE)
-	ylim <- range(c(
-		bp_ylim
-	))
-	rEl1[,j={boxplot(propStrata~year, add=FALSE, at=unique(year), col=colVec, outline=FALSE, axes=TRUE, ylim=ylim); NULL}]
-	if(rr=="sa"){
-		mapLegend(x=0.3, y=0.78, zlim=range(nTrans),cols=cols)
-	}else{
-		mapLegend(x=0.05, y=0.78, zlim=range(nTrans),cols=cols)
-	}
-	mtext(pretty_reg[rr], line=-0.75, side=3, adj=0.1, font=2)
-}
-mtext("Range Size of Transient Species", side=2, line=-0.75, outer=TRUE, font=2)
-mtext("Year", side=1, line=-0.75, outer=TRUE, font=2)
+eval(figure_setup())
+eval(neitherPres_subColor())
+boxRange_colRich(range_type="propStrata")
 
 #' 
 #'   
@@ -1049,47 +787,11 @@ mtext("Year", side=1, line=-0.75, outer=TRUE, font=2)
 #' ***  
 #'   
 #'   
-#' ##Time Series of Range Size, Color is Local Richness (MSOM!)
-#+ rangeTS-colorAlpha-MSOM, fig.width=6.5, fig.height=6.5
+#' ##Boxplot Time Series of Range Size, Color is Richness of Transient Species (MSOM)
+#+ rangeTS-colorAlpha-MSOM, fig.width=6.5, fig.height=6.5, caption="Range size and richness of transient species. Boxplots represent the cross-species distribution of range sizes. The color of the boxplot indicates the number of  transient species present in that year."
 eval(figure_setup())
-rE_logic1 <- bquote(reg==rr & ce_categ!="neither" & present==1)
-rE_logic2 <- bquote(reg==rr & ce_categ!="neither")
-rE_logic3 <- bquote(reg==rr & ce_categ=="neither")
-colQ <- bquote(adjustcolor(c("pre_ext"="red","post_col"="blue")[stretch_type],0.5))
-colQ2 <- bquote(adjustcolor(c("pre_ext"="red","post_col"="blue")[stretch_type],1))
-
-# dev.new(width=6.5, height=6.5)
-par(mfrow=c(3,3), mgp=c(0.85,0.2,0), ps=8, cex=1, mar=c(1.75,1.75,0.5,0.5), tcl=-0.15, oma=c(0.25,0.1,0.1,0.1))
-ur <- spp_master[,unique(reg)]
-for(r in 1:length(ur)){
-	rr <- ur[r]
-	rEl3 <- spp_master[order(year)][eval(rE_logic3)]
-	rEl2 <- spp_master[order(year)][eval(rE_logic2)]
-	rEl1 <- rEl2[order(year)][eval(rE_logic1)]
-	u_spp <- rEl1[, unique(spp)]
-	
-	nCols <- rEl1[,length(unique(year))]
-	cols <- viridis(nCols)
-	nTrans <- rEl1[,colSums(table(spp,year))]
-	nTrans <- nTrans[order(as.integer(names(nTrans)))]
-	colVec_ind <- cut(nTrans, breaks=nCols)
-	colVec <- cols[colVec_ind]
-	
-	rEl1[,j={bp_dat <<- boxplot(range_size_mu~year,plot=FALSE);NULL}]
-	bp_ylim <- unlist(bp_dat[c("stats")], use.names=FALSE)
-	ylim <- range(c(
-		bp_ylim
-	))
-	rEl1[,j={boxplot(range_size_mu~year, add=FALSE, at=unique(year), col=colVec, outline=FALSE, axes=TRUE, ylim=ylim); NULL}]
-	if(rr=="sa"){
-		mapLegend(x=0.3, y=0.78, zlim=range(nTrans),cols=cols)
-	}else{
-		mapLegend(x=0.05, y=0.78, zlim=range(nTrans),cols=cols)
-	}
-	mtext(pretty_reg[rr], line=-0.75, side=3, adj=0.1, font=2)
-}
-mtext("Range Size (MSOM) of Transient Species", side=2, line=-0.75, outer=TRUE, font=2)
-mtext("Year", side=1, line=-0.75, outer=TRUE, font=2)
+eval(neitherPres_subColor())
+boxRange_colRich(range_type="range_size_mu")
 
 #' 
 #'   
@@ -1098,47 +800,11 @@ mtext("Year", side=1, line=-0.75, outer=TRUE, font=2)
 #' ***  
 #'   
 #'   
-#' ##Time Series of Range Size, Color is Local Richness (Resampled)
-#+ rangeTS-colorAlpha-samp, fig.width=6.5, fig.height=6.5
+#' ##Boxplot Time Series of Range Size, Color is Richness of Transient Species (Resampled)
+#+ rangeTS-colorAlpha-samp, fig.width=6.5, fig.height=6.5, caption="Range size and richness of transient species. Boxplots represent the cross-species distribution of range sizes. The color of the boxplot indicates the number of  transient species present in that year."
 eval(figure_setup())
-rE_logic1 <- bquote(reg==rr & ce_categ!="neither" & present==1)
-rE_logic2 <- bquote(reg==rr & ce_categ!="neither")
-rE_logic3 <- bquote(reg==rr & ce_categ=="neither")
-colQ <- bquote(adjustcolor(c("pre_ext"="red","post_col"="blue")[stretch_type],0.5))
-colQ2 <- bquote(adjustcolor(c("pre_ext"="red","post_col"="blue")[stretch_type],1))
-
-# dev.new(width=6.5, height=6.5)
-par(mfrow=c(3,3), mgp=c(0.85,0.2,0), ps=8, cex=1, mar=c(1.75,1.75,0.5,0.5), tcl=-0.15, oma=c(0.25,0.1,0.1,0.1))
-ur <- spp_master[,unique(reg)]
-for(r in 1:length(ur)){
-	rr <- ur[r]
-	rEl3 <- spp_master[order(year)][eval(rE_logic3)]
-	rEl2 <- spp_master[order(year)][eval(rE_logic2)]
-	rEl1 <- rEl2[order(year)][eval(rE_logic1)]
-	u_spp <- rEl1[, unique(spp)]
-	
-	nCols <- rEl1[,length(unique(year))]
-	cols <- viridis(nCols)
-	nTrans <- rEl1[,colSums(table(spp,year))]
-	nTrans <- nTrans[order(as.integer(names(nTrans)))]
-	colVec_ind <- cut(nTrans, breaks=nCols)
-	colVec <- cols[colVec_ind]
-	
-	rEl1[,j={bp_dat <<- boxplot(range_size_samp~year,plot=FALSE);NULL}]
-	bp_ylim <- unlist(bp_dat[c("stats")], use.names=FALSE)
-	ylim <- range(c(
-		bp_ylim
-	))
-	rEl1[,j={boxplot(range_size_samp~year, add=FALSE, at=unique(year), col=colVec, outline=FALSE, axes=TRUE, ylim=ylim); NULL}]
-	if(rr=="sa"){
-		mapLegend(x=0.3, y=0.78, zlim=range(nTrans),cols=cols)
-	}else{
-		mapLegend(x=0.05, y=0.78, zlim=range(nTrans),cols=cols)
-	}
-	mtext(pretty_reg[rr], line=-0.75, side=3, adj=0.1, font=2)
-}
-mtext("Range Size (MSOM) of Transient Species", side=2, line=-0.75, outer=TRUE, font=2)
-mtext("Year", side=1, line=-0.75, outer=TRUE, font=2)
+eval(neitherPres_subColor())
+boxRange_colRich(range_type="range_size_samp")
 
 #' 
 #'   
@@ -1148,14 +814,9 @@ mtext("Year", side=1, line=-0.75, outer=TRUE, font=2)
 #'   
 #'   
 #' #Time Series of Tows per Site
-#+ towsPerSite-timeSeries, width=6.5, height=6.5
-par(mfrow=c(3,3), mar=c(4,3.5,1,1))
-ureg <- data_all[reg!='wcann',unique(reg)]
-nreg <- length(ureg)
-for(r in 1:nreg){
-	data_all[reg==ureg[r],list(Kmax=unique(Kmax)),by=c("reg","year","stratum")][,j={boxplot(Kmax~year, main=reg[1]);NULL},by='reg']
-}
-mtext("Tows per site", side=2, line=-1.25, outer=TRUE)
+#+ towsPerSite-timeSeries, width=6.5, height=6.5, caption="Cross-site distribution (boxplot) of the number of tows (per site) over time, for each region."
+plot_towsPerSiteTS()
+
 
 #' 
 #'   
@@ -1164,3 +825,5 @@ mtext("Tows per site", side=2, line=-1.25, outer=TRUE)
 #' ***  
 #'   
 #'   
+Sys.time()
+sessionInfo()
