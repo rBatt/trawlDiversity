@@ -421,7 +421,7 @@ setkey(bestEachOverall, reg, mod_call) # sort
 
 # get the worthy models
 allSmry <- rbind(sTime_reg_smry1, sTime_reg_smry2, sTime_reg_smry3, fill=TRUE) # combine results from all models and regions
-bestModels <- allSmry[best_each_overall, on=c('reg','mod_call')] # for each region, only select models that were best in that region or best overall
+bestModels <- allSmry[bestEachOverall, on=c('reg','mod_call')] # for each region, only select models that were best in that region or best overall
 
 # remove columns that are NA for all rows b/c models w/ those parameters were never winners
 loserNames <- sapply(bestModels, function(x)all(is.na(x))) # names of columns only pertaining to non-best models
