@@ -104,7 +104,8 @@ opts_chunk$set(
 
 # setwd("~/Documents/School&Work/pinskyPost/trawlDiversity/pkgBuild/manuscript")
 source("../manuscript/manuscript_figures_functions.R")
-source("../manuscript/manuscript_stats_functioans.R")
+source("../manuscript/manuscript_stats_functions.R")
+source("../manuscript/manuscript_data_functions.R")
 # source("../manuscript/fig_tbl_number.R")
 # eval(fig_tbl_number())
 
@@ -190,29 +191,30 @@ categ_barplot()
 categ_tbl <- t(spp_master[!duplicated(paste(reg,ce_categ,spp)), table(reg, ce_categ)])[c(4,1,2,3),]
 kable(categ_tbl, caption = "Number of species in each category in each region.")
 #' It's the same pattern, whichever way you split it. However, AI is the only region that had more *colonizers* than *both* species. An interesting way to think about some of this is that the average sd in richness was `r comm_master[,stats::sd(reg_rich),by='reg'][,mean(V1)]`, so when the number of *colonizer* or *leaver* species exceed's that region's sd, the impact of those categories, which I consider to be dubious, might start being relevant (though it's not necessarily problematic, nor is this even close to an actual test for the significance of those categories to the trend). EBS and Shelf had significant positive trends in richness and very low numbers in the *colonizer* category. WCTRI and NEWF had similar numbers in the *both* and *colonizer* category.  
-#+ attribute_richness_categ, echo=FALSE
-categ_tbl <- t(spp_master[!duplicated(paste(reg,ce_categ,spp)), table(reg, ce_categ)])[c(4,1,2,3),]
-predRich <- bquote(predict(lm(reg_rich~year)))
 
+#' ####Table Attributing Richness Change to Colonizers (only)
+#+ attribute_richness_categ, echo=FALSE
+eval(figure_setup()) # contains pretty_reg names
 categ_tbl2 <- spp_master[!duplicated(paste(reg,ce_categ,spp)), table(reg, ce_categ, dnn=NULL)]
-class(categ_tbl2) <- "matrix"
-dels <- comm_master[,
+class(categ_tbl2) <- "matrix" # matrix converts to a data.table better
+categ_dt <- data.table(reg=rownames(categ_tbl2),categ_tbl2)
+
+predRich <- bquote(predict(lm(reg_rich~year))) # predicted richness
+dels <- comm_master[, # del = delta richness
 	list(
-		rangeRich=diff(range(reg_rich)),
-		delPred=rev(eval(predRich))[1] - eval(predRich)[1]
+		rangeRich=diff(range(reg_rich)), # not using
+		delPred=rev(eval(predRich))[1] - eval(predRich)[1] # net change in predicted richness
 	),
 	by=c('reg')
 ]
-att_categ <- merge(dels, data.table(reg=rownames(categ_tbl2),categ_tbl2))
-att_categ[,attr_col:=(delPred-colonizer)]
-att_categ[,attr_ext:=(delPred-leaver)]
 
-setnames(att_categ, 'reg', "Region")
-att_categ[,Region:=factor(Region, levels=c("ebs","ai","goa","wctri","gmex","sa","neus","shelf","newf"), labels=c("E. Bering Sea","Aleutian Islands","Gulf of Alaska","West Coast US","Gulf of Mexico","Southeast US", "Northeast US", "Scotian Shelf","Newfoundland"))]
-setkey(att_categ, Region)
-setnames(att_categ, c("delPred"), "Richness Change")
-att_categ_print <- att_categ[,c("Region", "Richness Change", "colonizer"), with=FALSE]
-stargazer(att_categ_print, summary=FALSE, rownames=FALSE, column.sep.width="2pt", digits=1, digits.extra=0)
+att_categ <- merge(dels, categ_dt)[order(names(pretty_reg))] # merge and sort
+att_categ[,c("attr_col","attr_ext"):=list(delPred-colonizer, delPred-leaver)] # new columns
+
+att_categ[,reg:=pretty_reg[reg]] # change to pretty region names
+setnames(att_categ, old=c("delPred","reg"), c("Richness Change","Region")) # rename columns
+att_categ_print <- att_categ[,c("Region", "Richness Change", "colonizer"), with=FALSE] # change order for printing
+stargazer(att_categ_print, summary=FALSE, rownames=FALSE, column.sep.width="2pt", digits=1, digits.extra=0) # print table
 # \begin{table}[!htbp] \centering
 #   %\caption{}
 #   %\label{}
@@ -233,7 +235,7 @@ stargazer(att_categ_print, summary=FALSE, rownames=FALSE, column.sep.width="2pt"
 # \hline \\[-1.8ex]
 # \end{tabular}
 # \end{table}
-
+#'   
 #'   
 #' ####Figure NotIncluded. Time series of colonizations and extinctions
 #+ Richness-col-ext-ts, include=TRUE, echo=TRUE, fig.height=3.5, fig.width=3.5, fig.cap="**Figure NotIncluded.** Number of colonizations (blue) and extinctions (red) over time in each region."
@@ -275,32 +277,29 @@ rich_geoRange("size", leg=TRUE, legPan=1, panLab=FALSE)
 #'   
 #' ####Table. Regressions relating richness to range size
 #+ rich-rangeSize
-range_reg <- comm_master[,list(
-	reg, year, rich=reg_rich, density=propTow_occ_avg, size=range_size_mu_avg_ltAvg
-)]
+range_reg <- make_range_reg(dens="propTow_occ_avg", size="range_size_mu_avg_ltAvg")
 
 # Fit different models to the whole data set
+# Models vary in which/ how parameters vary among regions
 rSize_mods <- list()
-rSize_mods[[1]] <- lm(rich ~ size, data=range_reg)
-rSize_mods[[2]] <- lm(rich ~ size*reg, data=range_reg)
-rSize_mods[[3]] <- lme4::lmer(rich ~ size + (1|reg), data=range_reg)
-rSize_mods[[4]] <- lme4::lmer(rich ~ size + (size|reg), data=range_reg)
-rich_size_smry <- rbindlist(lapply(rSize_mods, mod_smry, pred_name="size"))
+rSize_mods[[1]] <- lm(rich ~ size, data=range_reg) # simple
+rSize_mods[[2]] <- lm(rich ~ size*reg, data=range_reg) # slope and intercept ind. among regs
+rSize_mods[[3]] <- lme4::lmer(rich ~ size + (1|reg), data=range_reg) # intercept varies randomly among regs
+rSize_mods[[4]] <- lme4::lmer(rich ~ size + (size|reg), data=range_reg) # slope & int. vary randomly among regs
+rich_size_smry <- smry_modList(rSize_mods) # summarize to get R^2, AIC, p-vals, etc
 
-# Fit same model to each region separately 
+# Fit simple model to each region separately 
 rSize_reg_mods <- list()
 ur <- range_reg[,unique(reg)]
 for(r in 1:length(ur)){
 	rSize_reg_mods[[r]] <- lm(rich ~ size, data=range_reg[reg==ur[r]])
 }
-rich_s_reg_smry <- data.table(
-	reg=ur, 
-	rbind(rbindlist(lapply(rSize_reg_mods, mod_smry, pred_name="size")))
-)
-setnames(rich_s_reg_smry, old=c("Marginal","Conditional","p.value"), new=c("MargR2","CondR2","pval"))
-setkey(rich_s_reg_smry, reg, Class, mod_call, predictor)
-rich_s_reg_smry[, BH:=round(p.adjust(pval, "BH"), 3), by=c("mod_call", "predictor")]
-rich_s_reg_smry <- dcast(rich_s_reg_smry, reg+Class+mod_call+MargR2+CondR2+AIC~predictor, value.var=c("pval", "BH"))
+rich_s_reg_smry <- data.table(reg=ur, smry_modList(rSize_reg_mods)) # summarize
+setnames(rich_s_reg_smry, old=c("Marginal","Conditional","p.value"), new=c("MargR2","CondR2","pval")) # rename
+setkey(rich_s_reg_smry, reg, Class, mod_call, predictor) # sort
+rich_s_reg_smry[, BH:=round(p.adjust(pval, "BH"), 3), by=c("mod_call", "predictor")] # correct p-vals for multiple tests
+smry_formula <- formula(reg+Class+mod_call+MargR2+CondR2+AIC~predictor) # formula to organize
+rich_s_reg_smry <- dcast(rich_s_reg_smry, smry_formula, value.var=c("pval", "BH")) # organize; helpful if multiple predictors
 
 #+ rich-rangeSize-tables, echo=FALSE
 kable(
@@ -352,28 +351,15 @@ rangeSize_absenceTime("rangeDensity")
 #'   
 #' I think the regressions for range size should omit an intercept, while the regressions for range density should have it. This might be hard to justify fully *a priori* (though see my thinking in previous paragraph), so I'll probably just do a model selection and maybe discuess the difference if one model has an intercept and the other does not.  
 #'   
-#' ####Table. Regressions w/ regions pooled relating time until extinction or after colonization to geographic range
+#' ####Table. Regressions of Range Size & Time to Event; All Regions at Once
 #+ rangeSize-ColExtTime-data
-# handy data set for regressions
-rangeTimeDT <-  spp_master[!is.na(stretch_type) & propStrata!=0]
-rangeTimeDT <- rangeTimeDT[,list(
-	reg=reg, 
-	event=as.character(event_year), 
-	spp=spp, 
-	type=as.character(stretch_type),
-	time=ext_dist, 
-	# size=propStrata,
-	size=range_size_mu,
-	density=propTow_occ
-)]
+rangeTimeDT <- make_rangeTime()
 
 #+ rangeSize-ColExtTime-models, results='markup'
 # models for range size
 sizeCE_mods <- list()
 sizeCE_mods[[1]] <- lme4::lmer(size ~ time + (time|spp/reg), data=rangeTimeDT)
-# sizeCE_mods[[2]] <- lme4::lmer(size ~ time + (time|spp/reg) + (1|type/reg), data=rangeTimeDT) # error
 sizeCE_mods[[2]] <- lme4::lmer(size ~ time*type + (time|spp/reg), data=rangeTimeDT)
-# lmerTest::step(sizeCE_mods[[2]]) # doing most complicated throws an error
 
 #+ rangeSize-ColExtTime-table, echo=FALSE
 do.call(stargazer, c(
@@ -382,98 +368,70 @@ do.call(stargazer, c(
 		title = "Mixed effect models predicting range size (size) from the temporal proximity (time) after colonization and/or until extinction (factor name = type). Each model uses data from all regions (reg) and all species (spp), and includes both time to extinction and time from colonization (type).",
 		list(type=table_type)
 ))
-
 tbl_ColExtTime <- rbindlist(lapply(c(sizeCE_mods), mod_smry2))
 setnames(tbl_ColExtTime, old=c("Pr..Chisq.","Marginal","Conditional"), new=c("pval","MargR2","CondR2"))
 kable(tbl_ColExtTime, caption="Same as above, but shows slightly different metrics")
 
 #' Range size seems to be important to include type as a fixed effect. It does not need an interaction between time*type. I did additional testing beyond what's presenting here, and I can confirm that having spp as a random factor is useful, too.  
 #'   
-#' ####Table. Regressions separate regions -- range size vs time until, SIMPLE
+#' ####Table. Regressions of Range Size & Time to Event; Each Region Separate Model (Simple)
 #+ rangeSizeDensity-ColExtTime-reg-simple
-sTime_reg_mods3 <- list()
-ur <- range_reg[,unique(reg)]
+# Set up -- region names and empty named lists
+ur <- rangeTimeDT[,unique(reg)]
+sTime_reg_mods1 <- structure(vector("list",length(ur)), .Names=ur)
+sTime_reg_mods2 <- structure(vector("list",length(ur)), .Names=ur)
+sTime_reg_mods3 <- structure(vector("list",length(ur)), .Names=ur)
+
+# Fit 3 models for each region
 for(r in 1:length(ur)){
-	sTime_reg_mods3[[r]] <- lme4::lmer(size ~ time + (time|spp), data=rangeTimeDT[reg==ur[r]])
+	t_reg <- ur[r]
+	t_dat <- rangeTimeDT[reg==t_reg]
+	sTime_reg_mods1[[t_reg]] <- lme4::lmer(size ~ time + (time|spp), data=t_dat)
+	sTime_reg_mods2[[t_reg]] <- lme4::lmer(size ~ time + type + (time|spp), data=t_dat)
+	sTime_reg_mods3[[t_reg]] <- lme4::lmer(size ~ time * type + (time|spp), data=t_dat)
 }
-sTime_reg_smry3 <- data.table(rbind(
-	rbindlist(structure(lapply(sTime_reg_mods3, mod_smry2), .Names=ur), idcol=TRUE)
-))
-setnames(sTime_reg_smry3, old=c(".id","Pr..Chisq.","Marginal","Conditional"), new=c('reg',"pval","MargR2","CondR2"))
-setkey(sTime_reg_smry3, reg, Class, mod_call, predictor)
-sTime_reg_smry3[, BH:=round(p.adjust(pval, "BH"), 3), by=c("mod_call", "predictor")]# adjust p-values for multiple tests
-sTime_reg_smry3 <- dcast(sTime_reg_smry3, reg+Class+mod_call+MargR2+CondR2+AIC~predictor, value.var=c("pval", "BH"))# rearrange so each model on 1 line
 
-modCoef3 <- getCoefs(sTime_reg_mods3)
-sTime_reg_smry3 <- merge(sTime_reg_smry3, modCoef3, by=c("reg","mod_call"))
-setnames(sTime_reg_smry3, old=c("(Intercept)"), new=c("Int"))
+# Summarize each model
+sTime_reg_smry1 <- smry_modList2(sTime_reg_mods1)
+sTime_reg_smry2 <- smry_modList2(sTime_reg_mods2)
+sTime_reg_smry3 <- smry_modList2(sTime_reg_mods3)
 
-#+ rangeSizeDensity-ColExtTime-reg-simple-table, echo=FALSE
-capS3 <- sTime_reg_smry3[grepl("size",mod_call),mod_call[1]]
-sTime_reg_smry3 <- sTime_reg_smry3[grepl("size",mod_call)]
-sTime_reg_smry3[,c("mod_call","randomGroup","Class"):=NULL]
-kable(sTime_reg_smry3, caption=paste0("Summary statistics for fits of predicting range SIZE from years before extinction and years after colonization. These are mixed effect models of the form ", capS3))
-#'   
-#' ####Table. Regressions separate regions -- geographic range vs time until extinction or after colonization
-#+ rangeSizeDensity-ColExtTime-reg
-# Fit same model to each region separately 
-sTime_reg_mods <- list()
-ur <- range_reg[,unique(reg)]
-for(r in 1:length(ur)){
-	sTime_reg_mods[[r]] <- lme4::lmer(size ~ time + type + (time|spp), data=rangeTimeDT[reg==ur[r]])
-}
-sTime_reg_smry <- data.table(rbind(
-	rbindlist(structure(lapply(sTime_reg_mods, mod_smry2), .Names=ur), idcol=TRUE)
-))
-setnames(sTime_reg_smry, old=c(".id","Pr..Chisq.","Marginal","Conditional"), new=c('reg',"pval","MargR2","CondR2"))
-setkey(sTime_reg_smry, reg, Class, mod_call, predictor)
-sTime_reg_smry[, BH:=round(p.adjust(pval, "BH"), 3), by=c("mod_call", "predictor")]# adjust p-values for multiple tests
-sTime_reg_smry <- dcast(sTime_reg_smry, reg+Class+mod_call+MargR2+CondR2+AIC~predictor, value.var=c("pval", "BH"))# rearrange so each model on 1 line
+# Captions for each model
+# Also a caption in case I want to report all models for all regions
+capS1 <- sTime_reg_smry1[,unique(mod_call)]
+capS2 <- sTime_reg_smry2[,unique(mod_call)]
+capS3 <- sTime_reg_smry3[,unique(mod_call)]
+timeRegMods_cap <- "Summary statistics for fits of predicting range size from years before extinction and years after colonization. These are mixed effect models of the form "
 
-# add coefficients to the sTime_reg_smry data.table
-modCoef <- getCoefs(sTime_reg_mods)
-sTime_reg_smry <- merge(sTime_reg_smry, modCoef, by=c("reg","mod_call"))
-setnames(sTime_reg_smry, old=c("(Intercept)"), new=c("Int"))
+# Compare AIC values from each model fit
+compAIC <- rbind(
+	cbind(sTime_reg_smry1[,list(reg,MargR2,CondR2,AIC)], mod=capS1),
+	cbind(sTime_reg_smry2[,list(reg,MargR2,CondR2,AIC)], mod=capS2),
+	cbind(sTime_reg_smry3[,list(reg,MargR2,CondR2,AIC)], mod=capS3)
+)
+setkey(compAIC, reg) # sort
 
-#+ rangeSizeDensity-ColExtTime-reg-table, echo=FALSE
-capS <- sTime_reg_smry[grepl("size",mod_call),mod_call[1]]
-sTime_reg_smry <- sTime_reg_smry[grepl("size",mod_call)]
-sTime_reg_smry[,c("mod_call","randomGroup","Class"):=NULL]
-kable(sTime_reg_smry, caption=paste0("Summary statistics for fits of predicting range SIZE from years before extinction and years after colonization. These are mixed effect models of the form ", capS))
-#'   
-#' ####Table. Regressions separate regions -- range size vs time until, WITH INTERACTION
-#+ rangeSizeDensity-ColExtTime-reg-interaction
-sTime_reg_mods2 <- list()
-ur <- range_reg[,unique(reg)]
-for(r in 1:length(ur)){
-	sTime_reg_mods2[[r]] <- lme4::lmer(size ~ time * type + (time|spp), data=rangeTimeDT[reg==ur[r]])
-}
-sTime_reg_smry2 <- data.table(rbind(
-	rbindlist(structure(lapply(sTime_reg_mods2, mod_smry2), .Names=ur), idcol=TRUE)
-))
-setnames(sTime_reg_smry2, old=c(".id","Pr..Chisq.","Marginal","Conditional"), new=c('reg',"pval","MargR2","CondR2"))
-setkey(sTime_reg_smry2, reg, Class, mod_call, predictor)
-sTime_reg_smry2[, BH:=round(p.adjust(pval, "BH"), 3), by=c("mod_call", "predictor")]# adjust p-values for multiple tests
-sTime_reg_smry2 <- dcast(sTime_reg_smry2, reg+Class+mod_call+MargR2+CondR2+AIC~predictor, value.var=c("pval", "BH"))# rearrange so each model on 1 line
-modCoef2 <- getCoefs(sTime_reg_mods2)
-sTime_reg_smry2 <- merge(sTime_reg_smry2, modCoef2, by=c("reg","mod_call"))
-setnames(sTime_reg_smry2, old=c("(Intercept)"), new=c("Int"))
+# Get best model from each region, and from each region list best overall model
+bestEach <- compAIC[,list("mod_call"=unique(mod)[which.min(AIC)]),by=c('reg')] # combinations of each region and its best model
+bestOverall_name <- bestEach[,j={bm <- table(mod_call); names(bm)[which.max(bm)]}] # name of best overall model
+bestOverall <- bestEach[,CJ(reg=reg,mod_call=bestOverall_name)] # get combos for each region w/ best overall model
+bestEachOverall <- unique(rbind(bestEach,bestOverall)) # combinations for best overall and each
+setkey(bestEachOverall, reg, mod_call) # sort
 
-#+ rangeSizeDensity-ColExtTime-reg-interaction-table, echo=FALSE
-capS2 <- sTime_reg_smry2[grepl("size",mod_call),mod_call[1]]
-sTime_reg_smry2 <- sTime_reg_smry2[grepl("size",mod_call)]
-sTime_reg_smry2[,c("mod_call","randomGroup","Class"):=NULL]
-kable(sTime_reg_smry2, caption=paste0("Summary statistics for fits of predicting range SIZE from years before extinction and years after colonization. These are mixed effect models of the form ", capS2))
+# get the worthy models
+allSmry <- rbind(sTime_reg_smry1, sTime_reg_smry2, sTime_reg_smry3, fill=TRUE) # combine results from all models and regions
+bestModels <- allSmry[best_each_overall, on=c('reg','mod_call')] # for each region, only select models that were best in that region or best overall
+
+# remove columns that are NA for all rows b/c models w/ those parameters were never winners
+loserNames <- sapply(bestModels, function(x)all(is.na(x))) # names of columns only pertaining to non-best models
+loserNames <- names(loserNames)[loserNames] # okay, get the names for real, not just logic
+bestModels[,c(loserNames):=list(NULL)] # drop the loser columns
+
 
 #+ rangeSizeDensity-ColExtTime-reg-compareModels, echo=FALSE
-compAIC <- rbind(
-	cbind(sTime_reg_smry3[,list(reg,MargR2,CondR2,AIC)], mod=capS3),
-	cbind(sTime_reg_smry[,list(reg,MargR2,CondR2,AIC)], mod=capS),
-	cbind(sTime_reg_smry2[,list(reg,MargR2,CondR2,AIC)], mod=capS2)
-)
-setkey(compAIC, reg)
-kable(compAIC)
-
+# kable(bestEach, caption="Which models for predicting range size from time to event were best in each region?")
+# kable(compAIC, caption="Comparing fit of models of varying complexity; more complex models test for differences in the slopes or intercepts of pre-extinction and post-colonization trends.")
+kable(bestModels, caption="Shows each region's best model, and shows the model that was most often the best for all regions (including those for which it wasn't the best). If all regions had the same best model, only 1 model is shown.")
 
 
 #' ###Conclusion for Range Change before Extinction/ after Colonization
@@ -490,17 +448,28 @@ o <- rangeTimeDT[nTime>=3,j={
 	getEPR(lm(size~time))
 	} ,by=c("reg","type","event","nTime","spp")
 ]
+rangeTime_signif <- o[,list(propSignificant=(sum(Pr<0.05)/sum(!is.na(Pr))),n=sum(!is.na(Pr))),by=c("reg","type")]
 
-par(mfcol=c(3,2), mar=c(2,2,0.5,0.5), cex=1, ps=10, mgp=c(1,0.1,0), tcl=-0.1)
-hist(o[,Estimate])
-hist(o[,(Pr)])
-hist(o[,(Rsquared)])
+# histograms of estimates, p-value, and r-squared split by pre-extinction and post-colonization
+par(mfrow=c(4,2), mar=c(2,2,0.5,0.5), cex=1, ps=10, mgp=c(1,0.1,0), tcl=-0.1)
+o[,j={hist(Estimate, main=type[1]);NULL},by='type']
+o[,j={hist(Pr, main=type[1]);NULL},by='type']
+o[,j={hist(Rsquared, main=type[1]);NULL},by='type']
+
+# p value vs number of years in series
 setorder(o, nTime)
 o[,j={plot(nTime,Pr); lines(spline(Pr~nTime),col='red',lwd=2)}]
-o[,j={plot(nTime,Estimate); ; lines(spline(Estimate~nTime),col='red',lwd=2)}]
+abline(h=0.05, lwd=1.5)
+abline(h=0.05, col='white', lwd=0.5)
 
-kable(o[,list(propSignificant=(sum(Pr<0.05)/sum(!is.na(Pr))),n=sum(!is.na(Pr))),by=c("reg","type")])
-kable(o[,list(propSignificant=(sum(Pr<0.05)/sum(!is.na(Pr))),n=sum(!is.na(Pr))),by=c("reg","type")][,mean(propSignificant),by=c("type")])
+# slope vs number of years in series
+o[,j={plot(nTime,Estimate); lines(spline(Estimate~nTime),col='red',lwd=2)}]
+abline(h=0, lwd=1.5)
+abline(h=0, col='white', lwd=0.5)
+
+#+ rangeSize_time_sepRegs-table1, echo=FALSE
+kable(rangeTime_signif, caption="Significant trends in range size before ext/ after col. Sample size is number of 'stretches'.")
+kable(rangeTime_signif[,list(proportionSignificant=mean(propSignificant)),by=c("type")])
 
 #' 
 #' The mixed effect models show a strong tendency for range size to be smaller near an absence. I figured that this relationship wouldn't be apparent for all cases, which ended up being the result. However, the significance of these relationships depends on the number of years for each event stretch. So sample size matters. On one hand, this could hold implications for the rate of decline, so excluding short stretches might also exclude more cases with abrupt declines/ increases (although, these may well be preceded by long durations of stability, so not all abrupt declines/ increases would be excluded necessarily). However, the slope estimate doesnt change a whole lot across sample size: from 0 to ~10 years, increasing sample size (duration) also increases the slope (going from slightly negative to pretty consistently positive). Then it levels out, and doesn't continue increasing. So it is *not* the case that longer stretches are long because they have more gradual slopes, necessarily. Actually, in the range of data for which there does appear to be a trend (0-10 samples), the slope becomes larger which is the opposite of "longer stretches result from more gradual processes" notion (thinking in terms of extinction).  
@@ -557,7 +526,7 @@ mtext("Depth bin size (meters)", side=2, line=2)
 fields::image.plot(min_sbs, axes=FALSE, legend.only=TRUE, graphics.reset=TRUE)
 
 
-#' ##Tows per site, sites per region
+#' ##Table of Tows per Site, Sites per Region
 #+ counts_years_sites_tows_spp
 sumry_counts <- data_all[reg!="wcann", 
 	j = {
@@ -568,13 +537,10 @@ sumry_counts <- data_all[reg!="wcann",
 			"Years" = paste(min(year),max(year),sep=" - "),
 			"Frequency" = paste(yi_form,collapse=", "),
 			"Sites" = trawlData::lu(stratum), 
-			# .SD[,list("max. Tows"=max(trawlData::lu(haulid)), "Average Tows" = mean(trawlData::lu(haulid))),by=c("stratum","year")]
 			"Tows" = paste0(
 				.SD[,trawlData::lu(haulid),by=c("stratum","year")][,max(V1)],
 				paste0("(",.SD[,trawlData::lu(haulid),by=c("stratum","year")][,round(mean(V1),1)],")")
 				),
-			# "Max. Tows" = .SD[,trawlData::lu(haulid),by=c("stratum","year")][,max(V1)],
-# 			"Avg Tows" = .SD[,trawlData::lu(haulid),by=c("stratum","year")][,mean(V1)],
 			"Species" = trawlData::lu(spp)
 		)
 	}, 
@@ -585,7 +551,6 @@ sumry_counts[,Region:=factor(Region, levels=c("ebs","ai","goa","wctri","gmex","s
 setkey(sumry_counts, Region)
 
 sumry_counts[,Org:=c("AFSC","AFSC","AFSC","NMFS","GSMFC","SCDNR","NEFSC","DFO","DFO")]
-# sumry_counts[,"Avg Tows":=round(eval(s2c("Avg Tows"))[[1]],1)]
 stargazer(sumry_counts, summary=FALSE, rownames=FALSE, column.sep.width="2pt", digits.extra=0, digits=NA)
 
 # \begin{table}[!htbp] \centering
