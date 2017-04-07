@@ -67,7 +67,7 @@ getCoefs <- function(mList){
 		outList[[ur[r]]] <- rbindlist(lapply(
 			coef(mList[[r]]), function(x)as.list(colMeans(x))
 		), idcol=TRUE)
-		setnames(outList[[ur[r]]], c(".id"), c("randomGroup"))
+		setnames(outList[[ur[r]]], c(".id"), c("randGrp"))
 		mod_call <- switch(class(mList[[r]]), lmerMod=mList[[r]]@call, lm=mList[[r]]$call)
 		mod_call <- as.character(mod_call)[2]
 		outList[[ur[r]]][,mod_call:=mod_call]
@@ -76,6 +76,32 @@ getCoefs <- function(mList){
 	setnames(outList, c(".id"), c("reg"))
 	# setcolorder(outList, c("reg", "mod_call", "randomGroup", "(Intercept)", "time", "typepre_ext"))
 	outList
+}
+
+
+# ============================
+# = Summarize List of Models =
+# ============================
+# Wrapper for Applying Model Summary to list of Models
+smry_modList <- function(ml, pred_name="size"){
+	rbindlist(lapply(ml, mod_smry, pred_name="size"))
+}
+
+smry_modList2 <- function(ml){
+	o <- rbindlist(lapply(ml, mod_smry2), idcol=TRUE) # reg=names(ml), 
+	setnames(o, old=c(".id","Pr..Chisq.","Marginal","Conditional"), new=c('reg',"pval","MargR2","CondR2"))
+	setkey(o, reg, Class, mod_call, predictor)
+	o[, BH:=round(p.adjust(pval, "BH"), 3), by=c("mod_call", "predictor")]# adjust p-values for multiple tests
+	o <- dcast(o, reg+Class+mod_call+MargR2+CondR2+AIC~predictor, value.var=c("pval", "BH"))# rearrange so each model on 1 line
+	
+	# combine fit stats with pvals and coefficients
+	o <- merge(o, getCoefs(ml), by=c('reg','mod_call'))
+	
+	# shorten width of output
+	setnames(o, old=c("(Intercept)"), new=c("Int")) # shorter names
+	o[,mod_call:=gsub(" ", "", mod_call)] # remove spaces to shorter
+	o[,Class:=NULL] # all the same when using mod_smry2
+	return(o)
 }
 
 

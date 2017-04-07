@@ -412,3 +412,206 @@ ceEventRange <- function(pred_vars = c("mean_size", "mean_density")){
 }
 
 
+# ---- scatter plot with per-region regression line -# Scatter Plot with Subset Regression Lines
+#' Scatter plot with certain groups of points getting own regression and fitted line
+#' 
+#' @param Data a data.table
+#' @param x,y,lineBy character, name of column in \code{Data}
+#' @param ptCol,lineCol character or quoted expression (call) for point or line color, repsectively
+#' @param ... arguments to be passed to \code{\link{plot}} and \code{link{lines}}
+#' 
+#' @examples
+#' dt <- data.table( 
+#' 	x=x<-rnorm(9, sd=2), # why <- is better than =
+#' 	dog=x*2+rnorm(9),
+#' 	goat=x*-1+rnorm(9, mean=6)
+#' )
+#' dt <- melt(dt, id.vars='x', measured.vars=c('dog','goat'), variable.name='animal')
+#' q_ptCol <- bquote(c('dog'='blue','goat'='red')[animal])
+#' scatterLine(dt, x='x', y='value', lineBy='animal', ptCol=q_ptCol, lineCol='lightblue')
+#' 
+#' @export
+scatterLine <- function(Data, x, y, lineBy, ptCol='black', pch=16, lineCol='black', ...){
+	dots <- list(...)
+	if(is.null(dots$ylab)){
+		dots <- modifyList(dots, list(ylab=y))
+	}
+	if(is.null(dots$xlab)){
+		dots <- modifyList(dots, list(xlab=x))
+	}
+	
+	xval <- x # messes up in order(get(x)) otherwise ... weird
+	yval <- y
+	Data[,do.call(plot, args=c(list(get(xval), get(yval), col=eval(ptCol), pch=pch),dots))]
+	Data[,j={
+		ulb <- unique(get(lineBy))
+		nlb <- length(ulb)
+		for(r in 1:nlb){ # loop through each region
+			.SD[get(lineBy)==ulb[r]][order(get(xval)),j={ # subset to r-th region, order points so x is increasing (so that predicted line plots correctly)
+				xval <- get(xval)
+				yval <- get(yval)
+				lines(xval, predict(lm(yval~xval)), col=eval(lineCol), ...)
+			}]
+		}
+	}]
+	invisible(NULL)
+}
+
+# ---- Boxplot for range size, color for transient richness ----
+boxRange_colRich <- function(range_type=c("range_size_samp", "range_size_mu", "propStrata")){
+	range_type <- match.arg(range_type)
+	par(mfrow=c(3,3), mgp=c(0.85,0.2,0), ps=8, cex=1, mar=c(1.75,1.75,0.5,0.5), tcl=-0.15, oma=c(0.25,0.1,0.1,0.1))
+	ur <- spp_master[,unique(reg)]
+	for(r in 1:length(ur)){
+		rr <- ur[r]
+		rEl3 <- spp_master[order(year)][eval(rE_logic3)]
+		all_yrs <- rEl3[,sort(unique(year))]
+		
+		rEl2 <- spp_master[order(year)][eval(rE_logic2)]
+		rEl1 <- rEl2[order(year)][eval(rE_logic1)]
+		u_spp <- rEl1[, unique(spp)]
+		
+		# ensure all years (I think there's at least 1 transient per year, but just to be safe ...)
+		rEl1 <- merge(rEl1, data.table(year=all_yrs), by="year", all=TRUE)
+		rEl2 <- merge(rEl2, data.table(year=all_yrs), by="year", all=TRUE)
+		
+		# colors
+		nCols <- rEl1[,length(unique(year))]
+		cols <- viridis(nCols)
+		nTrans <- rEl1[,colSums(table(spp,year))]
+		nTrans <- nTrans[order(as.integer(names(nTrans)))]
+		colVec_ind <- cut(nTrans, breaks=nCols)
+		colVec <- cols[colVec_ind]
+	
+		# initiate plot with hidden boxplot
+		rEl1[,j={bp_dat <<- boxplot(get(range_type)~year,plot=FALSE);NULL}]
+		bp_ylim <- unlist(bp_dat[c("stats")], use.names=FALSE)
+		rEl1[,j={boxplot(get(range_type)~year, add=FALSE, at=unique(year), col=colVec, outline=FALSE, axes=TRUE, xlab='', ylab=''); NULL}]
+		if(rr=="sa"){
+			mapLegend(x=0.75, y=0.78, zlim=range(nTrans),cols=cols)
+		}else{
+			mapLegend(x=0.05, y=0.78, zlim=range(nTrans),cols=cols)
+		}
+		mtext(pretty_reg[rr], line=-0.75, side=3, adj=0.1, font=2)
+	}
+	mtext(paste0("Range Size (",  range_type, ") of Transient Species"), side=2, line=-0.75, outer=TRUE, font=2)
+	mtext("Year", side=1, line=-0.75, outer=TRUE, font=2)
+	
+	invisible(NULL)
+}
+
+
+# ---- Range Size over Time for Community vs Transients (polygons) ----
+plot_rangeSize_FullTrans <- function(range_type=c("range_size_samp", "range_size_mu", "propStrata")){
+	range_type <- match.arg(range_type)
+	
+	par(mfrow=c(3,3), mgp=c(0.85,0.2,0), ps=8, cex=1, mar=c(1.75,1.75,0.5,0.5), tcl=-0.15)
+	ur <- spp_master[,unique(reg)]
+	for(r in 1:length(ur)){
+		rr <- ur[r]
+		rEl3 <- spp_master[order(year)][eval(rE_logic3)]
+		rEl2 <- spp_master[order(year)][eval(rE_logic2)]
+		rEl1 <- rEl2[order(year)][eval(rE_logic1)]
+		u_spp <- rEl1[, unique(spp)]
+
+		rEl1[,j={bp_dat <<- boxplot(I(get(range_type))~year,plot=FALSE);NULL}]
+		bp_ylim <- unlist(bp_dat[c("stats")], use.names=FALSE)
+		medRange_noNeith <- rEl3[,median(get(range_type)),by='year']
+		rEl1_qylim <- rEl1[,quantile(get(range_type),c(0.25,0.75)),by='year'][,range(V1)]
+		rEl3_qylim <- rEl3[,quantile(get(range_type),c(0.25,0.75)),by='year'][,range(V1)]
+		ylim <- range(c(
+			rEl1_qylim,
+			rEl3_qylim,
+			medRange_noNeith[,V1]
+		))	
+		rEl1[,plot(year, get(range_type), type='n', ylim=ylim, ylab=range_type)]
+		grid()
+		
+		r11 <- rEl1[,median(get(range_type)),by='year']
+		# r11 <- rEl1[,mean(get(range_type)),by='year']
+		r12 <- rEl1[,quantile(get(range_type),0.75),by='year']
+		r13 <- rEl1[,quantile(get(range_type),0.25),by='year']
+		# lines(r11, lwd=2, col='red')
+		# lines(r12, lwd=1, col='red')
+		# lines(r13, lwd=1, col='red')
+		poly1y <- c(r12[,V1], r13[,rev(V1)])
+		poly1x <- c(r12[,year],r13[,rev(year)])
+		
+		r21 <- rEl3[,median(get(range_type)),by='year']
+		# r21 <- rEl3[,mean(get(range_type)),by='year']
+		r22 <- rEl3[,quantile(get(range_type),0.75),by='year']
+		r23 <- rEl3[,quantile(get(range_type),0.25),by='year']
+		# lines(r21, lwd=2, col='blue')
+		# lines(r22, lwd=1, col='blue')
+		# lines(r23, lwd=1, col='blue')
+		poly2y <- c(r22[,V1], r23[,rev(V1)])
+		poly2x <- c(r22[,year],r23[,rev(year)])
+		
+		polygon(poly2x, poly2y, col=adjustcolor('blue',0.15), border=NA)
+		polygon(poly1x, poly1y, col=adjustcolor('red',0.15), border=NA)
+		lines(r21, lwd=2, col='blue')
+		lines(r11, lwd=2, col='red')
+		# comm_master[reg==rr, lines(year,get(paste0(range_type,"_avg")), col='black')]
+		comm_master[reg==rr, lines(year,get(paste0(range_type,"_avg_ltAvg")), col='black')]
+		mtext(pretty_reg[rr], line=-0.75, side=3, adj=0.1, font=2)
+	}
+	
+	invisible(NULL)
+}
+
+
+# ==================
+# = Data and QA/QC =
+# ==================
+
+# ---- Trimming Strata, Years ----
+# The effect of choice on trimming strata or years on lon, lat, and number of strata
+plot_excludeYearsStrata <- function(TRIM){
+	plot_stratsLonsLats <- function(){
+		plot(b[,list("# strata sampled"=trawlData::lu(stratum)),by=c("year")])
+		mtext(yregs[r], side=3, line=0, adj=0, font=2)
+		abline(v=yr_ablin[[r]])
+		plot(b[,list("min latitude"=min(lat)),by=c("year")])
+		mtext(yregs[r], side=3, line=0, adj=0, font=2)
+		abline(v=yr_ablin[[r]])
+		plot(b[,list("max latitude"=max(lat)),by=c("year")])
+		mtext(yregs[r], side=3, line=0, adj=0, font=2)
+		abline(v=yr_ablin[[r]])
+		plot(b[,list("min longitude"=min(lon)),by=c("year")])
+		mtext(yregs[r], side=3, line=0, adj=0, font=2)
+		abline(v=yr_ablin[[r]])
+		plot(b[,list("max longitude"=max(lon)),by=c("year")])
+		mtext(yregs[r], side=3, line=0, adj=0, font=2)
+		abline(v=yr_ablin[[r]])
+	}
+	
+	par(mfrow=c(9, 5), mar=c(2,2,1,0.25), cex=1, mgp=c(1,0.15,0), tcl=-0.15, ps=8)
+	if(TRIM){
+		for(r in 1:length(yregs)){
+			b <- data_all[reg==yregs[r]] # data_all is alread trimmed
+			plot_stratsLonsLats()
+		}
+	}else{
+		for(r in 1:length(yregs)){
+			# counterintuitively, i'm using trim_msom to get the 'untrimmed' (really re-trimmed, in relaxed manner) data
+			b <- trim_msom(yregs[r], gridSize=0.5, grid_stratum=TRUE, depthStratum=reg_depthStratum[yregs[r]], tolFraction=0.15, plot=FALSE, cull_show_up=FALSE, trimYears=FALSE)
+			plot_stratsLonsLats()
+		}
+	}
+	invisible(NULL)
+}
+
+
+# ---- Tows Per Site over Time ----
+plot_towsPerSiteTS <- function(){
+	par(mfrow=c(3,3), mar=c(4,3.5,1,1))
+	ureg <- trawlDiversity::data_all[reg!='wcann',unique(reg)]
+	nreg <- length(ureg)
+	for(r in 1:nreg){
+		max_tows <- trawlDiversity::data_all[reg==ureg[r],list(Kmax=unique(Kmax)),by=c("reg","year","stratum")]
+		max_tows[,j={boxplot(Kmax~year, main=reg[1]);NULL},by='reg']
+	}
+	mtext("Tows per site", side=2, line=-1.25, outer=TRUE)
+	invisible(NULL)
+}
+
