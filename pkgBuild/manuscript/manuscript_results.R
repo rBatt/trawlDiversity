@@ -134,7 +134,10 @@ kable(
 
 #' ####Figure 1. MSOM richness time series
 #+ Richness-ts-fig, fig.height=5, fig.width=3.5, ecal=TRUE, echo=TRUE, fig.cap="**Figure 1.** Time series of MSOM estimates of region richness. Each point is the posterior mean of regional richness in a year. Lines indicate long-term trends from fitted values of linear regression models predicting richness from time."
+load("../results/rich_trend_kendall.RData") # load rich trend stats
 richness_ts()
+
+
 #' ####Figure S1. MSOM - naive scatter
 #+ Richness-msom-naive-scatter-fig, fig.height=3.5, fig.width=3.5, fig.cap="**Figure S1.** MSOM richness vs naive richness"
 naive_msom_scatter()
@@ -706,10 +709,10 @@ par(mfrow=c(3,1), mar=c(1.75,1.5,0.25,0.25),mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, 
 ureg <- comm_master[,unique(reg)]
 nreg <- length(ureg)
 ptCol <- bquote(adjustcolor(pretty_col[reg],0.5))
-scatterLine(Data=comm_master, x="naive_rich", y="beta_div_obs", lineBy="reg", ptCol=ptCol)
-scatterLine(Data=comm_master, x="local_rich_obs", y="beta_div_obs", lineBy="reg", ptCol=ptCol)
+scatterLine(Data=comm_master, x="naive_rich", y="beta_div_obs", lineBy="reg", col=ptCol, pch=20)
+scatterLine(Data=comm_master, x="local_rich_obs", y="beta_div_obs", lineBy="reg", col=ptCol, pch=20)
 comm_master[,legend("topright",ncol=2,legend=pretty_reg[una(reg)],text.col=pretty_col[una(reg)], inset=c(-0.01, -0.03), bty='n', x.intersp=0.15, y.intersp=0.65)]
-scatterLine(Data=comm_master, x="naive_rich", y="local_rich_obs", lineBy="reg", ptCol=ptCol)
+scatterLine(Data=comm_master, x="naive_rich", y="local_rich_obs", lineBy="reg", col=ptCol, pch=20)
 
 
 #' ##Alpha, beta, and gamma diversity (MSOM)
@@ -719,10 +722,12 @@ par(mfrow=c(3,1), mar=c(1.75,1.5,0.25,0.25),mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, 
 ureg <- comm_master[,unique(reg)]
 nreg <- length(ureg)
 ptCol <- bquote(adjustcolor(pretty_col[reg],0.5))
-scatterLine(Data=comm_master, x="reg_rich", y="beta_div_mu", lineBy="reg", ptCol=ptCol)
-scatterLine(Data=comm_master, x="local_rich", y="beta_div_mu", lineBy="reg", ptCol=ptCol)
+scatterLine(Data=comm_master, x="reg_rich", y="beta_div_mu", lineBy="reg", col=ptCol, pch=20)
+scatterLine(Data=comm_master, x="local_rich", y="beta_div_mu", lineBy="reg", col=ptCol, pch=20)
 comm_master[,legend("topright",ncol=2,legend=pretty_reg[una(reg)],text.col=pretty_col[una(reg)], inset=c(-0.01, -0.03), bty='n', x.intersp=0.15, y.intersp=0.65)]
-scatterLine(Data=comm_master, x="reg_rich", y="local_rich", lineBy="reg", ptCol=ptCol)
+scatterLine(Data=comm_master, x="reg_rich", y="local_rich", lineBy="reg", col=ptCol, pch=20)
+
+
 
 
 #' 
@@ -750,10 +755,10 @@ par(mfrow=c(2,2))
 ureg <- comm_master[,unique(reg)]
 nreg <- length(ureg)
 ptCol <- bquote(adjustcolor(pretty_col[reg],0.5))
-scatterLine(Data=cmNN, x="range_size_mu_avg_ltAvg", y="reg_rich", lineBy="reg", ptCol=ptCol)
-scatterLine(Data=cmNN, x="range_size_mu_avg", y="reg_rich", lineBy="reg", ptCol=ptCol)
-scatterLine(Data=cmNN, x="propStrata_noNeither_avg_ltAvg", y="reg_rich", lineBy="reg", ptCol=ptCol)
-scatterLine(Data=cmNN, x="propStrata_noNeither_avg", y="reg_rich", lineBy="reg", ptCol=ptCol)
+scatterLine(Data=cmNN, x="range_size_mu_avg_ltAvg", y="reg_rich", lineBy="reg", col=ptCol)
+scatterLine(Data=cmNN, x="range_size_mu_avg", y="reg_rich", lineBy="reg", col=ptCol)
+scatterLine(Data=cmNN, x="propStrata_noNeither_avg_ltAvg", y="reg_rich", lineBy="reg", col=ptCol)
+scatterLine(Data=cmNN, x="propStrata_noNeither_avg", y="reg_rich", lineBy="reg", col=ptCol)
 
 #' 
 #'   
@@ -825,5 +830,6 @@ plot_towsPerSiteTS()
 #' ***  
 #'   
 #'   
+#+ systemSettings, results='markup'
 Sys.time()
 sessionInfo()
