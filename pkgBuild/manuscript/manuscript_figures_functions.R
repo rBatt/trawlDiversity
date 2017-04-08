@@ -28,31 +28,34 @@ panLab <- function(){
 # =============
 # ---- Richness Time Series ----
 richness_ts <- function(){
-	eval(figure_setup())
+	# figure setup gives colors and nice names
+	# eval(figure_setup(), envir=.GlobalEnv) # so that scatterLine() can find it
+	
+	sL_needsUs <- bquote({
+		eval(figure_setup())
+		Ltype <- rich_trend_kendall[,j={ # line type based on p value
+				lt <- c(1,2)[(pvalue>0.05)+1L]
+				names(lt) <- reg # associate line types with reigon name
+				lt # return
+			}]
+	})
+	eval(sL_needsUs, envir=.GlobalEnv)
+	
+	
+	# get line type to use for regression fits
+	lt_quoted <- bquote(Ltype[unique(reg)])
+	
+	# get colors to use for richness points/ lines
+	ptCol <- bquote(pretty_col[reg])
+	
+	# do plot
 	par(mar=c(1.75,1.5,0.25,0.25),mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
-	comm_master[,plot(year, reg_rich, col=pretty_col[reg], xlab="Year", ylab="Estimated Richness", pch=20)]
-	for(r in 1:length(regs)){
-		comm_master[reg==regs[r],j={lines(year, reg_rich, lwd=0.5, col=adjustcolor(pretty_col[reg], 0.5))}]
-	}
-	reg_line <- function(r){
-		lty_out <- switch(r,
-			"ai" = 2,
-			"ebs" = 1,
-			"gmex" = 2,
-			"goa" = 2,
-			"neus" = 2,
-			"newf" = 1,
-			"sa" = 2,
-			"seus" = 2,
-			"shelf" = 1,
-			"wctri" = 1,
-			"wc" = 1,
-			0
-		)
-		return(as.integer(lty_out))
-	}
-	comm_master[,lines(year,fitted(lm(reg_rich~year)), lty=reg_line(unique(reg))),by='reg']
-	comm_master[,legend("topleft",ncol=1,legend=pretty_reg[una(reg)],text.col=pretty_col[una(reg)], inset=c(-0.085,-0.01), bty='n')]
+	scatterLine(comm_master, "year", "reg_rich", lineBy="reg", col=ptCol, type='o', ltyBy=lt_quoted, pch=20, lwd=0.5, ylab="Estimated Richness", xlab="Year")
+	
+	# add a legend, sorted by mean richness
+	regOrd <- comm_master[,mean(reg_rich),by='reg'][order(-V1), reg]
+	comm_master[,legend("topleft",ncol=1,legend=pretty_reg[regOrd],text.col=pretty_col[regOrd], inset=c(-0.085,-0.01), bty='n')]
+	
 	invisible(NULL)
 }
 
@@ -416,44 +419,113 @@ ceEventRange <- function(pred_vars = c("mean_size", "mean_density")){
 #' Scatter plot with certain groups of points getting own regression and fitted line
 #' 
 #' @param Data a data.table
-#' @param x,y,lineBy character, name of column in \code{Data}
-#' @param ptCol,lineCol character or quoted expression (call) for point or line color, repsectively
+#' @param x,y character, name of column in \code{Data}
+#' @param lineBy character indicating grouping column in \code{Data}
 #' @param ... arguments to be passed to \code{\link{plot}} and \code{link{lines}}
+#' @param ltyBy,lwdBy,colBy arguments (lty, lwd, col) passed to \code{\link{lines}} for regression lines
+#' 
+#' @details
+#' All arguments in the \code{...} (and \code{ltyBy, lwdBy, colBy}) can be supplied as \code{\link{bquote}}'d expressions that will be evaluated in the context of \code{Data}. I.e., these arguments can include column names. 
+#' 
+#' If \code{type} is specified as \code{"o", "b", or "l"}, the lines are drawn through a separate call to \code{lines()} for each group, because it is assumed that points between groups should not be connected. However, this call to lines tries to use the parameters in the same way as the original call to plot() that made the points (for example, if each group of points had a different color, each group's line connecting its points would have the matching color).
 #' 
 #' @examples
-#' dt <- data.table( 
+#' dt <- data.table(
 #' 	x=x<-rnorm(9, sd=2), # why <- is better than =
 #' 	dog=x*2+rnorm(9),
 #' 	goat=x*-1+rnorm(9, mean=6)
 #' )
 #' dt <- melt(dt, id.vars='x', measured.vars=c('dog','goat'), variable.name='animal')
 #' q_ptCol <- bquote(c('dog'='blue','goat'='red')[animal])
-#' scatterLine(dt, x='x', y='value', lineBy='animal', ptCol=q_ptCol, lineCol='lightblue')
+#' scatterLine(dt, x='x', y='value', lineBy='animal', col=q_ptCol, colBy='lightblue')
 #' 
 #' @export
-scatterLine <- function(Data, x, y, lineBy, ptCol='black', pch=16, lineCol='black', ...){
+scatterLine <- function(Data, x, y, lineBy, ..., ltyBy=NULL, lwdBy=NULL, colBy='black'){
+	# get ... arguments into list for easy modification
 	dots <- list(...)
+	
+	# if ylab and xlab unspecified, provide default
+	# default is character in x and y respectively
 	if(is.null(dots$ylab)){
-		dots <- modifyList(dots, list(ylab=y))
+		# unless specified in ..., make the ylab the character passed via y=
+		dots <- modifyList(dots, list(ylab=y)) 
 	}
 	if(is.null(dots$xlab)){
-		dots <- modifyList(dots, list(xlab=x))
+		# make unspecified xlab a character, not get(x)
+		dots <- modifyList(dots, list(xlab=x)) 
 	}
 	
-	xval <- x # messes up in order(get(x)) otherwise ... weird
-	yval <- y
-	Data[,do.call(plot, args=c(list(get(xval), get(yval), col=eval(ptCol), pch=pch),dots))]
+	# if type= include a line, adjust arg
+	# because don't want lines connecting between lineBy groups
+	ptype <- dots$type # type argument to be passed to plot()
+	mod_ptype_line <- FALSE # was ptype modified? start with false
+	if(is.null(ptype)){
+		# avoiding NULL so can test for o,b,l
+		ptype <- "p" # default is points only
+	}else{
+		if(ptype%in%c("o","b","l")){
+			mod_ptype_line <- TRUE
+			adj_ptype <- c('o'='p','b'='p','l'='n')[ptype]
+			dots <- modifyList(dots, list(type=adj_ptype))
+		}
+	}
+	
+	# reassign to avoid (presumed) scoping error
+	x_exp <- parse(text=x)
+	y_exp <- parse(text=y)
+	xval <- Data[,eval(x_exp)]
+	yval <- Data[,eval(y_exp)] # , envir=.SD
+	
+	# if lty= passed via ..., don't eval for plot(); save for lines()
+	plot_dots <- dots # modifyList(dots, list(lty=NULL)) 
+	
+	# Get plot arguments, do plot
+	Data[,j={ # Get plot arguments
+		plot_dots2 <- modifyList(plot_dots, lapply(plot_dots, eval, envir=.SD)) # took me 1-2 hours to figure out envir=.SD; thanks http://stackoverflow.com/a/15913984/2343633
+		plot_args <<- c(list(x=xval, y=yval),plot_dots2)
+		invisible(NULL)
+	}]
+	do.call(plot, args=plot_args) # Do Plot
+	
+	# Plot lines() associated with plot(x,y) and y~x regression
 	Data[,j={
-		ulb <- unique(get(lineBy))
-		nlb <- length(ulb)
+		ulb <- unique(get(lineBy)) # group names
+		nlb <- length(ulb) # number of groups
 		for(r in 1:nlb){ # loop through each region
-			.SD[get(lineBy)==ulb[r]][order(get(xval)),j={ # subset to r-th region, order points so x is increasing (so that predicted line plots correctly)
-				xval <- get(xval)
-				yval <- get(yval)
-				lines(xval, predict(lm(yval~xval)), col=eval(lineCol), ...)
+			# subset to r-th lineBy group, and order 
+			# ordering is for straight plot of regression line
+			subI <- get(lineBy)==ulb[r]
+			xsub <- xval[subI]
+			ysub <- yval[subI]
+			.SD[subI][order(xsub),j={
+				
+				# Remove type arg from ...; not needed for lines()
+				# evalq() prevents early evaluation; got error with eval()
+				# Plot lines (type='o', e.g.) need to be evaluated per group
+				ldots <- lapply(modifyList(dots, list(type=NULL)), eval, envir=.SD)
+				
+				# For regression line args, further modify ...
+				# Some lty and col args need replacing with special args
+				# Need to be evaluated per grouping
+				specialByArgs <- lapply(list(lty=ltyBy, lwd=lwdBy, col=colBy), eval, envir=.SD)
+				ldotsBy <- modifyList(ldots, specialByArgs)
+				
+				# add line through coordinates passed to plot() if type= o, b, or l
+				# added separately so that line does not connect
+				# coordinates from different lineBy groups
+				if(mod_ptype_line){ 
+					plot_line_args <- lapply(c(list(x=xsub, y=ysub), ldots), eval, envir=.SD)
+					do.call(lines, args=plot_line_args)
+				}
+				
+				# add regression lines
+				regLine_args <- c(list(xsub, predict(lm(ysub~xsub))), ldotsBy)
+				do.call(lines, args=regLine_args)
+				# lines(xval, predict(lm(yval~xval)), col=eval(colBy), ...)
 			}]
 		}
 	}]
+	
 	invisible(NULL)
 }
 
