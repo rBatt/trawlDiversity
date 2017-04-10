@@ -110,6 +110,28 @@ source("../manuscript/manuscript_data_functions.R")
 # source("../manuscript/fig_tbl_number.R")
 # eval(fig_tbl_number())
 
+#' \FloatBarrier  
+#' ***  
+#+ analysisOptions, echo=TRUE, results="markup"
+rsType <- c("observed", "rarefied", "msom")[2]
+rSMet_base <- c("observed"="propStrata", "rarefied"="range_size_samp", "msom"="range_size_mu")[rsType]
+rSMet_annComm <- c("observed"="propStrata_avg", "rarefied"="range_size_samp_avg", "msom"="range_size_mu_avg")[rsType]
+rSMet_ltComm <- c("observed"="propStrata_avg_ltAvg", "rarefied"="range_size_samp_avg_ltAvg", "msom"="range_size_mu_avg_ltAvg")[rsType]
+
+rR <-  c("observed"="naive_rich", "rarefied"=NA, "msom"="reg_rich")[3]
+lR <-  c("observed"="local_rich_obs", "rarefied"="local_rich_samp", "msom"="local_rich")[2]
+betaD <-  c("observed"="beta_div_obs", "msom"="beta_div_mu")[1]
+
+#' There are four primary metrics:  
+#'  - range size  
+#'  - regional richness (gamma)  
+#'  - local richness (alpha)  
+#'  - spatial beta diversity  
+#'   
+#' Each of these metrics can be based on raw observations or on MSOM estimates, and some can also be based on a rarefied (resampled, or 'samp') set of observations.  
+#'   
+#' Furthermore, the range size metric can be based on a few combinations of cross-year and/or cross-species averages. The base metric for range size (no averaging) is used to to examine how range size changes with time until extinction and time after colonization. A cross-species average of a given year's observed range sizes (_avg) is used for the rare species to see how this sub-group changes in its geographic distribution, or when making specialized comparisons. A cross-year average (ltAvg) is used to relate a species' 'typical' range size to the total number of colonizations and extinctions it experienced during the time series. A cross-year (all years a species was observed) followed by a cross-species (species present in a given year) average (_avg_ltAvg) is used to compare species richness to the typical range size of species in the community.
+
 
 # ============
 # = Richness =
@@ -272,7 +294,8 @@ rangeSizeDens()
 #'   
 #' ###Figure 3. Species richness versus geographic range size
 #+ rich-geo-rangeSize, fig.width=3.5, fig.height=3.5, fig.cap="**Figure 3.** Species richness vs geographic range size. Range size is presented as each species' long-term average of the proportion of sites it occupied. Solid lines are linear regressions with MSOM richness as the response and the horizontal axis and an intercept as the predictors."
-rich_geoRange("size", leg=TRUE, legPan=1, panLab=FALSE)
+rich_geoRange(rSMet_ltComm, leg=TRUE, legPan=1, panLab=FALSE)
+print(rSMet_ltComm)
 
 #' Range size is a pretty good predictor of species richness. I think I had originally missed the range size relationship b/c I hadn't done the same aggregating procedure. The interpretation I have is that richness is highest when you have a bunch of rare species.  
 #'   
@@ -344,7 +367,8 @@ ceEventRange("mean_size")
 #' ##Range Change after Colonization/ before Extinction
 #' ###Figure 4. Changes in Geographic Range before Extinction and after Colonization
 #+ rangeSize_ColExt, fig.width=6, fig.height=3, fig.cap="**Figure 4.** Geographic range size vs years until extinction (A) and years after colonization (B). For visualization purposes, range size is averaged across species for each unique value on each axis, and a linear model fit through this average. Statistics in main text use unaggregated data. The horizontal axes were formulated as time until (since) the nearest upcoming (previous) absence. Because range size must be zero when either horizontal axis has a value of zero, points at (0,0) were excluded from figures and analyses."
-rangeSize_absenceTime("rangeSize")
+rangeSize_absenceTime(rSMet_base)
+print(rSMet_base)
 #' ###Figure 4b. Changes in Geographic Range before Extinction and after Colonization
 #+ rangeDensity_ColExt, fig.width=6, fig.height=3, fig.cap="**Figure 4b.** Geographic range density vs years until extinction (A) and years after colonization (B). For visualization purposes, range density is averaged across species for each unique value on each axis, and a linear model fit through this average. Statistics in main text use unaggregated data. The horizontal axes were formulated as time until (since) the nearest upcoming (previous) absence. Because range density must be zero when either horizontal axis has a value of zero, points at (0,0) were excluded from figures and analyses."
 rangeSize_absenceTime("rangeDensity")
@@ -356,7 +380,7 @@ rangeSize_absenceTime("rangeDensity")
 #'   
 #' ###Table. Regressions of Range Size & Time to Event; All Regions at Once
 #+ rangeSize-ColExtTime-data
-rangeTimeDT <- make_rangeTime()
+rangeTimeDT <- make_rangeTime(sizeName=rSMet_base)
 
 #+ rangeSize-ColExtTime-models, results='markup'
 # models for range size
