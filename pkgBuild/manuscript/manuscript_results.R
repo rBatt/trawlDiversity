@@ -119,10 +119,9 @@ source("../manuscript/manuscript_data_functions.R")
 #'   
 #' ***  
 #'   
-#' #Results
-#' ##Species Richness
-#' ###Richness Time Series
-#' ####Table. Summary of richness mean and variability
+#' #Species Richness
+#' ##Richness Time Series
+#' ###Table. Summary of richness mean and variability
 #+ richnessSummary-basic-table, echo=FALSE
 kable(
 	data.table(
@@ -132,13 +131,13 @@ kable(
 	caption="Long-term mean and standard deviation in MSOM richness, and average of those sd's. Gmex and Shelf have the highest and lowest long-term averages in species richness (MSOM)."
 )
 
-#' ####Figure 1. MSOM richness time series
+#' ###Figure 1. MSOM richness time series
 #+ Richness-ts-fig, fig.height=5, fig.width=3.5, ecal=TRUE, echo=TRUE, fig.cap="**Figure 1.** Time series of MSOM estimates of region richness. Each point is the posterior mean of regional richness in a year. Lines indicate long-term trends from fitted values of linear regression models predicting richness from time."
 load("../results/rich_trend_kendall.RData") # load rich trend stats
 richness_ts()
 
 
-#' ####Figure S1. MSOM - naive scatter
+#' ###Figure S1. MSOM - naive scatter
 #+ Richness-msom-naive-scatter-fig, fig.height=3.5, fig.width=3.5, fig.cap="**Figure S1.** MSOM richness vs naive richness"
 naive_msom_scatter()
 #' MSOM richness and Naive richness are pretty similar. MSOM richness is probably more accurate, or is at least more conservative b/c it has fewer significant trends. But their similarity should help justify using observed presences/ absences in other analyses.  
@@ -151,7 +150,7 @@ naive_msom_scatter()
 #' ***  
 #'   
 #+ Richness-trend
-#' ###Richness Trend
+#' ##Richness Trend
 #' Looking for trends in species richness in both the naive estimates and the MSOM estimates. Using Kendall's Tau_b, calculated for 1E4 resamplings of the posterior of richness. Tau is also calculated using a method that removes serial correlation to achieve independence of observations so that the p-values are correct.
 load("../../pkgBuild/results/rich_naive_trend_kendall.RData")
 rich_naive_trend_kendall[reg!="wcann",BH:=p.adjust(taup, method='BH')]
@@ -163,14 +162,14 @@ rich_trend_kendall[reg!="wcann",BH:=p.adjust(pvalue, method="BH")]
 rich_trend_kendall <- rich_trend_kendall[
 	reg!="wcann",list(reg=reg, estimate=tau, BH=BH, p.value=pvalue)
 ]
-#' ####Table S1. Naive tau
+#' ###Table S1. Naive tau
 #+ naiveTau-table, echo=FALSE
 kable(rich_naive_trend_kendall, 
 	caption="**Table S1.** Naive richness trends in each region. Estimate is Kendall's Tau_b, BH is the Benjamini-Hochberg corrected p-value, and p.value is the original p-value."
 )
 #' In the Naive estimates, `r rich_naive_trend_kendall[reg!='wcann', sum(p.value<=0.05)]` regions had significant $\tau_b$.  
 #'   
-#' ####Table 2. MSOM tau
+#' ###Table 2. MSOM tau
 #+ msomTau-table, echo=FALSE
 kable(rich_trend_kendall, 
 	caption="**Table 2.** MSOM richness trends in each region. Estimate is Kendall's Tau_b, BH is the Benjamini-Hochberg corrected p-value, and p.value is the original p-value. Trends are calculated for 1E4 resampled combinations of the richness posterior. For each resampling, independence of observations is achieved before estimating Tau by removing serial correlation from resampled time series. This procedure retains the integrity of p-values."
@@ -186,9 +185,9 @@ kable(rich_trend_kendall,
 #'   
 #' ***  
 #'   
-#' ##Colonization and Extinction  
-#' ###Colonization and Extinction Summary
-#' ####Figure S2.  Barplot of categories
+#' #Colonization and Extinction  
+#' ##Colonization and Extinction Summary
+#' ###Figure S2.  Barplot of categories
 #+ Richness-col-ext-barplot, include=TRUE, echo=TRUE, fig.height=3.5, fig.width=3.5, fig.cap="**Figure S2.** Number of species beloning to the categories of both, neither, colonizer, leaver in each region"
 categ_barplot()
 #+ Richness-col-ext-barplot-table, echo=FALSE
@@ -196,7 +195,7 @@ categ_tbl <- t(spp_master[!duplicated(paste(reg,ce_categ,spp)), table(reg, ce_ca
 kable(categ_tbl, caption = "Number of species in each category in each region.")
 #' It's the same pattern, whichever way you split it. However, AI is the only region that had more *colonizers* than *both* species. An interesting way to think about some of this is that the average sd in richness was `r comm_master[,stats::sd(reg_rich),by='reg'][,mean(V1)]`, so when the number of *colonizer* or *leaver* species exceed's that region's sd, the impact of those categories, which I consider to be dubious, might start being relevant (though it's not necessarily problematic, nor is this even close to an actual test for the significance of those categories to the trend). EBS and Shelf had significant positive trends in richness and very low numbers in the *colonizer* category. WCTRI and NEWF had similar numbers in the *both* and *colonizer* category.  
 
-#' ####Table Attributing Richness Change to Colonizers (only)
+#' ###Table Attributing Richness Change to Colonizers (only)
 #+ attribute_richness_categ, echo=FALSE
 eval(figure_setup()) # contains pretty_reg names
 categ_tbl2 <- spp_master[!duplicated(paste(reg,ce_categ,spp)), table(reg, ce_categ, dnn=NULL)]
@@ -241,7 +240,7 @@ stargazer(att_categ_print, summary=FALSE, rownames=FALSE, column.sep.width="2pt"
 # \end{table}
 #'   
 #'   
-#' ####Figure NotIncluded. Time series of colonizations and extinctions
+#' ###Figure NotIncluded. Time series of colonizations and extinctions
 #+ Richness-col-ext-ts, include=TRUE, echo=TRUE, fig.height=3.5, fig.width=3.5, fig.cap="**Figure NotIncluded.** Number of colonizations (blue) and extinctions (red) over time in each region."
 col_ext_ts()
 #' In most regions the differences in colonization and extinction numbers are similar over time. The most obvious exceptions are for the 3 regions that showed large initial spikes in richness; the GOA, GMEX, and AI regions initially have much larger numbers of colonizers than leavers, but this number shrinks rapidly until the two rates are ~equal.  
@@ -256,8 +255,8 @@ col_ext_ts()
 #'   
 #' ***  
 #'   
-#' ##Richness and Geographic Range
-#' ###Richness and Range Density, Range Size
+#' #Richness and Geographic Range
+#' ##Richness and Range Density, Range Size
 #' Looking for spatial footprint that will predict richness. Here I characterize the geographic distribution of a species as its range size. This is tricky for richness because richness is a community level trait, but I've characterized range size at the species level. In fact, this "species level" attribute is also potentially dyanmic -- a species need not have fixed range size. So there are two levels of averaging -- for each species take its long-term average value, then for each community take the average across species.  
 #' 
 #' Note that I'd previously used range density in addition to range size. I've dropped the density metric in most places in order to simplify the results, because the range size results were closely related to the range density results.  
@@ -271,7 +270,7 @@ rangeSizeDens()
 #'   
 #' The positive relationship between size and density is not surprising. My interpretation of density is ~population size. Often population size is correlated with range size. I think this is a standard result, but I need to double-check.
 #'   
-#' ####Figure 3. Species richness versus geographic range size
+#' ###Figure 3. Species richness versus geographic range size
 #+ rich-geo-rangeSize, fig.width=3.5, fig.height=3.5, fig.cap="**Figure 3.** Species richness vs geographic range size. Range size is presented as each species' long-term average of the proportion of sites it occupied. Solid lines are linear regressions with MSOM richness as the response and the horizontal axis and an intercept as the predictors."
 rich_geoRange("size", leg=TRUE, legPan=1, panLab=FALSE)
 
@@ -279,7 +278,7 @@ rich_geoRange("size", leg=TRUE, legPan=1, panLab=FALSE)
 #'   
 #' The goal here is to see if species richness is predicted by the typical range size of community's constituent species. First I'll run different types of models just to explore whether this is true, in general (across regions). Then I'll drill in to each region individually to answer the same question.  
 #'   
-#' ####Table. Regressions relating richness to range size
+#' ###Table. Regressions relating richness to range size
 #+ rich-rangeSize
 range_reg <- make_range_reg(dens="propTow_occ_avg", size="range_size_mu_avg_ltAvg")
 
@@ -320,10 +319,10 @@ kable(
 ) 
 #' All models are pretty good predictors. Well, the most basic model kinda sucks I guess. It needs to account for some of the between-region variation.  
 #'   
-#' ###Predicting Richness: Range Size or Density?
+#' ##Predicting Richness: Range Size or Density?
 #' As far as picking one or the other, it doesn't end up mattering much. Range size is a lot better than density in NEUS, and density outperforms size in AI. Otherwise, size as a slight edge over density on average, although both predictors are significant in all regions.  
 #'   
-#' ###Conclusion for Richness and Geographic Range
+#' ##Conclusion for Richness and Geographic Range
 #' The two metrics of geographic range are well correlated. Furthermore, richness can be predicted pretty well using regressions with either as a predictor. There are large differences among regions, though. This is probably because richness is not readily comparable among most regions. Regions vary mostly in their intercept values, and they have fairly similar slopes (though they are not identical, and model fits improve when allowing slopes to vary among regions; it's just that the improvement is small compared to allowing intercepts to vary among regions).  
 #'  
 #' The interpretation of the result that geographic distribution predicts species richness is likely associated with species rarity. When the average range density or range size of a community is low, it means it has a lot of species that are rare (at either spatial scale). It's these rare species that come and go, and form the dynamics of richness that we observe. When that dynamical value is high, it implies that an above-average number of the dynamic species are present. Because those species are transient (dynamic), they are also probably rare.  
@@ -332,21 +331,21 @@ kable(
 #'   
 #' ***  
 #'   
-#' ##Geographic Range and Colonizations and Extinctions
+#' #Geographic Range and Colonizations and Extinctions
 #'   
-#' ###Total Colonizations vs Extinctions and Geographic Range
+#' ##Total Colonizations vs Extinctions and Geographic Range
 #' The result that richness is predicted by geographic range implied an underlying association between range, colonization/ extinction, and richness itself. Above, richness was explained with range. Later, the results will explain how range changes near a colonization/ extinction event. Here, between the two, the results show how the number of colonizations is related to range.  
 #'   
-#' ####Figure S7. Total Colonizations/ Extinctions vs Georaphic Range
+#' ###Figure S7. Total Colonizations/ Extinctions vs Georaphic Range
 #+ ceEvents-vs-rangeSize, fig.width=3.5, fig.height=3.5, fig.cap="**Figure S7.** Number of colonizations and extinctions as a function of range size and range density."
 ceEventRange("mean_size")
 #' Yup, this is definitely a thing. Long-term average range size and range density predict how many colonizations and extinctions a species is likely to have. This will lead nicely into examing how range changes prior to an extinction or after a colonization.  
 #'   
-#' ###Range Change after Colonization/ before Extinction
-#' ####Figure 4. Changes in Geographic Range before Extinction and after Colonization
+#' ##Range Change after Colonization/ before Extinction
+#' ###Figure 4. Changes in Geographic Range before Extinction and after Colonization
 #+ rangeSize_ColExt, fig.width=6, fig.height=3, fig.cap="**Figure 4.** Geographic range size vs years until extinction (A) and years after colonization (B). For visualization purposes, range size is averaged across species for each unique value on each axis, and a linear model fit through this average. Statistics in main text use unaggregated data. The horizontal axes were formulated as time until (since) the nearest upcoming (previous) absence. Because range size must be zero when either horizontal axis has a value of zero, points at (0,0) were excluded from figures and analyses."
 rangeSize_absenceTime("rangeSize")
-#' ####Figure 4b. Changes in Geographic Range before Extinction and after Colonization
+#' ###Figure 4b. Changes in Geographic Range before Extinction and after Colonization
 #+ rangeDensity_ColExt, fig.width=6, fig.height=3, fig.cap="**Figure 4b.** Geographic range density vs years until extinction (A) and years after colonization (B). For visualization purposes, range density is averaged across species for each unique value on each axis, and a linear model fit through this average. Statistics in main text use unaggregated data. The horizontal axes were formulated as time until (since) the nearest upcoming (previous) absence. Because range density must be zero when either horizontal axis has a value of zero, points at (0,0) were excluded from figures and analyses."
 rangeSize_absenceTime("rangeDensity")
 #' Range size declines near an absence much more consistently than does range density; both are (relatively) low just before extinction and just after colonization. However, range density has much more variable intercepts among regions, whereas range size does not.   
@@ -355,7 +354,7 @@ rangeSize_absenceTime("rangeDensity")
 #'   
 #' I think the regressions for range size should omit an intercept, while the regressions for range density should have it. This might be hard to justify fully *a priori* (though see my thinking in previous paragraph), so I'll probably just do a model selection and maybe discuess the difference if one model has an intercept and the other does not.  
 #'   
-#' ####Table. Regressions of Range Size & Time to Event; All Regions at Once
+#' ###Table. Regressions of Range Size & Time to Event; All Regions at Once
 #+ rangeSize-ColExtTime-data
 rangeTimeDT <- make_rangeTime()
 
@@ -378,7 +377,7 @@ kable(tbl_ColExtTime, caption="Same as above, but shows slightly different metri
 
 #' Range size seems to be important to include type as a fixed effect. It does not need an interaction between time*type. I did additional testing beyond what's presenting here, and I can confirm that having spp as a random factor is useful, too.  
 #'   
-#' ####Table. Regressions of Range Size & Time to Event; Each Region Separate Model (Simple)
+#' ###Table. Regressions of Range Size & Time to Event; Each Region Separate Model (Simple)
 #+ rangeSizeDensity-ColExtTime-reg-simple
 # Set up -- region names and empty named lists
 ur <- rangeTimeDT[,unique(reg)]
@@ -438,14 +437,14 @@ bestModels[,c(loserNames):=list(NULL)] # drop the loser columns
 kable(bestModels, caption="Shows each region's best model, and shows the model that was most often the best for all regions (including those for which it wasn't the best). If all regions had the same best model, only 1 model is shown.")
 
 
-#' ###Conclusion for Range Change before Extinction/ after Colonization
+#' ##Conclusion for Range Change before Extinction/ after Colonization
 #' As stated with the larger (pooled regional data) regressions, range size responds more consistently/ strongly to an approaching extinction/ departure from colonization than does range density. Range size shrinks as extinction approaches, increases as time since colonization increases. In both cases, there was only 1 region for which the direction (into extinction, out of colonization) mattered: for range density, it was the Southeast US (effect of pre-extinction direction = 0.037, p=0.043 [BH correction], Table 12), and for range size it was Scotial Shelf (effect = -0.021, p = 0.002). Time was a significant predictor of range size in all regions; time was *not* a significant predictor of range density in Newfoundland (p = 0.846 [BH]), and the Scotial Shelf (p = 0.916).  
 #'  
 #' These results support the hypothesis that species rarity is closely associated with proximity to extinction/ colonization, and therefore the probability that the species will contribute to a change in species richness. Furthermore, these relationships have not been directly quantified for entire assemblages. Competing hypotheses exist regarding how range should change approaching extinction and after colonization. We find that the change in range is similar regardless of direction. However, spatial scale was important. Although slopes were similar, the intercept for density was far larger than for range size --- the fraction of tows containing a species in occupied sites may remain high even when extinction is imminent, and may similar be large even if colonization was recent. Range size, on the other hand, was much closer to 0 near an absence.  
 #'   
 #' Overall, the results suggest that the spatial footprint of individual species is important for understanding changes in species richness. Furthermore, because species contributing most to the dynamics of richness are those that repeatedly colonize and go extinct, it is meaningful to look at a species' long-term rarity in order to gauge whether it is likely to contribute to those long-term richness changes. Determining what drives the geographic range of individual species is probably a powerful way to anticipate richness changes.  
 #'   
-#' ####Exploring Range size vs absence time as individual regressions
+#' ###Exploring Range size vs absence time as individual regressions
 #+ rangeSize_time_sepRegs, fig.width=5, fig.height=6, fig.cap="**Exploration Figure** histograms of separate regressions of size ~ time; this is for each run-up to an extinction and reach follow-up to a colonization. Trying to understand how regularly the pattern might be observed. Hard to answer because adjusting the restriction on number of events in the run-up or follow-up (nTime) greatly affects the proportion that are significant."
 rangeTimeDT[,nTime:=length(time),by=c("reg","type","event","spp")]
 o <- rangeTimeDT[nTime>=3,j={
