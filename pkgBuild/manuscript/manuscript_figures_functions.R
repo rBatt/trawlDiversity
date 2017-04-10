@@ -60,17 +60,20 @@ richness_ts <- function(){
 }
 
 # ---- Prevalence Time to Absence ----
-rangeSize_absenceTime <- function(pred_var=c("rangeSize","rangeDensity")){
+rangeSize_absenceTime <- function(pred_var=c("propStrata", "range_size_samp", "range_size_mu","propTow_occ", "rangeSize", "rangeDensity")){
 	eval(figure_setup())
+	
+	pred_var <- match.arg(pred_var, several.ok=TRUE) #c("rangeSize","rangeDensity")
+	if(pred_var=="rangeSize"){pred_var <- "range_size_samp"}
+	if(pred_var=="rangeDensity"){pred_var <- "propTow_occ"}
+	avg_prev_abs <- spp_master[!is.na(ext_dist) & ext_dist!=0,.SD[,lapply(.SD, mean),.SDcols=pred_var],by=c("reg","ext_dist","stretch_type")]
 	# avg_prev_abs <- spp_master[!is.na(ext_dist) & ext_dist!=0,list(rangeSize=mean(propStrata), rangeDensity=mean(propTow_occ)),by=c("reg","ext_dist","stretch_type")]
-	avg_prev_abs <- spp_master[!is.na(ext_dist) & ext_dist!=0,list(rangeSize=mean(range_size_mu), rangeDensity=mean(propTow_occ)),by=c("reg","ext_dist","stretch_type")]
 	# avg_prev_abs_sppmean <- spp_master[!is.na(ext_dist) & ext_dist!=0,list(rangeSize=mean(propStrata), rangeDensity=mean(propTow_occ)),by=c("reg","ext_dist","stretch_type","spp")]
 	
 	# avg_prev_abs_scale1 <- spp_master[!is.na(ext_dist) & ext_dist!=0,list(rangeSize=(range_size_mu-mean(range_size_mu))/sd(range_size_mu), propTow_occ, ext_dist, stretch_type),by=c("reg","spp")] # scaling to mean 0 sd 1
 # 	avg_prev_abs_scale2 <- spp_master[!is.na(ext_dist) & ext_dist!=0,list(rangeSize=range_size_mu-min(range_size_mu), propTow_occ, ext_dist, stretch_type),by=c("reg","spp")] # scaling to minimum of 0
 # 	avg_prev_abs <- avg_prev_abs_scale2[,list(rangeSize=mean(rangeSize), rangeDensity=mean(propTow_occ)),by=c("reg","ext_dist","stretch_type")]
 	
-	pred_var <- match.arg(pred_var, several.ok=TRUE) #c("rangeSize","rangeDensity")
 	par(mfrow=c(length(pred_var),2), mar=c(1.65,1.65,0.25,0.25), oma=c(0.1,0.1,0.1,0.1), cex=1, ps=8, mgp=c(0.75,0.1,0), tcl=-0.1, ylbias=0.35)
 	counter <- 0
 	for(v in 1:length(pred_var)){
@@ -217,7 +220,7 @@ ceRate_map <- function(ce=c("colonization","extinction","richness")){
 #' rich_geoRange()
 #' 
 #' @export
-rich_geoRange <- function(gR0=c("size", "density"), leg=TRUE, legPan=2, panLab=TRUE){
+rich_geoRange <- function(gR0=c("propStrata_avg_ltAvg", "range_size_samp_avg_ltAvg", "range_size_mu_avg_ltAvg","range_size_mu_avg_ltAvg","size", "density"), leg=TRUE, legPan=2, panLab=TRUE){
 	eval(figure_setup())
 	
 	gR0 <- match.arg(gR0, several.ok=TRUE)
@@ -229,12 +232,22 @@ rich_geoRange <- function(gR0=c("size", "density"), leg=TRUE, legPan=2, panLab=T
 	}
 	for(g in 1:length(gR0)){
 		gR <- switch(gR0[g],
-			density = "propTow_occ_avg",
-			size = "range_size_mu_avg_ltAvg" #"propStrata_avg_ltAvg"
+			density = "propTow_occ_avg_ltAvg",
+			propTow_occ_avg_ltAvg = "propTow_occ_avg_ltAvg",
+			
+			size = "range_size_mu_avg_ltAvg", #"propStrata_avg_ltAvg"
+			propStrata_avg_ltAvg = "propStrata_avg_ltAvg",
+			range_size_samp_avg_ltAvg = "range_size_samp_avg_ltAvg",
+			range_size_mu_avg_ltAvg = "range_size_mu_avg_ltAvg"
 		)	
 		xlab <- switch(gR0[g],
 			density = "Community-level range density",
-			size = "Community-level range size"
+			propTow_occ_avg_ltAvg = "Community-level range density",
+			
+			size = "Community-level range size",
+			propStrata_avg_ltAvg = "Community-level range size",
+			range_size_samp_avg_ltAvg = "Community-level range size",
+			range_size_mu_avg_ltAvg = "Community-level range size"	
 		)
 		comm_master[,plot(eval(s2c(gR))[[1]], reg_rich, col=adjustcolor(pretty_col[reg],0.5), xlab=xlab, ylab="Species richness", pch=16)]
 		ur <- comm_master[,unique(reg)]
