@@ -680,12 +680,13 @@ par(mfrow=c(3,3), cex=1, ps=8, mar=c(2,2,2,2), mgp=c(1,0.2,0), tcl=-0.2)
 ureg <- bothR[,unique(reg)]
 nreg <- length(ureg)
 for(r in 1:nreg){
-	bothR[reg==ureg[r],list(mu_lR=mean(lR),naive_rich=naive_rich[1],reg_rich=reg_rich[1]),by=c("reg","year")][,j={
-		plot(year, mu_lR, type='l')
+	comm_master[reg==ureg[r],j={
+		plot(year, get(lR), type='l', ylab=lR)
 		mtext(reg[1], side=3, line=0, adj=0.1, font=2)
 		par(new=TRUE)
-		plot(year, naive_rich, type='l', col='red', xaxt='n', yaxt='n', xlab='',ylab='')
+		plot(year, get(rR), type='l', col='red', xaxt='n', yaxt='n', xlab='',ylab='')
 		axis(side=4, col='red')
+		mtext(rR, side=4, line=1, col='red')
 		NULL
 	}]
 }
