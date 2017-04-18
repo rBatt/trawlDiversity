@@ -89,7 +89,7 @@ rangeSize_absenceTime <- function(pred_var=c("propStrata", "range_size_samp", "r
 			if(st==1){
 				xlim <- rev(xlim)
 			}
-			avg_prev_abs[stretch_type==t_st,plot(ext_dist, eval(s2c(pv))[[1]], col=adjustcolor(pretty_col[(reg)], 0.5), xlim=xlim, pch=16, xlab=t_xlab, ylab=c(rangeSize="Range size",rangeDensity="Range density")[pv])]
+			avg_prev_abs[stretch_type==t_st,plot(ext_dist, eval(s2c(pv))[[1]], col=adjustcolor(pretty_col[(reg)], 0.5), xlim=xlim, pch=16, xlab=t_xlab, ylab="")]
 			avg_prev_abs[stretch_type==t_st,j={
 				lines(ext_dist, fitted(lm(eval(s2c(pv))[[1]]~ext_dist)), col=pretty_col[(reg[1])], lwd=1.5)
 			},by=c('reg')]
@@ -103,8 +103,20 @@ rangeSize_absenceTime <- function(pred_var=c("propStrata", "range_size_samp", "r
 			mtext(t_panel, side=3, line=-1.5, adj=c(0.05,0.95)[st], font=2, cex=1.25)
 			if(counter == 1){
 				comm_master[,legend("topright",ncol=1,legend=pretty_reg[una(reg)],text.col=pretty_col[una(reg)], inset=c(-0.02, -0.03), bty='n', x.intersp=1, y.intersp=0.65)]
+				
+				ylab_opts <- c("Range Size", "Range Density")
+				t_ylab <- switch(pv,
+					"propStrata" = ylab_opts[1], 
+					"range_size_samp" = ylab_opts[1], 
+					"range_size_mu" = ylab_opts[1],
+					"propTow_occ" = ylab_opts[2], 
+					"rangeSize" = ylab_opts[1], 
+					"rangeDensity" = ylab_opts[2]
+				)
+				mtext(t_ylab, side=2, line=0.75)
 			}	
 		}
+		
 	}
 	
 	
