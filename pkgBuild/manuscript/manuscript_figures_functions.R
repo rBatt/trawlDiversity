@@ -295,7 +295,7 @@ rich_geoRange <- function(gR0=c("propStrata_avg_ltAvg", "range_size_samp_avg_ltA
 # ---- MSOM Richness vs Naive Richness Scatterplot ----
 naive_msom_scatter <- function(){
 	eval(figure_setup())
-	par(mfrow=c(3,3), mar=c(1.5,1.25,0.75,0.1), oma=c(0.35,0.5,0.1,0.1), mgp=c(0.25,0.1,0), tcl=-0.1, ps=8, cex=1)
+	par(mfrow=c(3,3), mar=c(1.15,1.0,0.75,0.1), oma=c(0.35,0.5,0.1,0.1), mgp=c(0.25,0.1,0), tcl=-0.1, ps=8, cex=1)
 	ur <- names(pretty_reg)[names(pretty_reg)%in%comm_master[,unique(reg)]]
 	for(r in 1:length(ur)){
 		tr <- ur[r]
@@ -306,7 +306,7 @@ naive_msom_scatter <- function(){
 			mod <- lm(reg_rich~naive_rich)
 			abline(a=0, b=1, lty='solid')
 			# abline(mod, lty='dashed')
-			mtext(paste("r",round(cor(naive_rich,reg_rich,use="na.or.complete"),2),sep=" = "),side=3, line=-0.75, adj=0.05)
+			mtext(paste("r",round(cor(naive_rich,reg_rich,use="na.or.complete"),2),sep="="),side=3, line=-0.75, adj=0.05)
 			beta_coef <- coef(mod)[2]
 			# mtext(substitute(beta == beta_coef, list(beta_coef=beta_coef)), side=3, line=-1.5, adj=0.05)
 		}]
