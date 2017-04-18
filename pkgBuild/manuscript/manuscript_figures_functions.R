@@ -403,13 +403,13 @@ ceEventRange <- function(pred_vars = c("mean_size", "mean_density")){
 	pred_vars <- match.arg(pred_vars, several.ok=TRUE)
 	par(mfrow=c(length(pred_vars),1), mar=c(1.75,1.5,0.25,0.25),mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
 	
-	range_ceEvents <- spp_master[present==1,.SD[,list(mean_size=mean(range_size_mu), mean_density=mean(propTow_occ), total_colExt=sum(col+ext)),by='spp'],by='reg']
+	range_ceEvents <- spp_master[present==1,.SD[,list(mean_size=mean(range_size_samp), mean_density=mean(propTow_occ), total_colExt=sum(col+ext)),by='spp'],by='reg']
 	ur <- range_ceEvents[,unique(reg)]
 	
 	for(v in 1:length(pred_vars)){
 		pv <- pred_vars[v]
 		
-		range_ceEvents[,plot(eval(s2c(pv))[[1]], total_colExt, col=adjustcolor(pretty_col[reg],0.5), xlab=c("mean_size"="Range Size", "mean_density"="Range Density")[pv], ylab="Total Colonizations and Extinctions", pch=16)]
+		range_ceEvents[,plot(eval(s2c(pv))[[1]], total_colExt, col=adjustcolor(pretty_col[reg],0.5), xlab=c("mean_size"="Species Range Index", "mean_density"="Range Density")[pv], ylab="Total Colonizations and Extinctions", pch=16)]
 		for(r in 1:length(ur)){
 			td <- range_ceEvents[reg==ur[r] & !is.na(mean_density) & !is.na(mean_size)]
 			setorderv(td, pv)
