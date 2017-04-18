@@ -122,6 +122,8 @@ rR <-  c("observed"="naive_rich", "rarefied"=NA, "msom"="reg_rich")[3]
 lR <-  c("observed"="local_rich_obs", "rarefied"="local_rich_samp", "msom"="local_rich")[2]
 betaD <-  c("observed"="beta_div_obs", "msom"="beta_div_mu")[1]
 
+interactive()
+
 #' There are four primary metrics:  
 #'  - range size  
 #'  - regional richness (gamma)  
@@ -779,10 +781,10 @@ par(mfrow=c(2,2))
 ureg <- comm_master[,unique(reg)]
 nreg <- length(ureg)
 ptCol <- bquote(adjustcolor(pretty_col[reg],0.5))
-scatterLine(Data=cmNN, x="range_size_mu_avg_ltAvg", y="reg_rich", lineBy="reg", col=ptCol)
-scatterLine(Data=cmNN, x="range_size_mu_avg", y="reg_rich", lineBy="reg", col=ptCol)
-scatterLine(Data=cmNN, x="propStrata_noNeither_avg_ltAvg", y="reg_rich", lineBy="reg", col=ptCol)
-scatterLine(Data=cmNN, x="propStrata_noNeither_avg", y="reg_rich", lineBy="reg", col=ptCol)
+scatterLine(Data=cmNN, x="range_size_mu_avg_ltAvg", y="reg_rich", lineBy="reg", col=ptCol, pch=20)
+scatterLine(Data=cmNN, x="range_size_mu_avg", y="reg_rich", lineBy="reg", col=ptCol, pch=20)
+scatterLine(Data=cmNN, x="propStrata_noNeither_avg_ltAvg", y="reg_rich", lineBy="reg", col=ptCol, pch=20)
+scatterLine(Data=cmNN, x="propStrata_noNeither_avg", y="reg_rich", lineBy="reg", col=ptCol, pch=20)
 
 #' 
 #'   
