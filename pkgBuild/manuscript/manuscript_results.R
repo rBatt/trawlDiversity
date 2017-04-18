@@ -1003,10 +1003,21 @@ boxRange_colRich(range_type="range_size_samp")
 #' ***  
 #'   
 #'   
-#' #Time Series of Tows per Site
+#' #Boxplot Time Series of Tows per Site
 #+ towsPerSite-timeSeries, width=6.5, height=6.5, caption="Cross-site distribution (boxplot) of the number of tows (per site) over time, for each region."
 plot_towsPerSiteTS()
 
+#'   
+#' \FloatBarrier  
+#'   
+#' ***  
+#'   
+#' ##Richness Trend vs Transient Range Trend
+#+ richTrend-vs-transientRangeTrend, fig.width=5, fig.height=5
+dat <- merge(transExpansionStats, comm_master[,coef(lm(reg_rich~year))[2], by='reg'], by='reg')
+dat[,summary(lm(V1~year))]
+dat[,plot(year, V1, col=pretty_col[reg], pch=19, xlab="Rate of Range Expansion by Transient Species", ylab="Rate of Change in Species Richness")]
+#' The significance of this trend depends on Southeast US, though. I'm not sure I want to get into defending a plot based on an outlier, and the fact that I didn't account for uncertainty in the x-axis.  
 
 #' 
 #'   
