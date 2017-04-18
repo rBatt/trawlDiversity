@@ -794,35 +794,150 @@ scatterLine(Data=cmNN, x="propStrata_noNeither_avg", y="reg_rich", lineBy="reg",
 #'   
 #'   
 #' ##Range Size Over Time For Community vs Transients
-#+ rareExpansion, fig.width=6.5, fig.height=6.5
+#+ rareExpansion, fig.width=6.5, fig.height=6.5, results='asis'
 eval(neitherPres_subColor())
 plot_rangeSize_FullTrans(range_type="range_size_samp")
 
-#' 
-#'   
-#' \FloatBarrier  
-#'   
-#' ***  
-#'   
-#'   
-#' ##Boxplot Time Series of Range Size, Color is Richness of Transient Species (Observed)
-#+ rangeTS-colorAlpha, fig.width=6.5, fig.height=6.5
-eval(figure_setup())
-eval(neitherPres_subColor())
-boxRange_colRich(range_type="propStrata")
+transMod <- structure(vector("list",length(ur)), .Names=ur)
+coreMod <- structure(vector("list",length(ur)), .Names=ur)
+ctMod <- structure(vector("list",length(ur)), .Names=ur)
+ctMod2 <- ctMod
+for(r in 1:length(ur)){
+	rr <- ur[r]
+	td <- spp_master[eval(rE_logic1)]
+	td[,year:=year-min(year)]
+	transMod[[r]] <- lmer(range_size_samp~year+(1|spp), data=td)
+	
+	td2 <- spp_master[eval(rE_logic3)]
+	td2[,year:=year-min(year)]
+	coreMod[[r]] <- lmer(range_size_samp~year+(1|spp), data=td2)
+	
+	td3 <- spp_master[reg==rr & present==1]
+	td3[,year:=year-min(year)]
+	td3[,categ2:=c("core","transient")[(ce_categ!="neither")+1L]]
+	ctMod[[r]] <- lmer(range_size_samp~year*categ2+(1|spp), data=td3)
+	
+	ctMod2[[r]] <- lm(range_size_samp~year*categ2, data=td3)
+	# ctMod2[[r]] <- lmer(range_size_samp~year+(year|spp), data=td)
+	# ctMod2[[r]] <- lmer(range_size_samp~year+(year|spp), data=td3)
+	# ctMod2[[r]] <- lmer(range_size_samp~year*categ2+(year|spp), data=td3)
+	# td3[,auto.arima(range_size_samp, xreg=as.matrix(cbind(year=year, categ2=(categ2=="transient"), year_categ2=(year*(categ2=="transient")))), allowdrift=FALSE, d=0)]
 
-#' 
+}
+transExpansionStats <- smry_modList2(transMod)
+coreExpansionStats <- smry_modList2(coreMod)
+ctExpansionStats <- smry_modList2(ctMod)
+# ctExpansionStats2 <- smry_modList2(ctMod2)
+
+meanNum <- function(x, ...){
+	if(storage.mode(x) %in% c("double", "integer", "logical")){
+		mean(x, ...)
+	}else{
+		NA
+	}
+}
+
+kable(rbind(transExpansionStats,lapply(transExpansionStats, meanNum), transExpansionStats[BH_year<0.05, lapply(.SD, meanNum)][,reg:="signifYear"]))
+kable(rbind(coreExpansionStats,lapply(coreExpansionStats, meanNum), coreExpansionStats[BH_year<0.05, lapply(.SD, meanNum)][,reg:="signifYear"]))
+kable(rbind(ctExpansionStats,lapply(ctExpansionStats, meanNum), ctExpansionStats[BH_year<0.05, lapply(.SD, meanNum)][,reg:="signifYear"], ctExpansionStats[`BH_year:categ2`<0.05, lapply(.SD, meanNum)][,reg:="signifYear:categ2"]))
+
+
+#+ rareExpansion-description, fig.width=6.5, fig.height=6.5, results='markup'
+#' Examining how range size changed over time for "core" and "transient" groups of species. Core species are those that are present in all years. Transient species are those that are not present in all years. **`r transExpansionStats[,sum(BH_year<0.05)]`** regions had significant trends in range size for transient species (average slope for regions with significant trend = **`r transExpansionStats[,mean(year[BH_year<0.05])]`**), and **`r coreExpansionStats[,sum(BH_year<0.05)]`** regions had significant trends in range size for core species (**`r coreExpansionStats[,paste(reg[(BH_year>=0.05)], collapse = ", ")]`** did not have significant trends for core species; averge slope for regions with significant trend = **`r coreExpansionStats[,mean(year[BH_year<0.05])]`**).  
+#'   
+#' Given that many regions showed positive trends in range size for both species groups, it is prudent to compare trends between these groups, to see if they differ. To this end, I analyzed the groups together, and tested the significance of an interaction term that adjusted the a baseline slope if the species was in the transient group.  
+#'   
+#' Note that transient species are very much expected to have a smaller range size than the core group, particularly at the beginning of the time series; I'm not dynamically reporting the significance of the difference in intercepts here, but at the time of writing all regions showed significant differences in intercept between groups, with the transient group having a smaller intercept than the core group.
+#'   
+#' Interestingly, **`r ctExpansionStats[,sum(BH_year<0.05)]`** regions had significant trends (main effect), and **`r ctExpansionStats[,paste(reg[(BH_year<0.05 & year <0)], collapse = ", ")]`** had significant negative trends, while **`r ctExpansionStats[,paste(reg[(BH_year<0.05 & year >0)], collapse = ", ")]`** had significant positive trends. **`r ctExpansionStats[,paste(reg[(get("BH_year:categ2")>=0.05)], collapse = ", ")]`** were the regions without significant interactions -- (at the time of this writing) these are not the same regions that lacked significant trends in the core group. If we sum the main effect and transient-interaction together (ignoring significance), we see that **`r ctExpansionStats[,paste(reg[(year+get("year:categ2transient"))<0], collapse = ", ")]`** was/were the only region/s with negative estimated trends for transient species; all others had positive trends in range for transients. Some regions had significant trends for both core and transients, but the direction of these trends differed between the two groups: **`r ctExpansionStats[,paste(reg[(BH_year<0.05 & year <0 & get("BH_year:categ2")< 0.05 & get("year:categ2transient")>0)], collapse = ", ")]`** had core species with trends in range size that were significantly less than 0 but transient species with trends in range size that were significantly greater than 0.
+
+
+
 #'   
 #' \FloatBarrier  
 #'   
 #' ***  
 #'   
+#' ##Range Size and Extinction Probability
+#' ###Statistics for Range Size Year before Extinction
+#+ rangeProbExt-modelFit, results='markup'
+std_range_t1 <- spp_master[ce_categ!='neither' & ce_categ!="colonizer", j={
+	
+	std_range <- .SD[,list(year, ext, std_range=c(scale(get(rSMet_base))), ext_dist=ext_dist),by=c("spp")]
+	setkey(std_range, spp, year)
+	std_range_t1 <- std_range[present==1,list(year=year[-1], ext=ext[-1], std_range=std_range[-1], std_range_t1=head(std_range, -1), ext_dist=ext_dist[-1]),by=c("spp")]
+	
+	std_range_t1[,nspp:=length(unique(spp)),by=c('year')]
+	std_range_t1
+	
+},by="reg"]
+# print(std_range_t1[,{print(summary(glm(ext~std_range, family='binomial')));NULL},by='reg'])
+# print(std_range_t1[,{print(summary(glmer(ext~std_range+(std_range|reg), family='binomial')));NULL}])
+
+# Set up -- region names and empty named lists
+ur <- std_range_t1[,unique(reg)]
+rangeExtProb1 <- structure(vector("list",length(ur)), .Names=ur)
+rangeExtProb2 <- structure(vector("list",length(ur)), .Names=ur)
+rangeExtProb3 <- structure(vector("list",length(ur)), .Names=ur)
+
+# Fit 3 models for each region
+for(r in 1:length(ur)){
+	t_reg <- ur[r]
+	t_dat <- std_range_t1[reg==t_reg]
+	rangeExtProb1[[t_reg]] <- (glm(ext~std_range, family='binomial', data=t_dat))
+	rangeExtProb2[[t_reg]] <- summary(glm(ext~std_range+nspp, family='binomial', data=t_dat))
+	rangeExtProb3[[t_reg]] <- summary(glm(ext~std_range*nspp, family='binomial', data=t_dat))
+}
+(smry_modList(rangeExtProb1, pred_name="std_range"))
+
+#' ###Figure for Range Size Year before Extinction
+#+ rangeProbExt-modelFit-fig, fig.width=6, fig.height=6
+par(mfrow=c(3,3), mar=c(2.5,2.5,1.5,0.5), ps=10, mgp=c(0.75,0.15,0), tcl=-0.15)
+for(r in 1:length(ur)){
+	std_range_t1[reg==ur[r],plot(std_range, ext)]
+	new_r <- std_range_t1[reg==ur[r],sort(std_range)]
+	lines(new_r, predict(rangeExtProb1[[ur[r]]], newdata=data.frame(std_range=new_r), type='response'))
+	mtext(pretty_reg[ur[r]], side=3, line=0, adj=0.1, font=2)
+}
+
 #'   
-#' ##Boxplot Time Series of Range Size, Color is Richness of Transient Species (MSOM)
-#+ rangeTS-colorAlpha-MSOM, fig.width=6.5, fig.height=6.5, caption="Range size and richness of transient species. Boxplots represent the cross-species distribution of range sizes. The color of the boxplot indicates the number of  transient species present in that year."
-eval(figure_setup())
-eval(neitherPres_subColor())
-boxRange_colRich(range_type="range_size_mu")
+#' \FloatBarrier  
+#'   
+#' ***  
+#'   
+#' ###Statistics for Range Size Predicting Years until Extinction
+#+ rangeProbExt-modelFit2, results='markup'
+print(std_range_t1[,{print(summary(glm(ext_dist~std_range, family='poisson')));NULL},by='reg'])
+print(std_range_t1[,{print(summary(glmer(ext~std_range+(std_range|reg), family='poisson')));NULL}])
+
+# Set up -- region names and empty named lists
+ur <- std_range_t1[,unique(reg)]
+rangeExtProb1_2 <- structure(vector("list",length(ur)), .Names=ur)
+rangeExtProb2_2 <- structure(vector("list",length(ur)), .Names=ur)
+rangeExtProb3_2 <- structure(vector("list",length(ur)), .Names=ur)
+
+# Fit 3 models for each region
+for(r in 1:length(ur)){
+	t_reg <- ur[r]
+	t_dat <- std_range_t1[reg==t_reg]
+	rangeExtProb1_2[[t_reg]] <- (glm(ext_dist~std_range, family='poisson', data=t_dat))
+	rangeExtProb2_2[[t_reg]] <- (glmer(ext_dist~std_range+(std_range|spp), family='poisson', data=t_dat))
+	# rangeExtProb3_2[[t_reg]] <- summary(glm(ext_dist~std_range*(std_range|spp), family='poisson', data=t_dat))
+}
+(rangeExtProb1_2_smry <- smry_modList(rangeExtProb1_2, pred_name="std_range"))
+(rangeExtProb2_2_smry <- smry_modList2(rangeExtProb2_2))
+
+#' ###Figure for Range Size Predicting Years until Extinction
+#+ rangeProbExt-modelFit2-fig, fig.width=6, fig.height=6
+par(mfrow=c(3,3), mar=c(2.5,2.5,1.5,0.5), ps=10, mgp=c(0.75,0.15,0), tcl=-0.15)
+for(r in 1:length(ur)){
+	std_range_t1[reg==ur[r],plot(std_range, ext_dist)]
+	new_r <- std_range_t1[reg==ur[r],sort(std_range)]
+	lines(new_r, predict(rangeExtProb1_2[[ur[r]]], newdata=data.frame(std_range=new_r), type='response'))
+	mtext(pretty_reg[ur[r]], side=3, line=0, adj=0.1, font=2)
+}
+
+
 
 #' 
 #'   
