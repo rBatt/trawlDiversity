@@ -1003,63 +1003,6 @@ boxRange_colRich(range_type="range_size_samp")
 #'   
 #' ##Map of Site Locations
 #+ siteMap, fig.width=7.42, fig.height=3
-plotSiteMap <- function(regs=c("ebs", "ai", "goa", "wctri", "gmex", "sa", "neus", "shelf", "newf"), Plot=TRUE, Points=TRUE, Outline=TRUE, Map=TRUE, Legend=TRUE, legPos="bottomleft", Axes=TRUE, OutlineFirst=FALSE){
-	par(mar=c(1.9, 2.1, 0.5, 0.5), cex=1, mgp=c(1.1, 0.15, 0), tcl=-0.15, ps=10)
-	LL <- data_all[!duplicated(stratum) & reg%in%regs,j={
-		ll_split <- strsplit(stratum, " ")
-		Lon <- as.numeric(sapply(ll_split, function(x)x[1]))
-		Lat <- as.numeric(sapply(ll_split, function(x)x[2]))
-		if(Plot){
-			if(Axes){
-				plot(Lon, Lat, col=pretty_col[reg], type='n', xlab=bquote(Longitude~(phantom()*degree*E)), ylab=bquote(Latitude~(phantom()*degree*N)))
-			}else{
-				plot(Lon, Lat, col=pretty_col[reg], type='n', xlab="", ylab="", xaxt='n', yaxt='n')
-			}
-		}
-		list(reg=reg, Lon=Lon, Lat=Lat)
-	}]
-	
-	if(Outline & OutlineFirst){
-		for(r in 1:length(regs)){
-			tr <- regs[r]
-			mo <- mapOwin[[tr]]
-			plot(mo, add=FALSE, border=pretty_col[tr], lwd=1.5, xlab='', ylab='', main='')
-		}
-	}
-	 
-	w2 <- map('world2', plot=FALSE)
-	w2$x <- w2$x-360
-	subInd <- w2$x <= -180 & w2$x > -210 & w2$y < 59
-	w2$y <- w2$y[subInd]
-	w2$x <- w2$x[subInd]
-	map_quote <- bquote({
-		lines(w2$x, w2$y, lwd=1.5, col="lightgray")
-		lines(w2$x, w2$y, lwd=0.5, col="black")
-		map(add=TRUE, fill=TRUE, col="lightgray", lwd=0.5)
-	})
-	if(Map){
-		eval(map_quote)
-	}
-	
-	if(Plot & Points){
-		LL[,j={
-			points(Lon, Lat, cex=0.35, col=NA, bg=adjustcolor(pretty_col[reg], 0.5), pch=21)
-		}]
-	}
-
-	if(Outline & !OutlineFirst){
-		for(r in 1:length(regs)){
-			tr <- regs[r]
-			mo <- mapOwin[[tr]]
-			plot(mo, add=TRUE, border=pretty_col[tr], lwd=1.5)
-		}
-	}
-	if(Legend){
-		legend(legPos, legend=pretty_reg[regs], text.col=pretty_col[names(pretty_reg[regs])], bty='n', ncol=2)
-	}
-	
-	invisible(LL)	
-}
 plotSiteMap()
 
 
