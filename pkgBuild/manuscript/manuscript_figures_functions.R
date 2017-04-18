@@ -102,7 +102,7 @@ rangeSize_absenceTime <- function(pred_var=c("propStrata", "range_size_samp", "r
 			# legend("topleft", legend=t_panel, inset=c(-0.075, -0.03), bty='n', text.font=2)
 			mtext(t_panel, side=3, line=-1.5, adj=c(0.05,0.95)[st], font=2, cex=1.25)
 			if(counter == 1){
-				comm_master[,legend("topright",ncol=1,legend=pretty_reg[una(reg)],text.col=pretty_col[una(reg)], inset=c(-0.02, -0.03), bty='n', x.intersp=1, y.intersp=0.65)]
+				comm_master[,legend("topright",ncol=1,legend=pretty_reg[names(pretty_reg)%in%una(reg)],text.col=pretty_col[names(pretty_col)%in%una(reg)], inset=c(-0.02, -0.03), bty='n', x.intersp=1, y.intersp=0.65)]
 				
 				ylab_opts <- c("Range Size", "Range Density")
 				t_ylab <- switch(pv,
@@ -261,7 +261,7 @@ rich_geoRange <- function(gR0=c("propStrata_avg_ltAvg", "range_size_samp_avg_ltA
 			range_size_samp_avg_ltAvg = "Community Range Index",
 			range_size_mu_avg_ltAvg = "Community Range Index"	
 		)
-		comm_master[,plot(eval(s2c(gR))[[1]], reg_rich, col=adjustcolor(pretty_col[reg],0.5), xlab=xlab, ylab="Species richness", pch=16)]
+		comm_master[,plot(eval(s2c(gR))[[1]], reg_rich, col=adjustcolor(pretty_col[reg],0.5), xlab=xlab, ylab="Regional Species Richness", pch=16)]
 		ur <- comm_master[,unique(reg)]
 		mod_expr <- bquote(fitted(lm(reg_rich~eval(s2c(gR))[[1]])))
 		for(r in 1:length(ur)){
@@ -269,9 +269,9 @@ rich_geoRange <- function(gR0=c("propStrata_avg_ltAvg", "range_size_samp_avg_ltA
 		}
 		if(leg & g==legPan){
 			if(gR0[g]=="density"){
-				comm_master[,legend("topright",ncol=2,legend=pretty_reg[una(reg)],text.col=pretty_col[una(reg)], inset=c(-0.02, -0.02), bty='n')]
+				comm_master[,legend("topright",ncol=2,legend=pretty_reg[names(pretty_reg)%in%una(reg)],text.col=pretty_col[names(pretty_col)%in%una(reg)], inset=c(-0.02, -0.02), bty='n')]
 			}else if(gR0[g]=="size"){
-				comm_master[,legend("topleft",ncol=2,legend=pretty_reg[una(reg)],text.col=pretty_col[una(reg)], inset=c(0.03, -0.02), bty='n', x.intersp=0.15, y.intersp=0.65)]
+				comm_master[,legend("topleft",ncol=2,legend=pretty_reg[names(pretty_reg)%in%una(reg)],text.col=pretty_col[names(pretty_col)%in%una(reg)], inset=c(0.03, -0.02), bty='n', x.intersp=0.15, y.intersp=0.65)]
 			}
 			
 		}
@@ -295,17 +295,25 @@ rich_geoRange <- function(gR0=c("propStrata_avg_ltAvg", "range_size_samp_avg_ltA
 # ---- MSOM Richness vs Naive Richness Scatterplot ----
 naive_msom_scatter <- function(){
 	eval(figure_setup())
-	par(mfrow=c(3,3), mar=c(1.25,1.0,0.5,0.1), oma=c(0.35,0.5,0.1,0.1), mgp=c(0.25,0.1,0), tcl=-0.1, ps=8, cex=1)
-	for(r in 1:length(regs)){
-		comm_master[reg==regs[r],j={
-			plot(naive_rich, reg_rich, main=pretty_reg[una(reg)], type='p', xlab="", ylab="", cex.main=1)
-			abline(a=0, b=1)
-			mtext(paste("r",round(cor(naive_rich,reg_rich,use="na.or.complete"),2),sep="="),side=3, line=-0.75, adj=0.05)
+	par(mfrow=c(3,3), mar=c(1.5,1.25,0.75,0.1), oma=c(0.35,0.5,0.1,0.1), mgp=c(0.25,0.1,0), tcl=-0.1, ps=8, cex=1)
+	ur <- names(pretty_reg)[names(pretty_reg)%in%comm_master[,unique(reg)]]
+	for(r in 1:length(ur)){
+		tr <- ur[r]
+		# plotSiteMap(regs=tr, Legend=FALSE, Points=FALSE, OutlineFirst=TRUE, Axes=FALSE, Plot=FALSE)
+		# par(new=TRUE)
+		comm_master[reg==tr,j={
+			plot(naive_rich, reg_rich, main=pretty_reg[tr], type='p', xlab="", ylab="", cex.main=1)
+			mod <- lm(reg_rich~naive_rich)
+			abline(a=0, b=1, lty='solid')
+			# abline(mod, lty='dashed')
+			mtext(paste("r",round(cor(naive_rich,reg_rich,use="na.or.complete"),2),sep=" = "),side=3, line=-0.75, adj=0.05)
+			beta_coef <- coef(mod)[2]
+			# mtext(substitute(beta == beta_coef, list(beta_coef=beta_coef)), side=3, line=-1.5, adj=0.05)
 		}]
 	}
 
 	mtext("MSOM Richness", side=2, line=-0.2, outer=TRUE)
-	mtext("Naive Richness", side=1, line=-0.5, outer=TRUE)
+	mtext("Na\xC3\xAFve Richness", side=1, line=-0.5, outer=TRUE)
 	invisible(NULL)
 }
 
@@ -403,7 +411,7 @@ rangeSizeDens <- function(){
 	
 	range_reg <- comm_master[,list(reg, year, rich=reg_rich, density=propTow_occ_avg, size=propStrata_avg_ltAvg)]
 	range_reg[,plot(size, density, col=adjustcolor(pretty_col[reg],0.5), xlab="Community range size (observed)", ylab="Community range density", pch=16)]
-	comm_master[,legend("topright",ncol=2,legend=pretty_reg[una(reg)],text.col=pretty_col[una(reg)], inset=c(-0.02, -0.02), bty='n')]
+	comm_master[,legend("topright",ncol=2,legend=pretty_reg[names(pretty_reg)%in%una(reg)],text.col=pretty_col[names(pretty_col)%in%una(reg)], inset=c(-0.02, -0.02), bty='n')]
 	mtext(c("B"), side=1, line=-1.5, adj=0.95, font=2, cex=1.25)
 
 	invisible(NULL)
@@ -430,7 +438,7 @@ ceEventRange <- function(pred_vars = c("mean_size", "mean_density")){
 			td[, lines(eval(s2c(pv))[[1]], lf, col=pretty_col[reg], lwd=2)]
 		}
 		if(v==1 | length(pred_vars)==1){
-			range_ceEvents[,legend("topright",ncol=2,legend=pretty_reg[una(reg)],text.col=pretty_col[una(reg)], inset=c(-0.02, -0.02), bty='n')]
+			range_ceEvents[,legend("topright",ncol=2,legend=pretty_reg[names(pretty_reg)%in%una(reg)],text.col=pretty_col[names(pretty_col)%in%una(reg)], inset=c(-0.02, -0.02), bty='n')]
 		}	
 		if(length(pred_vars)>1){
 			mtext(c("A","B")[v], side=1, line=-2, adj=0.95, font=2, cex=1.25)
@@ -602,8 +610,8 @@ boxRange_colRich <- function(range_type=c("range_size_samp", "range_size_mu", "p
 plot_rangeSize_FullTrans <- function(range_type=c("range_size_samp", "range_size_mu", "propStrata")){
 	range_type <- match.arg(range_type)
 	
-	par(mfrow=c(3,3), mgp=c(0.85,0.2,0), ps=8, cex=1, mar=c(1.75,1.75,0.5,0.5), tcl=-0.15)
-	ur <- spp_master[,unique(reg)]
+	par(mfrow=c(3,3), mgp=c(0.85,0.2,0), ps=8, cex=1, mar=c(1.25,1.25,0.5,0.5), oma=c(0.75, 0.75, 0.1, 0.1), tcl=-0.15)
+	ur <- names(pretty_reg)[names(pretty_reg)%in%spp_master[,unique(reg)]]
 	for(r in 1:length(ur)){
 		rr <- ur[r]
 		rEl3 <- spp_master[order(year)][eval(rE_logic3)]
@@ -621,7 +629,7 @@ plot_rangeSize_FullTrans <- function(range_type=c("range_size_samp", "range_size
 			rEl3_qylim,
 			medRange_noNeith[,V1]
 		))	
-		rEl1[,plot(year, get(range_type), type='n', ylim=ylim, ylab=range_type)]
+		rEl1[,plot(year, get(range_type), type='n', ylim=ylim, ylab="",xlab="")]
 		grid()
 		
 		r11 <- rEl1[,median(get(range_type)),by='year']
@@ -652,6 +660,14 @@ plot_rangeSize_FullTrans <- function(range_type=c("range_size_samp", "range_size
 		comm_master[reg==rr, lines(year,get(paste0(range_type,"_avg_ltAvg")), col='black')]
 		mtext(pretty_reg[rr], line=-0.75, side=3, adj=0.1, font=2)
 	}
+	if(range_type%in%c("range_size_samp", "range_size_mu", "propStrata")){
+		ylab <- "Range Size"
+	}else{
+		ylab <- range_type
+	}
+	xlab <- "Year"
+	mtext(xlab, side=1, line=-0.18, outer=TRUE)
+	mtext(ylab, side=2, line=-0.10, outer=TRUE)
 	
 	invisible(NULL)
 }
