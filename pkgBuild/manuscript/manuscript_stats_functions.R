@@ -11,11 +11,11 @@ library("data.table")
 # = Model Summary 1 =
 # ===================
 # This is a function that'll help summarize model fit and coeffs and parameter significance:  
-mod_smry <- function(m, pred_name=c("density","size","time","type","time:type")){
+mod_smry <- function(m, pred_name=c("density","size","time","type","time:type","std_range","naive_rich")){
 	pred_name <- match.arg(pred_name)
 	sc <- sem.coefs(m)
 	sc[,c("estimate","p.value")] <- lapply(sc[,c("estimate","p.value")], signif, 4)
-	mod_call <- switch(class(m), lmerMod=m@call, lm=m$call)
+	mod_call <- switch(class(m)[1], lmerMod=m@call, glmerMod=m@call, lm=m$call, glm=m$call)
 	mod_call <- as.character(mod_call)[2]
 	fits <- sem.model.fits(m)
 	fits[,c("Marginal","Conditional")] <- lapply(fits[,c("Marginal","Conditional")], signif, 4)
@@ -37,7 +37,7 @@ mod_smry <- function(m, pred_name=c("density","size","time","type","time:type"))
 # ===================
 # summary function used in tables
 mod_smry2 <- function(m){
-	mod_call <- switch(class(m), lmerMod=m@call, lm=m$call)
+	mod_call <- switch(class(m)[1], lmerMod=m@call, glmerMod=m@call, lm=m$call, glm=m$call)
 	mod_call <- as.character(mod_call)[2]
 	fits <- tryCatch(sem.model.fits(m), error=function(cond)NA)
 	if(all(is.na(fits))){
@@ -68,7 +68,7 @@ getCoefs <- function(mList){
 			coef(mList[[r]]), function(x)as.list(colMeans(x))
 		), idcol=TRUE)
 		setnames(outList[[ur[r]]], c(".id"), c("randGrp"))
-		mod_call <- switch(class(mList[[r]]), lmerMod=mList[[r]]@call, lm=mList[[r]]$call)
+		mod_call <- switch(class(mList[[r]])[1], lmerMod=mList[[r]]@call, glmerMod=mList[[r]]@call, lm=mList[[r]]$call, glm=mList[[r]]$call)
 		mod_call <- as.character(mod_call)[2]
 		outList[[ur[r]]][,mod_call:=mod_call]
 	}
@@ -84,7 +84,7 @@ getCoefs <- function(mList){
 # ============================
 # Wrapper for Applying Model Summary to list of Models
 smry_modList <- function(ml, pred_name="size"){
-	rbindlist(lapply(ml, mod_smry, pred_name="size"))
+	rbindlist(lapply(ml, mod_smry, pred_name=pred_name))
 }
 
 smry_modList2 <- function(ml){
