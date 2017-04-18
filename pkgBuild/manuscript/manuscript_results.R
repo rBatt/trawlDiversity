@@ -429,6 +429,7 @@ kable(tbl_ColExtTime, caption="Same as above, but shows slightly different metri
 #+ rangeSizeDensity-ColExtTime-reg-simple
 # Set up -- region names and empty named lists
 ur <- rangeTimeDT[,unique(reg)]
+sTime_reg_mods0 <- structure(vector("list",length(ur)), .Names=ur)
 sTime_reg_mods1 <- structure(vector("list",length(ur)), .Names=ur)
 sTime_reg_mods2 <- structure(vector("list",length(ur)), .Names=ur)
 sTime_reg_mods3 <- structure(vector("list",length(ur)), .Names=ur)
@@ -437,18 +438,21 @@ sTime_reg_mods3 <- structure(vector("list",length(ur)), .Names=ur)
 for(r in 1:length(ur)){
 	t_reg <- ur[r]
 	t_dat <- rangeTimeDT[reg==t_reg]
+	sTime_reg_mods0[[t_reg]] <- lme4::lmer(size ~ time + (time-1|spp), data=t_dat)
 	sTime_reg_mods1[[t_reg]] <- lme4::lmer(size ~ time + (time|spp), data=t_dat)
 	sTime_reg_mods2[[t_reg]] <- lme4::lmer(size ~ time + type + (time|spp), data=t_dat)
 	sTime_reg_mods3[[t_reg]] <- lme4::lmer(size ~ time * type + (time|spp), data=t_dat)
 }
 
 # Summarize each model
+sTime_reg_smry0 <- smry_modList2(sTime_reg_mods0)
 sTime_reg_smry1 <- smry_modList2(sTime_reg_mods1)
 sTime_reg_smry2 <- smry_modList2(sTime_reg_mods2)
 sTime_reg_smry3 <- smry_modList2(sTime_reg_mods3)
 
 # Captions for each model
 # Also a caption in case I want to report all models for all regions
+capS0 <- sTime_reg_smry0[,unique(mod_call)]
 capS1 <- sTime_reg_smry1[,unique(mod_call)]
 capS2 <- sTime_reg_smry2[,unique(mod_call)]
 capS3 <- sTime_reg_smry3[,unique(mod_call)]
@@ -456,6 +460,7 @@ timeRegMods_cap <- "Summary statistics for fits of predicting range size from ye
 
 # Compare AIC values from each model fit
 compAIC <- rbind(
+	cbind(sTime_reg_smry0[,list(reg,MargR2,CondR2,AIC)], mod=capS0),
 	cbind(sTime_reg_smry1[,list(reg,MargR2,CondR2,AIC)], mod=capS1),
 	cbind(sTime_reg_smry2[,list(reg,MargR2,CondR2,AIC)], mod=capS2),
 	cbind(sTime_reg_smry3[,list(reg,MargR2,CondR2,AIC)], mod=capS3)
@@ -470,7 +475,7 @@ bestEachOverall <- unique(rbind(bestEach,bestOverall)) # combinations for best o
 setkey(bestEachOverall, reg, mod_call) # sort
 
 # get the worthy models
-allSmry <- rbind(sTime_reg_smry1, sTime_reg_smry2, sTime_reg_smry3, fill=TRUE) # combine results from all models and regions
+allSmry <- rbind(sTime_reg_smry0, sTime_reg_smry1, sTime_reg_smry2, sTime_reg_smry3, fill=TRUE) # combine results from all models and regions
 bestModels <- allSmry[bestEachOverall, on=c('reg','mod_call')] # for each region, only select models that were best in that region or best overall
 
 # remove columns that are NA for all rows b/c models w/ those parameters were never winners
