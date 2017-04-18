@@ -463,6 +463,23 @@ bestModels[,c(loserNames):=list(NULL)] # drop the loser columns
 kable(bestModels, caption="Shows each region's best model, and shows the model that was most often the best for all regions (including those for which it wasn't the best). If all regions had the same best model, only 1 model is shown.")
 
 
+#+ rangeSize-timeUntil-detailedFigure, fig.width=6.8, fig.height=6.8
+par(mfrow=c(3,3), mgp=c(0.85,0.2,0), ps=8, cex=1, mar=c(1.75,1.75,0.75,0.5), oma=c(0.5,0.5,0.1,0.1), tcl=-0.15)
+for(r in 1:length(ur)){
+	t_reg <- ur[r]
+	t_dat <- rangeTimeDT[reg==t_reg]
+	t_dat[,spp:=paste0(spp,event)]
+	t_dat[type=="pre_ext", c("spp","time"):=list(spp=paste0(spp,type),time=-time)]
+	setkey(t_dat, spp, type, time)
+	scatterLine(t_dat, x="time", y="size", lineBy="spp", colBy=adjustcolor(pretty_col[t_reg], 1), lwdBy=0.5, type='p', xlab="", ylab="")
+	t_dat[,points(mean(time), mean(size), pch=19, col='black', cex=1.2),by=c('time')]
+	t_dat[,points(mean(time), mean(size), bg=pretty_col[t_reg], pch=21, col='white'),by=c('time')]
+	mtext(pretty_reg[t_reg], line=-0.2, side=3, adj=0.1, font=2)
+}
+mtext("Time to Event", side=1, line=-0.5, outer=TRUE)
+mtext("Range Size", side=2, line=-0.5, outer=TRUE)
+
+
 #' ##Conclusion for Range Change before Extinction/ after Colonization
 #' As stated with the larger (pooled regional data) regressions, range size responds more consistently/ strongly to an approaching extinction/ departure from colonization than does range density. Range size shrinks as extinction approaches, increases as time since colonization increases. In both cases, there was only 1 region for which the direction (into extinction, out of colonization) mattered: for range density, it was the Southeast US (effect of pre-extinction direction = 0.037, p=0.043 [BH correction], Table 12), and for range size it was Scotial Shelf (effect = -0.021, p = 0.002). Time was a significant predictor of range size in all regions; time was *not* a significant predictor of range density in Newfoundland (p = 0.846 [BH]), and the Scotial Shelf (p = 0.916).  
 #'  
