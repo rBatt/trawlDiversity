@@ -169,6 +169,28 @@ naive_msom_scatter()
 #' **Manuscript paragraph:**  
 #' MSOM estimates of richness were greater than Naive estimates, but the two methods produced similar temporal dynamics in richness (Figure S1). Henceforth, we report MSOM richness estimates. The greatest long-term average richness was the Gulf of Mexico (142.3), lowest in the Scotian Shelf (46.3). The inter-region average of long-term standard deviations of richness was 5.3; the Aleutian Islands showed the lowest variability (sd = 2.4), and the Gulf of Alaska was the most variable (sd = 8.5).  
 #'   
+#+ Richness-msom-naive-scatter-stats, results='markup'
+ur <- comm_master[,unique(reg)]
+nr <- length(ur)
+naive_msom_mod <- list()
+for(r in 1:nr){
+	td <- comm_master[reg==ur[r]]
+	naive_msom_mod[[ur[r]]] <- lm(reg_rich~naive_rich, data=td)
+}
+
+diff1 <- function(x){
+	co <- summary(x)$coeff
+	est <- co["naive_rich","Estimate"]
+	se <- co["naive_rich","Std. Error"]
+	# est + sign(est)*1.96*se
+	
+	pnorm(1-est, sd=se, lower.tail=FALSE)
+}
+rbindlist(lapply(naive_msom_mod, mod_smry, pred_name="naive_rich"), idcol='reg')
+sapply(naive_msom_mod, diff1)
+#' All regions except Northeast U.S. and Newfoundland have estimates that are less than 1, although West Coast U.S. is not signifiantly less than 1. Therefore, for two-thirds of the regions, the MSOM tended to estimate that more undetected species were present when naive estimates were low.
+
+#'   
 #' \FloatBarrier  
 #'   
 #' ***  
