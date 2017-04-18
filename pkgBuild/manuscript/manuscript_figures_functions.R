@@ -303,7 +303,7 @@ categ_barplot <- function(){
 	categ_table <- t(spp_master[!duplicated(paste(reg,ce_categ,spp)), table(reg, ce_categ)])[c(4,1,2,3),]
 	colnames(categ_table) <- pretty_reg[colnames(categ_table)]
 	colnames(categ_table) <- gsub("^(.*) (.*)$", "\\1\n\\2", colnames(categ_table))
-	rownames(categ_table) <- c("neither"="Neither","both"="Both","colonizer"="Colonizing","leaver"="Leaving")[rownames(categ_table)]
+	rownames(categ_table) <- c("neither"="Core","both"="Both","colonizer"="Colonizing","leaver"="Leaving")[rownames(categ_table)]
 	par(cex=1, mar=c(3,2,1,0.1), ps=8)
 	bp <- barplot(categ_table, beside=T, legend=T, names.arg=rep("",ncol(categ_table)), args.legend=list(bty='n'))
 	text(colMeans(bp)-1, -11, labels=colnames(categ_table), srt=45, xpd=TRUE)
