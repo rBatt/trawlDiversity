@@ -244,10 +244,10 @@ rich_geoRange <- function(gR0=c("propStrata_avg_ltAvg", "range_size_samp_avg_ltA
 			density = "Community-level range density",
 			propTow_occ_avg_ltAvg = "Community-level range density",
 			
-			size = "Community-level range size",
-			propStrata_avg_ltAvg = "Community-level range size",
-			range_size_samp_avg_ltAvg = "Community-level range size",
-			range_size_mu_avg_ltAvg = "Community-level range size"	
+			size = "Community Range Index",
+			propStrata_avg_ltAvg = "Community Range Index",
+			range_size_samp_avg_ltAvg = "Community Range Index",
+			range_size_mu_avg_ltAvg = "Community Range Index"	
 		)
 		comm_master[,plot(eval(s2c(gR))[[1]], reg_rich, col=adjustcolor(pretty_col[reg],0.5), xlab=xlab, ylab="Species richness", pch=16)]
 		ur <- comm_master[,unique(reg)]
