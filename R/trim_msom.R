@@ -153,7 +153,8 @@ trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tol
 			"Paragorgia arborea", # coral, shows up in 3rd year at ~15% strata
 			"Lepidopsetta polyxystra", # flatfish, shows up in 1997 for 80% strata (also in ebs)
 			"Pteraster militaris", # seastar, show sup at 40% in 1994
-			"Ophiopholis aculeata" # sea star, shows up in 1994 at ~35%
+			"Ophiopholis aculeata", # sea star, shows up in 1994 at ~35%
+			"Bathyraja panthera" # leopard skate; newly identified species in ~2010, definitely present previously # https://paperpile.com/app/p/bb183579-f00b-006f-966a-ca724c647bd6
 		)
 		
 		X.t <- X.t[!spp%in%bad_spp_ai,]
