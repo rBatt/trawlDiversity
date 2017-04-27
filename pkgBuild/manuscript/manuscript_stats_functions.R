@@ -14,7 +14,7 @@ library("data.table")
 mod_smry <- function(m, pred_name=c("density","size","time","type","time:type","std_range","naive_rich")){
 	pred_name <- match.arg(pred_name)
 	sc <- sem.coefs(m)
-	sc[,c("estimate","p.value")] <- lapply(sc[,c("estimate","p.value")], signif, 4)
+	sc[,c("estimate","p.value")] <- lapply(sc[,c("estimate","p.value")], signif, 6)
 	mod_call <- switch(class(m)[1], lmerMod=m@call, glmerMod=m@call, lm=m$call, glm=m$call)
 	mod_call <- as.character(mod_call)[2]
 	fits <- sem.model.fits(m)
