@@ -3,20 +3,33 @@
 # = Simulating Spreading Range =
 # ==============================
 # ---- setup ----
-nspp <- 300
-nsite <- 300
+nspp <- 25
+nsite <- 25
 nr <- nsite
 nc <- nspp
-n_iter <- 300
+n_iter <- 25
+
+grow <- FALSE
+moveDir <- c("left","right")[2] #[1:2]
 
 # ---- transfer matrix ----
 transf <- diag(nrow=nsite)
-transf[row(transf)-col(transf)==1] <- 1
-transf[row(transf)-col(transf)==-1] <- 1
+if(!grow){
+	diag(transf) <- 0
+}
+if("left"%in%moveDir){
+	transf[row(transf)-col(transf)==-1] <- 1	
+	transf[1,1] <- 1 # so it doesn't go extinct if grow=FALSE
+}
+if("right"%in%moveDir){
+	transf[row(transf)-col(transf)==1] <- 1
+	transf[nrow(transf),ncol(transf)] <- 1 # so it doesn't go extinct if grow=FALSE
+}
+
 
 # ---- start with each species in different site ----
 starting <- matrix(0, nrow=nsite, ncol=nspp)
-start_occ <- sample(1:nsite, nspp) # the sites that start with a species
+start_occ <- sample(1:nsite, nspp, replace=(nspp>nsite)) # the sites that start with a species
 starting[as.matrix(data.frame(row=start_occ, col=1:nspp))] <- 1
 
 # ---- dynamics ----
@@ -94,6 +107,30 @@ par(new=TRUE)
 plot(rangeSize_mu, betaDiv_hellinger, type='l', xaxt='n', yaxt='n', xlab='', ylab='', col='red')
 # dev.off()
 
+# =================
+# = Gif Animation =
+# =================
+old.wd <- getwd()
+setwd("~/Desktop")
+saveGIF(
+	{
+		ani.options(inverval=0.0001)
+		for(i in 1:n_iter){
+			# par(mfrow=c(1,1), mar=c(2,2,0.5,0.1), ps=10, cex=1, mgp=c(0.5,0.15,0), tcl=-0.15, family="Times")
+			image(occupancy[[i]], xlab='location', ylab='species')
+			
+			par(new=TRUE)
+			plot(1:i, betaDiv_hellinger[1:i], type='l', xaxt='n', yaxt='n', xlab='', ylab='', col='white', lwd=3, ylim=range(betaDiv_hellinger), xlim=c(1,n_iter))
+			lines(1:i, betaDiv_hellinger[1:i])
+			axis(side=4)
+		}
+	
+	},
+	ani.height=400,
+	ani.width=400,
+	movie.name="betaDiv_distribution.gif",
+)
+setwd(old.wd)
 
 
 
