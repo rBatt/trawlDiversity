@@ -1,6 +1,6 @@
 
 library(devtools)
-setwd("~/Documents/School&Work/pinskyPost/trawl")
+setwd("~/Documents/School&Work/pinskyPost/")
 
 # =========================
 # = Uninstall & Reinstall =
