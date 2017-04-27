@@ -75,7 +75,7 @@ library(rbLib) # library(devtools); install_github("rBatt/rbLib")
 # ================
 doc_type <- c("html", "pdf")[1]
 table_type <- c("html"="html", "pdf"="latex")[doc_type]
-options("digits"=3) # rounding output to 4 in kable() (non-regression tables)
+options("digits"=5) # rounding output to 4 in kable() (non-regression tables)
 o_f <- paste(doc_type, "document", sep="_")
 
 # problem with pdflatex in El Capitan? It might be directories. Check http://pages.uoregon.edu/koch/FixLink.pkg
@@ -122,7 +122,6 @@ rR <-  c("observed"="naive_rich", "rarefied"=NA, "msom"="reg_rich")[3]
 lR <-  c("observed"="local_rich_obs", "rarefied"="local_rich_samp", "msom"="local_rich")[2]
 betaD <-  c("observed"="beta_div_obs", "msom"="beta_div_mu")[1]
 
-interactive()
 
 #' There are four primary metrics:  
 #'  - range size  
@@ -235,6 +234,7 @@ kable(rich_trend_kendall,
 #' ##Colonization and Extinction Summary
 #' ###Figure S2.  Barplot of categories
 #+ Richness-col-ext-barplot, include=TRUE, echo=TRUE, fig.height=3.5, fig.width=3.5, fig.cap="**Figure S2.** Number of species beloning to the categories of both, neither, colonizer, leaver in each region"
+# par(cex=1, mar=c(3,1,1,0), ps=8, mgp=c(1,0.25,0), tcl=-0.15, lheight=0.7)
 categ_barplot()
 #+ Richness-col-ext-barplot-table, echo=FALSE
 categ_tbl <- t(spp_master[!duplicated(paste(reg,ce_categ,spp)), table(reg, ce_categ)])[c(4,1,2,3),]
@@ -287,14 +287,37 @@ stargazer(att_categ_print, summary=FALSE, rownames=FALSE, column.sep.width="2pt"
 #'   
 #'   
 #' ###Figure NotIncluded. Time series of colonizations and extinctions
-#+ Richness-col-ext-ts, include=TRUE, echo=TRUE, fig.height=3.5, fig.width=3.5, fig.cap="**Figure NotIncluded.** Number of colonizations (blue) and extinctions (red) over time in each region."
+#+ Richness-col-ext-ts, include=TRUE, echo=TRUE, fig.height=6.8, fig.width=6.8, fig.cap="**Figure NotIncluded.** Number of colonizations (blue) and extinctions (red) over time in each region."
 col_ext_ts()
+
 #' In most regions the differences in colonization and extinction numbers are similar over time. The most obvious exceptions are for the 3 regions that showed large initial spikes in richness; the GOA, GMEX, and AI regions initially have much larger numbers of colonizers than leavers, but this number shrinks rapidly until the two rates are ~equal.  
 #'   
 #' For the regions with significant positive slopes, there is no visually obvious increase in colonizations relative to extinctions over time. Because the colonization and extinction numbers tend to track each other over the long-term, it it would be difficult to attribute the long-term changes in richness to a change in just colonization or extinction rates.
 #'   
 #' **Manuscript paragraph:**  
 #' A time series of richness can be decomposed into the colonizations and extinctions of individual species over time. We categorized species according to the following colonization extinction patterns: present in all years = neither (536 species), colonized and went extinct = both (263 species),  initially absent but present every year after its colonization = colonizer (61 species), initially present but absent every year after its extinction = leaver (4 species). Most regions had the same overall ranking (neither > both > colonizer > leaver), except in the Northeast US where both was the most common and neither second, and in the Aleutian Islands where colonizer was the second most common and both third (**Figure S2**). In general, changes in richness were not due to permanent departures or introductions of species to the region. Furthermore, colonization and extinction rates did not become more dissimilar over time for any region (**Figure NotIncluded**). Colonizations were initially greater than extinctions in Aleutian Islands, Gulf of Alaska, and Gulf of Mexico, but this difference disappeared in the latter portion of these time series, as evidenced by these regions’ initially rapid increase in richness that later plateaued. The other regions did not show strong trends in the difference between colonizations and extinctions over time, making it difficult to attribute the long-term trends in richness to changes in just colonization or just extinction rates.
+
+#'   
+#' \FloatBarrier  
+#'   
+#' ***  
+#'   
+#' ###Figure of Novel Colonizations Per Year
+#+ novelCol-ts, include=TRUE, echo=TRUE, fig.height=6.8, fig.width=6.8
+fp <- spp_master[present==1,.SD[which.min((year))] ,by=c('reg','spp')]
+fp2 <- fp[,list(new_col=sum(col)),keyby=c('reg','year')]
+ry_skele <- unique(spp_master[,list(reg,year)])
+fp3 <- merge(ry_skele, fp2, all=TRUE, by=c('reg','year'))
+fp3[is.na(new_col), new_col:=0]
+par(mfrow=c(3,3))
+fp3[,plot(year, new_col, type='o', main=reg[1]),by=c('reg')]
+#' Reveals similar information as the number of colonizations per year, except it isolates the number of colonizations by species that have never been seen in the region before. This is the rate at which new species are introduced to the region. An important caveat here is that the trends here are probably biased downward because we onlly included species that were observed in at leat 10 year-sites in order to avoid the inclusion of ultra-rare species. These exclusions reduce the odds that species that colonized a limited number of sites towards the end of the time series met the threshold of 10, especially for regions with relatively few strata.  
+#'   
+#' E.g., say that a species colonized Southeast U.S., which has 24 sites, in the last year of sampling --- for this species to be included, it would have had to occupy 42% of the region (10 sites) in its first year present. Across all regions, the average colonizing species occupies only 5% of strata in its first year, and for the 3 species that colonized the Southeast U.S., they colonized only 4.2% of sites, a full order of magnitude lower than what was needed. Depending on the expansion rate, a species would need to first colonize several years before the end of the time series to be included. It's also worth noting that no region has a new colonizing species towards the end of the time series --- this makes a similar point.
+#'   
+#' Because of the way we eliminated species from our data set, our analysis was extremely conservative with regard to detecting changes in richness, particularly if those changes were going to be the result of changes in the rate of novel introductions (right now I'm a little less clear on what sources of species declines might be affected, other than to say that generally fewer species would have been included due to only being present at the beginning [affects declines more] or end [affects increases more] of the time series). Regions with short time series and few sites were especially prone to having muted changes in richness.
+
+
 #'   
 #'   
 #' \FloatBarrier  
@@ -319,7 +342,6 @@ rangeSizeDens()
 #' ###Figure 3. Species richness versus geographic range size
 #+ rich-geo-rangeSize, fig.width=3.5, fig.height=3.5, fig.cap="**Figure 3.** Species richness vs geographic range size. Range size is presented as each species' long-term average of the proportion of sites it occupied. Solid lines are linear regressions with MSOM richness as the response and the horizontal axis and an intercept as the predictors."
 rich_geoRange(rSMet_ltComm, leg=TRUE, legPan=1, panLab=FALSE)
-print(rSMet_ltComm)
 
 #' Range size is a pretty good predictor of species richness. I think I had originally missed the range size relationship b/c I hadn't done the same aggregating procedure. The interpretation I have is that richness is highest when you have a bunch of rare species.  
 #'   
@@ -327,7 +349,7 @@ print(rSMet_ltComm)
 #'   
 #' ###Table. Regressions relating richness to range size
 #+ rich-rangeSize
-range_reg <- make_range_reg(dens="propTow_occ_avg", size="range_size_mu_avg_ltAvg")
+range_reg <- make_range_reg(dens="propTow_occ_avg", size=rSMet_ltComm)
 
 # Fit different models to the whole data set
 # Models vary in which/ how parameters vary among regions
@@ -339,8 +361,8 @@ rSize_mods[[4]] <- lme4::lmer(rich ~ size + (size|reg), data=range_reg) # slope 
 rich_size_smry <- smry_modList(rSize_mods) # summarize to get R^2, AIC, p-vals, etc
 
 # Fit simple model to each region separately 
-rSize_reg_mods <- list()
 ur <- range_reg[,unique(reg)]
+rSize_reg_mods <- structure(vector("list",length(ur)), .Names=ur)
 for(r in 1:length(ur)){
 	rSize_reg_mods[[r]] <- lm(rich ~ size, data=range_reg[reg==ur[r]])
 }
@@ -489,9 +511,25 @@ bestModels[,c(loserNames):=list(NULL)] # drop the loser columns
 # kable(compAIC, caption="Comparing fit of models of varying complexity; more complex models test for differences in the slopes or intercepts of pre-extinction and post-colonization trends.")
 kable(bestModels, caption="Shows each region's best model, and shows the model that was most often the best for all regions (including those for which it wasn't the best). If all regions had the same best model, only 1 model is shown.")
 
+#+ rangeSizeDensity-ColExtTime-reg-compareModels-text
+chosenModels <- bestModels[!is.na(MargR2) & mod_call!=("size~time+type+(time|spp)")]
+mR2Range <-  chosenModels[,range(MargR2)]
+cR2Range <- chosenModels[,range(CondR2)]
+pRange <- chosenModels[,range(pval_time)]
+slopeRange <- chosenModels[,range(time)]
+slopeAvg <- chosenModels[,mean(time)]
+
+sd_ranef <- sapply(sTime_reg_mods1, function(x)sd(coef(x)[[1]][,'time']))
+mean_ranef <- sapply(sTime_reg_mods1, function(x)mean(coef(x)[[1]][,'time']))
+dRange_ranef <- sapply(sTime_reg_mods1, function(x)diff(range(coef(x)[[1]][,'time'])))
+ranef_smry <- data.table(reg=names(sd_ranef), sd_ranef=sd_ranef, mean_ranef=mean_ranef, dRange_ranef=dRange_ranef)
+ranef_smry[,c("sd_mean","dR_mean"):=list(sd_ranef/mean_ranef, dRange_ranef/mean_ranef)]
+#' ####Summary of Range Size ~ Time Until Extinction Regression Fits
+#' after correcting for multiple tests, all $p \leq `r pRange[2]`; `r mR2Range[1]` \leq mR^2 \leq `r mR2Range[2]`; `r cR2Range[1]` \leq cR^2 \leq `r cR2Range[2]`$. For slope, $`r slopeRange[1]*10` \leq \beta \leq `r slopeRange[2]*10`, \bar{\beta} = `r slopeAvg*10`$ percent per decade.
+
 
 #+ rangeSize-timeUntil-detailedFigure, fig.width=6.8, fig.height=6.8
-par(mfrow=c(3,3), mgp=c(0.85,0.2,0), ps=8, cex=1, mar=c(1.75,1.75,0.75,0.5), oma=c(0.5,0.5,0.1,0.1), tcl=-0.15)
+par(mfrow=c(3,3), mgp=c(0.85,0.2,0), ps=8, cex=1, mar=c(1.75,1.5,0.75,0.5), oma=c(0.5,0.5,0.1,0.1), tcl=-0.15)
 for(r in 1:length(ur)){
 	t_reg <- ur[r]
 	t_dat <- rangeTimeDT[reg==t_reg]
@@ -501,7 +539,7 @@ for(r in 1:length(ur)){
 	scatterLine(t_dat, x="time", y="size", lineBy="spp", colBy=adjustcolor(pretty_col[t_reg], 1), lwdBy=0.5, type='p', xlab="", ylab="")
 	t_dat[,points(mean(time), mean(size), pch=19, col='black', cex=1.2),by=c('time')]
 	t_dat[,points(mean(time), mean(size), bg=pretty_col[t_reg], pch=21, col='white'),by=c('time')]
-	mtext(pretty_reg[t_reg], line=-0.2, side=3, adj=0.1, font=2)
+	mtext(pretty_reg[t_reg], line=0, side=3, adj=0.1, font=2)
 }
 mtext("Time to Event", side=1, line=-0.5, outer=TRUE)
 mtext("Range Size", side=2, line=-0.5, outer=TRUE)
@@ -531,14 +569,17 @@ o[,j={hist(Rsquared, main=type[1]);NULL},by='type']
 
 # p value vs number of years in series
 setorder(o, nTime)
-o[,j={plot(nTime,Pr); lines(spline(Pr~nTime),col='red',lwd=2)}]
-abline(h=0.05, lwd=1.5)
-abline(h=0.05, col='white', lwd=0.5)
+# o[,j={plot(nTime,Pr); lines(spline(Pr~nTime),col='red',lwd=2)}]
+# abline(h=0.05, lwd=1.5)
+# abline(h=0.05, col='white', lwd=0.5)
+o[,mean(Pr),by='nTime'][,plot(nTime, V1)]; 
+abline(h=0.05, col='blue', lty=2)
 
 # slope vs number of years in series
-o[,j={plot(nTime,Estimate); lines(spline(Estimate~nTime),col='red',lwd=2)}]
-abline(h=0, lwd=1.5)
-abline(h=0, col='white', lwd=0.5)
+# o[,j={plot(nTime,Estimate); lines(spline(Estimate~nTime),col='red',lwd=2)}]
+# abline(h=0, lwd=1.5)
+# abline(h=0, col='white', lwd=0.5)
+o[,mean(Rsquared),by='nTime'][,plot(nTime, V1)]; 
 
 #+ rangeSize_time_sepRegs-table1, echo=FALSE
 kable(rangeTime_signif, caption="Significant trends in range size before ext/ after col. Sample size is number of 'stretches'.")
@@ -555,130 +596,6 @@ kable(rangeTime_signif[,list(proportionSignificant=mean(propSignificant)),by=c("
 #' ***  
 #'   
 #'   
-#' #Supplement
-#' ##Bin Size
-#+ bin_size, fig.width=7, fig.height=7, fig.cap="**Bin Size** How Bin size (lon, lat, depth) affects the number of sites in a region. The vertical axis is the size of the depth bin in meters, horizontal axis is the size of the lon-lat bin in degrees, and the colors indicate the number of sites in that region that are sampled for at least 85% of years."
-load("../manuscript/manuscript_binSize.RData")
-par(mfrow=c(3,3), mar=c(3,3,0.5,3), oma=c(1,1,1,0.5))
-for(r in 1:length(regs)){
-	image(bin_sites[[r]], axes=FALSE, col=fields::tim.colors())
-	mtext(regs[r], side=3, line=0, font=2)
-	xl <- as.numeric(rownames(bin_sites[[r]]))
-	yl <- as.numeric(colnames(bin_sites[[r]]))
-	axis(1, at=seq(0,1, length.out=length(xl)), labels=xl)
-	axis(2, at=seq(0,1, length.out=length(yl)), labels=yl)
-	if(r==length(regs)){
-		mtext("Longitude-latitude bin size (degrees)", side=1, line=0, outer=TRUE)
-		mtext("Depth bin size (meters)", side=2, line=-0.5, outer=TRUE)
-	}
-	fields::image.plot(bin_sites[[r]], axes=FALSE, legend.only=TRUE, graphics.reset=TRUE)
-}
-
-#+ bin_size_scaled, fig.width=4, fig.height=7, fig.cap="**Bin Size** How Bin size (lon, lat, depth) affects the number of sites in a region. To compare across regions, we can first z-score each region, then take the cross-region average for each bin size combination."
-scaled_bin_sites <- lapply(bin_sites, function(x){x2 <- x; x2[,] <- scale(c(x)); x2})
-mean_sbs <- apply(simplify2array(scaled_bin_sites), c(1,2), mean, na.rm=TRUE)
-min_sbs <- apply(simplify2array(scaled_bin_sites), c(1,2), min, na.rm=TRUE)
-par(mfrow=c(2,1), mar=c(4,4,1,5))
-
-image(mean_sbs, axes=FALSE, col=fields::tim.colors())
-mtext("cross-region average of z-scores", side=3, line=0, font=2)
-xl <- as.numeric(rownames(bin_sites[[1]]))
-yl <- as.numeric(colnames(bin_sites[[1]]))
-axis(1, at=seq(0,1, length.out=length(xl)), labels=xl)
-axis(2, at=seq(0,1, length.out=length(yl)), labels=yl)
-mtext("Longitude-latitude bin size (degrees)", side=1, line=2)
-mtext("Depth bin size (meters)", side=2, line=2)
-fields::image.plot(mean_sbs, axes=FALSE, legend.only=TRUE, graphics.reset=TRUE)
-
-image(min_sbs, axes=FALSE, col=fields::tim.colors())
-mtext("cross-region minimum of z-scores", side=3, line=0, font=2)
-axis(1, at=seq(0,1, length.out=length(xl)), labels=xl)
-axis(2, at=seq(0,1, length.out=length(yl)), labels=yl)
-mtext("Longitude-latitude bin size (degrees)", side=1, line=2)
-mtext("Depth bin size (meters)", side=2, line=2)
-fields::image.plot(min_sbs, axes=FALSE, legend.only=TRUE, graphics.reset=TRUE)
-
-
-#' ##Table of Tows per Site, Sites per Region
-#+ counts_years_sites_tows_spp
-sumry_counts <- data_all[reg!="wcann", 
-	j = {
-		yi <- table(diff(sort(unique(year))))
-		yi_form <- paste0(names(yi), paste("(",yi,")",sep=""))
-		data.table(
-			"N" = trawlData::lu(year),
-			"Years" = paste(min(year),max(year),sep=" - "),
-			"Frequency" = paste(yi_form,collapse=", "),
-			"Sites" = trawlData::lu(stratum), 
-			"Tows" = paste0(
-				.SD[,trawlData::lu(haulid),by=c("stratum","year")][,max(V1)],
-				paste0("(",.SD[,trawlData::lu(haulid),by=c("stratum","year")][,round(mean(V1),1)],")")
-				),
-			"Species" = trawlData::lu(spp)
-		)
-	}, 
-	by=c('reg')
-]
-setnames(sumry_counts, 'reg', "Region")
-sumry_counts[,Region:=factor(Region, levels=c("ebs","ai","goa","wctri","gmex","sa","neus","shelf","newf"), labels=c("E. Bering Sea","Aleutian Islands","Gulf of Alaska","West Coast US","Gulf of Mexico","Southeast US", "Northeast US", "Scotian Shelf","Newfoundland"))]
-setkey(sumry_counts, Region)
-
-sumry_counts[,Org:=c("AFSC","AFSC","AFSC","NMFS","GSMFC","SCDNR","NEFSC","DFO","DFO")]
-stargazer(sumry_counts, summary=FALSE, rownames=FALSE, column.sep.width="2pt", digits.extra=0, digits=NA)
-
-# \begin{table}[!htbp] \centering
-# %  \caption{}
-# %  \label{}
-# \begin{tabular}{@{\extracolsep{2pt}} cccccccc}
-# \\[-1.8ex]\hline
-# \hline \\[-1.8ex]
-# Region & N & Years & Frequency & Sites & Tows & Species & Org \\
-# \hline \\[-1.8ex]
-# E. Bering Sea & $31$ & 1984 - 2014 & 1(30) & $138$ & 4(1.6) & $110$ & $\text{AFSC}^{*}$ \\
-# Aleutian Islands & $12$ & 1983 - 2014 & 2(5), 3(4), 4(1), 5(1) & $82$ & 12(2.8) & $55$ & $\text{AFSC}^{*}$ \\
-# Gulf of Alaska & $13$ & 1984 - 2013 & 2(7), 3(5) & $89$ & 15(4.4) & $98$ & $\text{AFSC}^{*}$ \\
-# West Coast US & $10$ & 1977 - 2004 & 3(9) & $84$ & 91(4.7) & $92$ & $\text{NMFS}^{\dagger}$ \\
-# Gulf of Mexico & $17$ & 1984 - 2000 & 1(16) & $39$ & 39(5.7) & $144$ & $\text{GSMFC}^{\ddagger}$ \\
-# Southeast US & $25$ & 1990 - 2014 & 1(24) & $24$ & 13(3.9) & $104$ & $\text{SCDNR}^{\S}$ \\
-# Northeast US & $32$ & 1982 - 2013 & 1(31) & $100$ & 10(3) & $141$ & $\text{NEFSC}^{\P}$ \\
-# Scotian Shelf & $41$ & 1970 - 2010 & 1(40) & $48$ & 11(2.5) & $48$ &$\text{DFO}^{\nabla}$ \\
-# Newfoundland & $16$ & 1996 - 2011 & 1(15) & $191$ & 9(2.2) & $72$ & $\text{DFO}^{\nabla}$ \\
-# \hline \\[-1.8ex]
-# \end{tabular}
-# \end{table}
-
-# knitr::kable(sumry_counts, caption="Years = Total number of years sampled, Year Range = the minimum and maximum of years sampled, Year Interval = the number of years elapsed between samples (and the frequency of this interval in parentheses), Sites = the total number of sites in the region, Max. Tows = maximum number of tows per site per year, Average Tows = the average number of tows per site per year, Total Species = the total number of species observed in the region across all sites and years.")
-
-
-#' ##Years Excluded & Strata Sampled
-#+ excluding_years_strata, fig.width=7, fig.height=7, fig.cap="**Trimming Years b/c of Strata, Counts of Analyzed and Excluded Strata** Along the vertical axis is a stratum ID. Along the horizontal axis is a year of sampling. The colors are binary: the light color indicates that the stratum was sampled in that year, and the red color indicates that the stratum was not sampled. The vertical line indicates that years at the line or to the left (if the line is on the left half of graph) or to the right (if line is on right half of graph) were excluded from the analysis, inclusively. E.g., for E. Bering Sea (ebs), 1982 and 1983 were excluded. Three regions had no years excluded (ai = Aleutian Islands, goa = Gulf of Alaska, wctri West Coast US).  The last three regions had years excluded because of changes in the number or location of strata sampled: gmex = Gulf of Mexico 1983 < years < 2001; newf = Newfoundland 1995 < years; sa = Southeast US 1989 < years. Three regions had years excluded for reasons other than number of strata sampled: ebs = E. Bering Sea years < 1984, years excluded due to massive early increase in number of species sampled each year, change in identification suspected; neus = Northeast US 1981 < years < 2014; shelf = Scotian Shelf years < 2011, bottom temperature not available in final year (used as covariate in occupancy model). Finally, note that in GoA strata had to be present in 100% of years or else they were not included; this was done b/c in 2001 the western-most stratum that was sampled was much further to the east than in other years. Similarly, in E. Bering Sea strata had to be present in all years, otherwise the Northeastern extent of the sampled range was reduced substantially in several years."
-
-reg_depthStratum <- trim_msom_settings('depth')
-reg_tolFraction <- trim_msom_settings('tolerance')
-yr_subs <- trim_msom_settings('years_logic')
-yr_ablin <- trim_msom_settings('years_cutoff')
-regs <- names(reg_tolFraction)
-yregs <- names(yr_subs)
-
-par(mfrow=c(3, 3), mar=c(2,2,1,0.25), cex=1, mgp=c(1,0.15,0), tcl=-0.15, ps=8)
-for(r in 1:length(yregs)){
-	b <- trim_msom(yregs[r], gridSize=0.5, grid_stratum=TRUE, depthStratum=reg_depthStratum[yregs[r]], tolFraction=0.5, plot=FALSE, cull_show_up=FALSE, trimYears=FALSE)
-	b_tbl <- b[,table(year,stratum)>0]
-	b_tbl <- b_tbl[,order(colSums(b_tbl))]
-	image(b_tbl, axes=FALSE)
-	at_vals <- seq(0,1,length.out=nrow(b_tbl))
-	axis(1, at=at_vals, labels=rownames(b_tbl))
-	abline(v=at_vals[rownames(b_tbl)%in%yr_ablin[[r]]])
-	mtext(yregs[r], side=3, line=0, adj=0, font=2)
-}
-
-#' ##Years Excluded & Strata Excluded, Part 2
-#+ excluding_years_strata_part2_allStrata, fig.width=5.5, fig.height=10, fig.cap="**Trimming Years b/c of Stratum Locations, Stats for Analyzed and Excluded Strata**  The number and coordinate extreme of strata in each region if all years had been included in the analysis, and if strata were only removed if they were absent in more than 15% of years. Note that the 15%  tolerance rule used here can differ from the implemented rule in two ways: 1) for regions with years excluded, the increased number of years may change whether or not a stratum meets the 15% cutoff; 2) two of the regions (E Bering Sea and Gulf of Alaska) had a 0% tolerance, therefore the same strata were sampled in each year for these regions (though the changes in coordinate extrema and stratum count illustrate the need for the unique tolerance rule in these regions)."
-plot_excludeYearsStrata(TRIM=FALSE)
-
-
-#+ excluding_years_strata_part2_analyzedStrata, fig.width=5.5, fig.height=10, fig.cap="**Trimming Years b/c of Stratum Locations, Stats for the Analyzed Strata** Changes in stratum statistics (number of strata, min/max lon/lat) for strata included in results in paper."
-plot_excludeYearsStrata(TRIM=TRUE)
 
 #' 
 #'   
@@ -740,31 +657,6 @@ mtext("Observed Regional (red) and Mean Local (black) Richness", side=3, line=-0
 #' In general, local richness and regional richness are similar. There are differences, possibly in some cases the regional slope might be significant whereas local would not be (I haven't checked, though). However, the trends aren't in opposite directions at the two scales.
 
 
-#' 
-#'   
-#' \FloatBarrier  
-#'   
-#' ***  
-#'   
-#'   
-#' ##All Years All Species Present or Absent
-#+ pres-abs-allSpp-time, fig.width=5, fig.height=7
-# pdf("~/Desktop/pres-abs-allSpp-time.pdf",width=5, height=7)
-par(mfrow=c(3,3)) # remove this line for separate images; names then readable
-ureg <- spp_master[,unique(reg)]
-for(r in 1:length(ureg)){
-	t_table <- spp_master[reg==ureg[r] & present==1, table(spp,year)]
-	t_table2 <- t(t_table)#[ncol(t_table):1,]
-	t_table3 <- t_table2[,order(colSums(t_table2))]
-
-	par(mar=c(1,5,0.5,1), ps=8, mgp=c(0.75,0.2,0), tcl=-0.15)
-	image(t_table3, axes=FALSE)
-	abline(h=seq(0,1,length.out=ncol(t_table3)), v=seq(0,1,length.out=nrow(t_table3)), col='gray', lty='dotted', lwd=0.5)
-	axis(side=2, at=seq(0,1,length.out=ncol(t_table3)), label=colnames(t_table3), las=1, cex.axis=0.5)
-	axis(side=1, at=seq(0,1,length.out=nrow(t_table3)), label=rownames(t_table3))
-	text(0.95,0.95, label=ureg[r], font=2)
-}
-# dev.off()
 #' 
 #'   
 #' \FloatBarrier  
@@ -907,7 +799,7 @@ kable(rbind(ctExpansionStats,lapply(ctExpansionStats, meanNum), ctExpansionStats
 #+ rangeProbExt-modelFit, results='markup'
 std_range_t1 <- spp_master[ce_categ!='neither' & ce_categ!="colonizer", j={
 	
-	std_range <- .SD[,list(year, ext, std_range=c(scale(get(rSMet_base))), ext_dist=ext_dist),by=c("spp")]
+	std_range <- .SD[,list(year, ext, std_range=c((get(rSMet_base))), ext_dist=ext_dist),by=c("spp")]
 	setkey(std_range, spp, year)
 	std_range_t1 <- std_range[present==1,list(year=year[-1], ext=ext[-1], std_range=std_range[-1], std_range_t1=head(std_range, -1), ext_dist=ext_dist[-1]),by=c("spp")]
 	
@@ -932,7 +824,8 @@ for(r in 1:length(ur)){
 	rangeExtProb2[[t_reg]] <- summary(glm(ext~std_range+nspp, family='binomial', data=t_dat))
 	rangeExtProb3[[t_reg]] <- summary(glm(ext~std_range*nspp, family='binomial', data=t_dat))
 }
-(smry_modList(rangeExtProb1, pred_name="std_range"))
+rangeExtProb1_smry <- (smry_modList(rangeExtProb1, pred_name="std_range"))[,reg:=names(rangeExtProb1)]
+rangeExtProb1_smry[,BH:=p.adjust(p.value, method='BH')]
 
 #' ###Figure for Range Size Year before Extinction
 #+ rangeProbExt-modelFit-fig, fig.width=6, fig.height=6
@@ -949,37 +842,51 @@ for(r in 1:length(ur)){
 #'   
 #' ***  
 #'   
+#' ##Do Transient Species Have Smaller Ranges than Core Species?
+#+ comp-transCore-range
+transRange <- spp_master[,list(reg=reg, spp=spp, transient=(ce_categ!='neither'),rangeSize=range_size_samp)]
+ur <- names(pretty_reg)
+nr <- length(ur)
+tR_mod <- structure(vector('list', length(ur)), .Names=ur)
+for(r in 1:nr){
+	tR_mod[[ur[r]]] <- lmer(rangeSize~transient + (1|spp), data=transRange[reg==ur[r]])
+}
+tR_mod_smry <- smry_modList2(tR_mod)
+kable(tR_mod_smry)
+
+
+#'   
+#' \FloatBarrier  
+#'   
+#' ***  
+#'   
 #' ###Statistics for Range Size Predicting Years until Extinction
 #+ rangeProbExt-modelFit2, results='markup'
-print(std_range_t1[,{print(summary(glm(ext_dist~std_range, family='poisson')));NULL},by='reg'])
-print(std_range_t1[,{print(summary(glmer(ext~std_range+(std_range|reg), family='poisson')));NULL}])
+make_timeRange <- function(densName=c("propTow_occ"), sizeName=c("range_size_samp","range_size_mu","propStrata")){
+	rangeTimeDT <-  spp_master[stretch_type=="pre_ext" & !is.na(stretch_type) & propStrata!=0]
+	rangeTimeDT <- rangeTimeDT[,list(
+		reg=reg, 
+		event=as.character(event_year), 
+		spp=spp, 
+		type=as.character(stretch_type),
+		time=ext_dist, 
+		size=get(sizeName),
+		density=get(densName)
+	)]
+	return(rangeTimeDT)
+}
 
-# Set up -- region names and empty named lists
-ur <- std_range_t1[,unique(reg)]
-rangeExtProb1_2 <- structure(vector("list",length(ur)), .Names=ur)
-rangeExtProb2_2 <- structure(vector("list",length(ur)), .Names=ur)
-rangeExtProb3_2 <- structure(vector("list",length(ur)), .Names=ur)
-
-# Fit 3 models for each region
+timeRangeDT <- make_timeRange()
+ur <- timeRangeDT[,unique(reg)]
+sTime_reg_mods_Inv <- structure(vector("list",length(ur)), .Names=ur)
 for(r in 1:length(ur)){
 	t_reg <- ur[r]
-	t_dat <- std_range_t1[reg==t_reg]
-	rangeExtProb1_2[[t_reg]] <- (glm(ext_dist~std_range, family='poisson', data=t_dat))
-	rangeExtProb2_2[[t_reg]] <- (glmer(ext_dist~std_range+(std_range|spp), family='poisson', data=t_dat))
-	# rangeExtProb3_2[[t_reg]] <- summary(glm(ext_dist~std_range*(std_range|spp), family='poisson', data=t_dat))
+	t_dat <- timeRangeDT[reg==t_reg]
+	sTime_reg_mods_Inv[[t_reg]] <- lme4::lmer(time ~ size + (size|spp), data=t_dat)
 }
-(rangeExtProb1_2_smry <- smry_modList(rangeExtProb1_2, pred_name="std_range"))
-(rangeExtProb2_2_smry <- smry_modList2(rangeExtProb2_2))
+sTime_reg_smry_Inv <- smry_modList2(sTime_reg_mods_Inv)
+kable(sTime_reg_smry_Inv)
 
-#' ###Figure for Range Size Predicting Years until Extinction
-#+ rangeProbExt-modelFit2-fig, fig.width=6, fig.height=6
-par(mfrow=c(3,3), mar=c(2.5,2.5,1.5,0.5), ps=10, mgp=c(0.75,0.15,0), tcl=-0.15)
-for(r in 1:length(ur)){
-	std_range_t1[reg==ur[r],plot(std_range, ext_dist)]
-	new_r <- std_range_t1[reg==ur[r],sort(std_range)]
-	lines(new_r, predict(rangeExtProb1_2[[ur[r]]], newdata=data.frame(std_range=new_r), type='response'))
-	mtext(pretty_reg[ur[r]], side=3, line=0, adj=0.1, font=2)
-}
 
 
 
@@ -1006,16 +913,6 @@ boxRange_colRich(range_type="range_size_samp")
 plotSiteMap()
 
 
-#' 
-#'   
-#' \FloatBarrier  
-#'   
-#' ***  
-#'   
-#'   
-#' #Boxplot Time Series of Tows per Site
-#+ towsPerSite-timeSeries, width=6.5, height=6.5, caption="Cross-site distribution (boxplot) of the number of tows (per site) over time, for each region."
-plot_towsPerSiteTS()
 
 #'   
 #' \FloatBarrier  
@@ -1028,6 +925,28 @@ dat <- merge(transExpansionStats, comm_master[,coef(lm(reg_rich~year))[2], by='r
 dat[,summary(lm(V1~year))]
 dat[,plot(year, V1, col=pretty_col[reg], pch=19, xlab="Rate of Range Expansion by Transient Species", ylab="Rate of Change in Species Richness")]
 #' The significance of this trend depends on Southeast US, though. I'm not sure I want to get into defending a plot based on an outlier, and the fact that I didn't account for uncertainty in the x-axis.  
+
+#'   
+#' \FloatBarrier  
+#'   
+#' ***  
+#'   
+#' ##Beta Div vs CRI
+#+ betaDiv-CRI-plot, fig.with=3.5, fig.height=3.5
+par(mfrow=c(3,3), mar=c(1.85,1.85, 0.5,0.5), mgp=c(0.65, 0.15, 0), oma=c(0.5, 0.5, 0.25, 0.1), tcl=-0.15, ps=8, cex=1)
+ur <- names(pretty_reg)[names(pretty_reg)%in%comm_master[,unique(reg)]]
+nr <- length(ur)
+for(r in 1:nr){
+	comm_master[reg==ur[r],j={
+		plot(beta_div_obs, propStrata_avg_ltAvg, xlab='', ylab='')
+		mod <- lm(propStrata_avg_ltAvg~beta_div_obs)
+		abline(mod)
+	}]
+	mtext(pretty_reg[ur[r]], side=3, adj=0.1, font=2)
+}
+
+
+
 
 #' 
 #'   
