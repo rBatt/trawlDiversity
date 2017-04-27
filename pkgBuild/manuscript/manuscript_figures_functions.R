@@ -74,7 +74,7 @@ rangeSize_absenceTime <- function(pred_var=c("propStrata", "range_size_samp", "r
 # 	avg_prev_abs_scale2 <- spp_master[!is.na(ext_dist) & ext_dist!=0,list(rangeSize=range_size_mu-min(range_size_mu), propTow_occ, ext_dist, stretch_type),by=c("reg","spp")] # scaling to minimum of 0
 # 	avg_prev_abs <- avg_prev_abs_scale2[,list(rangeSize=mean(rangeSize), rangeDensity=mean(propTow_occ)),by=c("reg","ext_dist","stretch_type")]
 	
-	par(mfrow=c(length(pred_var),2), mar=c(1.65,1.65,0.25,0.25), oma=c(0.1,0.1,0.1,0.1), cex=1, ps=8, mgp=c(0.75,0.1,0), tcl=-0.1, ylbias=0.35)
+	par(mfrow=c(length(pred_var),2), mar=c(2.0,1.65,0.25,0.25), oma=c(0.1,0.1,0.1,0.1), cex=1, ps=8, mgp=c(0.75,0.1,0), tcl=-0.1, ylbias=0.35)
 	counter <- 0
 	for(v in 1:length(pred_var)){
 		pv <- pred_var[v]
@@ -238,9 +238,9 @@ rich_geoRange <- function(gR0=c("propStrata_avg_ltAvg", "range_size_samp_avg_ltA
 	gR0 <- match.arg(gR0, several.ok=TRUE)
 	if(length(gR0)>1){
 		mfr <- rbLib::auto.mfrow(length(gR0), tall=TRUE)
-		par(mfrow=mfr, mar=c(1.75,1.5,0.25,0.25),mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
+		par(mfrow=mfr, mar=c(1.85,1.5,0.25,0.25),mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
 	}else{
-		par(mar=c(1.75,1.5,0.25,0.25),mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
+		par(mar=c(1.85,1.5,0.25,0.25),mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
 	}
 	for(g in 1:length(gR0)){
 		gR <- switch(gR0[g],
@@ -324,25 +324,46 @@ categ_barplot <- function(){
 	colnames(categ_table) <- pretty_reg[colnames(categ_table)]
 	colnames(categ_table) <- gsub("^(.*) (.*)$", "\\1\n\\2", colnames(categ_table))
 	rownames(categ_table) <- c("neither"="Core (always present)","both"="Both (C. & L.)","colonizer"="Colonizing (only)","leaver"="Leaving (only)")[rownames(categ_table)]
-	par(cex=1, mar=c(3,2,1,0.1), ps=8)
-	bp <- barplot(categ_table, beside=T, legend=T, names.arg=rep("",ncol(categ_table)), args.legend=list(bty='n'))
-	text(colMeans(bp)-1, -11, labels=colnames(categ_table), srt=45, xpd=TRUE)
+	par(cex=1, mar=c(3,1,1,0), ps=8, mgp=c(1,0.25,0), tcl=-0.15, lheight=0.7)
+	bp <- barplot(categ_table, beside=T, legend=T, names.arg=rep("",ncol(categ_table)), args.legend=list(bty='n', x='topright', inset=c(0,-0.1)))
+	text(colMeans(bp)-1.5, -11, labels=colnames(categ_table), srt=45, xpd=TRUE)
 	invisible(NULL)
 }
 
 # ---- Colonization / Extinction Time Series ----
 col_ext_ts <- function(){
 	eval(figure_setup())
-	par(mfrow=c(3,3), mar=c(1.25,1.0,0.5,0.1), oma=c(0.35,0.5,0.1,0.1), mgp=c(0.25,0.1,0), tcl=-0.1, ps=8, cex=1)
-	for(r in 1:length(regs)){
-		comm_master[reg==regs[r],j={
-			ylim=range(c(n_col,n_ext));
-			plot(year, n_col, main=pretty_reg[una(reg)], type='l', col='blue', ylim=ylim, xlab="", ylab="", cex.main=1)
-			lines(year, n_ext, col='red')
-		}]
+	# par(mfrow=c(3,3), mar=c(1.25,1.0,0.5,0.1), oma=c(0.35,0.5,0.1,0.1), mgp=c(0.25,0.1,0), tcl=-0.1, ps=8, cex=1)
+# 	for(r in 1:length(regs)){
+# 		comm_master[reg==regs[r],j={
+# 			ylim=range(c(n_col,n_ext));
+# 			plot(year, n_col, main=pretty_reg[una(reg)], type='l', col='blue', ylim=ylim, xlab="", ylab="", cex.main=1)
+# 			lines(year, n_ext, col='red')
+# 		}]
+# 	}
+# 	mtext("Colonizations or Extinctions", side=2, line=-0.2, outer=TRUE)
+# 	mtext("Year", side=1, line=-0.5, outer=TRUE)
+
+	ceDT <- melt.data.table(comm_master[,list(reg,year, n_col, n_ext)], id.vars=c("reg","year"), value.name="nCE", variable.name="CE")
+	par(mfrow=c(3,3), mar=c(1.75,1.75,0.5,0.5), mgp=c(0.75,0.15,0), oma=c(0.5,0.5,0.5,0.1), tcl=-0.15, ps=8, cex=1)
+	ur <- ceDT[,names(pretty_reg)[names(pretty_reg)%in%unique(reg)]]
+	nr <- length(ur)
+	for(r in 1:nr){
+		td <- ceDT[reg==ur[r]]
+		# scatterLine(td, "year", "nCE", lineBy="CE", ltyBy=0, lwdBy=4, colBy=bquote(c('n_col'='blue', 'n_ext'='red')[CE]), col=bquote(c('n_col'='blue', 'n_ext'='red')[CE]), type='o', pch=20, xlab="", ylab="") # bquote(as.integer(as.factor(CE)))
+		ylim <- td[,range(nCE)]
+		xlim <- td[,range(year)]
+		td[CE=="n_col", plot(year, nCE, type='o', ylim=ylim, xlim=xlim, xlab='', ylab='', col='blue', pch=20)]
+		td[CE=="n_ext", lines(year, nCE, type='o', col='red', pch=20)]
+		abline(td[CE=='n_col', lm(nCE~year)], col='blue', lwd=4)
+		abline(td[CE=='n_ext', lm(nCE~year)], col='red', lwd=4)
+		
+		mtext(pretty_reg[ur[r]], side=3, line=0, font=2, adj=0.1, col='black') # pretty_col[ur[r]]
+		if(r==2){legend("top", legend=c("Colonizations", "Extinctions"), text.col=c("blue","red"), bty='n', text.font=2, inset=c(0.0, -0.05), y.intersp=0.5)}
 	}
-	mtext("Colonizations or Extinctions", side=2, line=-0.2, outer=TRUE)
-	mtext("Year", side=1, line=-0.5, outer=TRUE)
+	mtext("Year", side=1, line=-0.5, outer=TRUE, cex=1.1)
+	mtext("Number of Colonizations or Extinctions", side=2, line=-0.5, outer=TRUE, cex=1.1)
+
 	invisible(NULL)
 }
 
@@ -396,7 +417,7 @@ nb_moranI <- function(ce=c("colonization", "extinction")){
 rangeSizeDens <- function(){
 	eval(figure_setup())
 	
-	par(mfrow=c(2,1), mar=c(1.75,1.5,0.25,0.25),mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
+	par(mfrow=c(2,1), mar=c(2,1.5,0.25,0.25),mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
 	range_reg_spp <- spp_master[,list(reg, year, density=propTow_occ, size=propStrata)]
 	range_reg_spp[,plot(size, density, col=adjustcolor(pretty_col[reg],0.1), xlab="Range size", ylab="Range density", pch=16)]
 	ur <- range_reg_spp[,unique(reg)]
@@ -421,7 +442,7 @@ rangeSizeDens <- function(){
 ceEventRange <- function(pred_vars = c("mean_size", "mean_density")){
 	eval(figure_setup())
 	pred_vars <- match.arg(pred_vars, several.ok=TRUE)
-	par(mfrow=c(length(pred_vars),1), mar=c(1.75,1.5,0.25,0.25),mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
+	par(mfrow=c(length(pred_vars),1), mar=c(2.0,1.5,0.25,0.25),mgp=c(0.85,0.1,0), tcl=-0.1, cex=1, ps=8)
 	
 	range_ceEvents <- spp_master[present==1,.SD[,list(mean_size=mean(range_size_samp), mean_density=mean(propTow_occ), total_colExt=sum(col+ext)),by='spp'],by='reg']
 	ur <- range_ceEvents[,unique(reg)]
@@ -610,7 +631,7 @@ boxRange_colRich <- function(range_type=c("range_size_samp", "range_size_mu", "p
 plot_rangeSize_FullTrans <- function(range_type=c("range_size_samp", "range_size_mu", "propStrata")){
 	range_type <- match.arg(range_type)
 	
-	par(mfrow=c(3,3), mgp=c(0.85,0.2,0), ps=8, cex=1, mar=c(1.25,1.25,0.5,0.5), oma=c(0.75, 0.75, 0.1, 0.1), tcl=-0.15)
+	par(mfrow=c(3,3), mgp=c(0.85,0.2,0), ps=8, cex=1, mar=c(1.25,1.25,0.5,0.5), oma=c(0.85, 0.75, 0.1, 0.1), tcl=-0.15)
 	ur <- names(pretty_reg)[names(pretty_reg)%in%spp_master[,unique(reg)]]
 	for(r in 1:length(ur)){
 		rr <- ur[r]
