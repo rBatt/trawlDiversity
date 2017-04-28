@@ -1,8 +1,8 @@
 
 # run on amphiprion: 
-# nohup R CMD BATCH -cwd --no-save trawlDiversity/pkgBuild/test/msom_source_script.R &
+# nohup R CMD BATCH -cwd --no-save pkgBuild/test/msom_source_script.R &
 
-# nohup R CMD BATCH -cwd --no-save trawlDiversity/pkgBuild/test/msom_source_script.R msom_source_script_AllRegs_annual_jags_sppChecked_r2-3.Rout &
+# nohup R CMD BATCH -cwd --no-save pkgBuild/test/msom_source_script.R msom_source_script_AllRegs_annual_jags_sppChecked_r2-3.Rout &
 
 
 # ========
