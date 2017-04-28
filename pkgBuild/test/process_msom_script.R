@@ -1,5 +1,5 @@
 
-# nohup R CMD BATCH -cwd --no-save trawlDiversity/pkgBuild/test/process_msom_script.R process_msom_script.Rout &
+# nohup R CMD BATCH -cwd --no-save pkgBuild/test/process_msom_script.R process_msom_script.Rout &
 
 library("rstan")
 library("trawlDiversity")
@@ -16,7 +16,8 @@ reg_file <- c(
 	# "msomStatic_norv_1yr_ebs_jags_6kIter_89nZ_start2016-03-13_r1.RData", # ebs 6k iter
 	# "msomStatic_norv_1yr_ebs_jags_start2016-03-10_16-44-44_r1.RData", # ebs 6k iter, converged
 	
-		"msomStatic_norv_1yr_ai_jags_12kIter_50nZ_start2016-05-07_r2.RData",
+		"msomStatic_norv_1yr_ai_jags_12kIter_50nZ_start2017-04-28_r2.RData", # leopard skate removed
+	# "msomStatic_norv_1yr_ai_jags_12kIter_50nZ_start2016-05-07_r2.RData",
 	# "msomStatic_norv_1yr_ai_jags_12kIter_50nZ_start2016-04-04_r2.RData", # ai 12k iter, 4th yr didn't converge
 	# "msomStatic_norv_1yr_ai_jags_12kIter_50nZ_start2016-03-23_r2.RData", # ai 12k iter -- converged
 	# "msomStatic_norv_1yr_ai_jags_60kIter_61nZ_start2016-03-14_r2.RData", # ai, 60k iter, didn't converge
