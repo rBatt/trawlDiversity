@@ -89,6 +89,21 @@ for(i in 1:length(reg_file)){
 	
 	rm_out <- rm_out[[reg_results_ind]]
 	
+	#' #TODO: Remove if I ever re-run MSOM for all regions; I added a check on inputData to make sure it doesn't include species that aren't in data_all .... 
+	# sort(unique(unlist(sapply(rm_out, function(x){(dimnames(x$inputData$X)$spp)[!grepl("Unknown", dimnames(x$inputData$X)$spp)]})))) # the unique species from all years (ignoring 'unknowns')	
+	fix2names <- function(x){
+		nms <- dimnames(x$inputData$X)$spp
+		fixInd1 <- nms=="Reinhardtius stomias"
+		fixed1 <- "Atheresthes stomias"
+		fixInd2 <- nms=="Cross papposus"
+		fixed2 <- "Crossaster papposus"
+		dimnames(x$inputData$X)$spp[fixInd1] <- fixed1
+		dimnames(x$inputData$X)$spp[fixInd2] <- fixed2
+		return(x)
+	}
+	for(fi in 1:length(rm_out)){
+		rm_out[[fi]] <- fix2names(rm_out[[fi]])
+	}
 	
 	p[[i]] <- process_msomStatic(rm_out)
 	
