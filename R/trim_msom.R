@@ -121,7 +121,7 @@ trim_msom <- function(reg, gridSize=1, grid_stratum=TRUE, depthStratum=NULL, tol
 			# species that have variable detectability according to data providers
 			# "Bathyraja parmifera", # I already spotted this one
 			# "Lepidopsetta polyxystra", # I already spotted this one
-			"Acantholumpenus mackayi", "Atheresthes evermanni", "Atheresthes stomias", 
+			"Acantholumpenus mackayi", "Atheresthes evermanni", #"Atheresthes stomias", 
 			"Bathyraja aleutica", "Bathyraja interrupta", "Bathyraja maculata", 
 			 "Bathyraja taranetzi", "Boreogadus saida", 
 			"Careproctus rastrinus", "Ctenodiscus crispatus", "Elassochirus cavimanus", 
