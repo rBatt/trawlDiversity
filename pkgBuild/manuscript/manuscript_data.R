@@ -191,11 +191,11 @@ if(file.exists("~/Documents/School&Work/pinskyPost/trawl/trawlDiversity/pkgBuild
 		# A similar idea would be to take the annual average temperature across strata every occupied by a species; however, this might not be restrictive enough to really focus in on the "best" locations. But if the above approach is too complex for a paper, maybe something along those lines would work.
 		btemp_atOptDepth <- t_resp_metrics[,j={
 			strata_devs <- X_bt[, list(bt, optDepth_dev=abs(depth-depth_base_opt)),by=c("stratum","year")] # deviations from opt depth
-			n_strat_samp <- X_bt[,ceiling(lu(stratum)*0.1)] # 10% = n strata
+			n_strat_samp <- X_bt[,ceiling(trawlData::lu(stratum)*0.1)] # 10% = n strata
 			ODS <- strata_devs[,list(optDepth_dev_best=(optDepth_dev[which.min((optDepth_dev))])),by="stratum"] # smallest deviation; ODS = optimal depth strata
 			setorder(ODS, optDepth_dev_best) # order strata by their smallest deviation
 			best_strata <- ODS[1:pmin(n_strat_samp, nrow(ODS)), stratum] # select top 10% (or all, if somehow less available [shouldn't happen])
-			btemp_ODS <- strata_devs[stratum%in%best_strata,list(btemp_ODS=mean(bt, na.rm=TRUE), nODS=lu(stratum)),by="year"] # get mean bottom temperature in best strata for each year
+			btemp_ODS <- strata_devs[stratum%in%best_strata,list(btemp_ODS=mean(bt, na.rm=TRUE), nODS=trawlData::lu(stratum)),by="year"] # get mean bottom temperature in best strata for each year
 			btemp_ODS
 		},by="spp"]
 	
@@ -211,12 +211,17 @@ if(file.exists("~/Documents/School&Work/pinskyPost/trawl/trawlDiversity/pkgBuild
 	save(resp_metrics, file="~/Documents/School&Work/pinskyPost/trawl/trawlDiversity/pkgBuild/results/resp_metrics.RData")
 }
 
+# just had to put this here temporarily, should be fixed
+# resp_metrics[spp=="Reinhardtius stomias", spp:="Atheresthes stomias"]
+# resp_metrics[spp=="Cross papposus", spp:="Crossaster papposus"]
+
 
 # ================================
 # = Merge into Data Sets to Save =
 # ================================
 # ---- Species Master Data Set ----
 spp_master <- merge(detect_ce_dt, propStrat, all=TRUE) # species-specific data
+# spp_master <- spp_master[!(reg=='ebs' & spp=='Atheresthes stomias')] # # TODO REMOVE AFTER RE-RUN of EBS MSOM
 spp_master[,has_stretches:=all(c(0,1)%in%una(present)), by=c("reg","spp")]
 stretches <- spp_master[(has_stretches),data.table(year, as.data.table(event_stretches(.SD))), keyby=c("reg","spp")]
 spp_master <- merge(spp_master, stretches, all=TRUE, by=c("reg","spp","year"))
