@@ -189,6 +189,10 @@ rich_trend_kendall <- rich_trend_kendall[
 # make plot
 load("../results/rich_trend_kendall.RData") # load rich trend stats
 richness_ts()
+pdf("../../submitted_pdfs/final/Fig1.pdf", width=3.228, height=4.6114)
+richness_ts()
+dev.off()
+
 #' Looking for trends in species richness in both the naive estimates and the MSOM estimates. Using Kendall's Tau_b, calculated for 1E4 resamplings of the posterior of richness. Tau is also calculated using a method that removes serial correlation to achieve independence of observations so that the p-values are correct.  
 #'   
 #' In the Naive estimates, `r rich_naive_trend_kendall[reg!='wcann', sum(pvalue<=0.05)]` regions had significant $\tau_b$.  
@@ -230,6 +234,10 @@ kable(rich_trend_kendall,
 #' ##Figure 2. Changes in Geographic Range before Extinction and after Colonization
 #+ rangeSize_ColExt, fig.width=6, fig.height=3, fig.cap="**Figure 4.** Geographic range size vs years until extinction (A) and years after colonization (B). For visualization purposes, range size is averaged across species for each unique value on each axis, and a linear model fit through this average. Statistics in main text use unaggregated data. The horizontal axes were formulated as time until (since) the nearest upcoming (previous) absence. Because range size must be zero when either horizontal axis has a value of zero, points at (0,0) were excluded from figures and analyses."
 rangeSize_absenceTime(rSMet_base)
+pdf("../../submitted_pdfs/final/Fig2.pdf", width=6.81102, height=3*(6.81102/6))
+rangeSize_absenceTime(rSMet_base)
+dev.off()
+
 print(rSMet_base)
 #' Range size declines near an absence much more consistently than does range density; both are (relatively) low just before extinction and just after colonization. However, range density has much more variable intercepts among regions, whereas range size does not.   
 #'   
@@ -361,6 +369,9 @@ sign_tDM <- sign(transDiffMean)
 #' ##Figure 3. Richness versus Community Range Index
 #+ rich-geo-rangeSize, fig.width=3.5, fig.height=3.5, fig.cap="**Figure 3.** Species richness vs geographic range size. Range size is presented as each species' long-term average of the proportion of sites it occupied. Solid lines are linear regressions with MSOM richness as the response and the horizontal axis and an intercept as the predictors."
 rich_geoRange(rSMet_ltComm, leg=TRUE, legPan=1, panLab=FALSE)
+pdf("../../submitted_pdfs/final/Fig3.pdf", width=3.228, height=3.228)
+rich_geoRange(rSMet_ltComm, leg=TRUE, legPan=1, panLab=FALSE)
+dev.off()
 
 #' Range size is a pretty good predictor of species richness. I think I had originally missed the range size relationship b/c I hadn't done the same aggregating procedure. The interpretation I have is that richness is highest when you have a bunch of rare species.  
 #'   
@@ -435,6 +446,9 @@ rich_cri_meanR2 <- rich_s_reg_smry[,mean(MargR2)]
 #+ rareExpansion, fig.width=6.5, fig.height=6.5, results='asis'
 eval(neitherPres_subColor())
 plot_rangeSize_FullTrans(range_type="range_size_samp")
+pdf("../../submitted_pdfs/final/Fig4.pdf", width=6.81102, height=6.81102)
+plot_rangeSize_FullTrans(range_type="range_size_samp")
+dev.off()
 
 #' ###Range Size over time for transient & core -- Stats
 #+ rareExpansion-stats
