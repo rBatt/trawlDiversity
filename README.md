@@ -1,6 +1,6 @@
-#trawlDiversity
+# trawlDiversity
+[![DOI](https://zenodo.org/badge/63213266.svg)](https://zenodo.org/badge/latestdoi/63213266)
 
----
 
 ## Gradual changes in range size accompany long-term trends in species richness
 
