@@ -21,3 +21,4 @@ The MSOM models run in Stan or JAGS. These are additional programs that won't be
 
 
 
+https://onlinelibrary.wiley.com/doi/abs/10.1111/ele.12812
